@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth-context';
+import { useLanguage } from '@/lib/language-context';
 import { ViewType, ExamSession } from '@/lib/types';
-import { mockExamResults } from '@/lib/mock-data';
+import { mockExamResults, questions, languages } from '@/lib/mock-data';
 import {
   User,
   Calendar,
@@ -18,7 +19,12 @@ import {
   CheckCircle,
   XCircle,
   ChevronRight,
-  FileText
+  FileText,
+  Globe,
+  Volume2,
+  Eye,
+  Image as ImageIcon,
+  GraduationCap
 } from 'lucide-react';
 
 interface CandidateDashboardProps {
@@ -27,33 +33,20 @@ interface CandidateDashboardProps {
 
 export default function CandidateDashboard({ onViewChange }: CandidateDashboardProps) {
   const { user } = useAuth();
+  const { currentLanguage, setLanguage, languageConfig } = useLanguage();
 
   const passedExams = mockExamResults.filter(r => r.reussi).length;
   const totalExams = mockExamResults.length;
   const successRate = totalExams > 0 ? Math.round((passedExams / totalExams) * 100) : 0;
 
+  const signQuestions = questions.filter(q => q.mediaType === 'sign' || q.mediaType === 'sign+scenario').length;
+  const scenarioQuestions = questions.filter(q => q.mediaType === 'scenario' || q.mediaType === 'sign+scenario').length;
+
   const stats = [
-    {
-      title: 'Examens passés',
-      value: totalExams.toString(),
-      icon: FileText,
-      color: '#009460',
-      bgColor: '#00946015'
-    },
-    {
-      title: 'Taux de réussite',
-      value: `${successRate}%`,
-      icon: TrendingUp,
-      color: '#FCD116',
-      bgColor: '#FCD11615'
-    },
-    {
-      title: 'Prochain examen',
-      value: '15 mars 2026',
-      icon: Calendar,
-      color: '#CE1126',
-      bgColor: '#CE112615'
-    }
+    { title: 'Examens passés', value: totalExams.toString(), icon: FileText, color: '#009460', bgColor: '#00946015' },
+    { title: 'Taux de réussite', value: `${successRate}%`, icon: TrendingUp, color: '#FCD116', bgColor: '#FCD11615' },
+    { title: 'Prochain examen', value: '15 mars 2026', icon: Calendar, color: '#CE1126', bgColor: '#CE112615' },
+    { title: 'Langue active', value: languageConfig.nativeName, icon: Globe, color: '#7C3AED', bgColor: '#7C3AED15' },
   ];
 
   const recentSessions: ExamSession[] = [
@@ -64,6 +57,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
       centreNom: 'Centre RouteSafe Kaloum',
       date: '2026-03-15',
       heure: '09:00',
+      langue: currentLanguage,
       statut: 'programme',
       totalQuestions: 40,
       dateInscription: '2026-03-01'
@@ -89,7 +83,11 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Card */}
         <Card className="mb-8 border-0 shadow-lg overflow-hidden">
-          <div className="h-2" style={{ background: 'linear-gradient(to right, #CE1126, #FCD116, #009460)' }}></div>
+          <div className="h-1.5 flex">
+            <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
+            <div className="flex-1" style={{ backgroundColor: '#FCD116' }}></div>
+            <div className="flex-1" style={{ backgroundColor: '#009460' }}></div>
+          </div>
           <CardContent className="p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -107,10 +105,14 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                     <Badge variant="outline" className="text-xs">
                       Catégorie {user?.categoriePermis}
                     </Badge>
+                    <Badge variant="outline" className="text-xs flex items-center gap-1" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
+                      <Globe className="w-3 h-3" />
+                      {languageConfig.nativeName}
+                    </Badge>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 <Button
                   className="text-white font-semibold"
                   style={{ backgroundColor: '#009460' }}
@@ -128,23 +130,32 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                   <BookOpen className="w-4 h-4 mr-2" />
                   S&apos;entraîner
                 </Button>
+                <Button
+                  variant="outline"
+                  className="font-semibold"
+                  style={{ borderColor: '#7C3AED', color: '#7C3AED' }}
+                  onClick={() => onViewChange('courses')}
+                >
+                  <GraduationCap className="w-4 h-4 mr-2" />
+                  Cours
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {stats.map((stat, index) => (
             <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">{stat.title}</p>
-                    <p className="text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 mb-1">{stat.title}</p>
+                    <p className="text-xl sm:text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: stat.bgColor }}>
-                    <stat.icon className="w-6 h-6" style={{ color: stat.color }} />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: stat.bgColor }}>
+                    <stat.icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: stat.color }} />
                   </div>
                 </div>
               </CardContent>
@@ -152,31 +163,43 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
           ))}
         </div>
 
-        {/* Progress Card */}
-        <Card className="mb-8 border-0 shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2" style={{ color: '#1A2332' }}>
-              <Award className="w-5 h-5" style={{ color: '#FCD116' }} />
-              Progression vers le permis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm text-gray-600">Score requis: 35/40</span>
-                  <span className="text-sm font-semibold" style={{ color: successRate >= 88 ? '#009460' : '#CE1126' }}>
-                    Meilleur score: {mockExamResults.length > 0 ? `${mockExamResults[0].score}/${mockExamResults[0].totalQuestions}` : 'N/A'}
-                  </span>
+        {/* Multimedia Features Banner */}
+        <Card className="mb-8 border-0 shadow-md overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex flex-col sm:flex-row">
+              <div className="flex-1 p-6" style={{ background: 'linear-gradient(135deg, #1A2332 0%, #2d3e54 100%)' }}>
+                <h3 className="text-white font-bold text-lg mb-2">Nouvelles fonctionnalités</h3>
+                <p className="text-gray-300 text-sm mb-4">Passez votre examen avec des outils modernes</p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-blue-500/20 text-blue-200 border border-blue-400/30">
+                    <ImageIcon className="w-3 h-3 mr-1" /> {signQuestions} panneaux routiers
+                  </Badge>
+                  <Badge className="bg-purple-500/20 text-purple-200 border border-purple-400/30">
+                    <Eye className="w-3 h-3 mr-1" /> {scenarioQuestions} scénarios visuels
+                  </Badge>
+                  <Badge className="bg-orange-500/20 text-orange-200 border border-orange-400/30">
+                    <Volume2 className="w-3 h-3 mr-1" /> 4 langues nationales
+                  </Badge>
                 </div>
-                <Progress value={successRate} className="h-3" />
               </div>
-              <p className="text-sm text-gray-500">
-                {successRate >= 88
-                  ? '🎉 Félicitations ! Vous avez atteint le score requis pour réussir l\'examen.'
-                  : 'Continuez à vous entraîner pour atteindre le score minimum de 35/40.'
-                }
-              </p>
+              <div className="sm:w-64 p-6 flex flex-col justify-center items-center bg-gray-50">
+                <Button
+                  className="w-full text-white font-semibold mb-2"
+                  style={{ backgroundColor: '#009460' }}
+                  onClick={() => onViewChange('courses')}
+                >
+                  <GraduationCap className="w-4 h-4 mr-2" />
+                  Accéder aux cours
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full font-semibold text-sm"
+                  onClick={() => onViewChange('language-select')}
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  Changer de langue
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -201,7 +224,14 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                   <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div>
                       <p className="font-medium text-sm" style={{ color: '#1A2332' }}>{session.centreNom}</p>
-                      <p className="text-xs text-gray-500">{new Date(session.date).toLocaleDateString('fr-FR')} à {session.heure}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-gray-500">{new Date(session.date).toLocaleDateString('fr-FR')} à {session.heure}</p>
+                        {session.langue && session.langue !== 'fr' && (
+                          <Badge variant="outline" className="text-xs py-0 px-1" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
+                            {languages.find(l => l.code === session.langue)?.nativeName}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {session.score !== undefined && (
@@ -215,37 +245,76 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
             </CardContent>
           </Card>
 
-          {/* Practice Test Quick Access */}
+          {/* Quick Access */}
           <Card className="border-0 shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2" style={{ color: '#1A2332' }}>
-                <BookOpen className="w-5 h-5" style={{ color: '#FCD116' }} />
-                Test d&apos;entraînement
+                <Award className="w-5 h-5" style={{ color: '#FCD116' }} />
+                Accès rapide
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-500">
-                  Préparez-vous en vous entraînant avec des questions similaires à l&apos;examen officiel.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gray-50 rounded-lg text-center">
-                    <p className="text-2xl font-bold" style={{ color: '#009460' }}>30</p>
-                    <p className="text-xs text-gray-500">Questions disponibles</p>
+              <div className="space-y-3">
+                <button
+                  className="w-full p-4 rounded-xl border-2 border-gray-100 hover:border-green-200 bg-white hover:bg-green-50/50 transition-all text-left flex items-center gap-4"
+                  onClick={() => onViewChange('courses')}
+                >
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#00946015' }}>
+                    <GraduationCap className="w-6 h-6" style={{ color: '#009460' }} />
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-lg text-center">
-                    <p className="text-2xl font-bold" style={{ color: '#FCD116' }}>5</p>
-                    <p className="text-xs text-gray-500">Catégories</p>
+                  <div className="flex-1">
+                    <p className="font-semibold" style={{ color: '#1A2332' }}>Cours et formation</p>
+                    <p className="text-sm text-gray-500">3 cours, 12 leçons avec panneaux et audio</p>
                   </div>
-                </div>
-                <Button
-                  className="w-full text-white font-semibold"
-                  style={{ backgroundColor: '#009460' }}
+                  <ChevronRight className="w-5 h-5 text-gray-300" />
+                </button>
+
+                <button
+                  className="w-full p-4 rounded-xl border-2 border-gray-100 hover:border-blue-200 bg-white hover:bg-blue-50/50 transition-all text-left flex items-center gap-4"
                   onClick={() => onViewChange('practice-test')}
                 >
-                  <User className="w-4 h-4 mr-2" />
-                  Commencer l&apos;entraînement
-                </Button>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0EA5E915' }}>
+                    <BookOpen className="w-6 h-6" style={{ color: '#0EA5E9' }} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold" style={{ color: '#1A2332' }}>Test d&apos;entraînement</p>
+                    <p className="text-sm text-gray-500">{questions.length} questions avec images et audio</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-300" />
+                </button>
+
+                <button
+                  className="w-full p-4 rounded-xl border-2 border-gray-100 hover:border-orange-200 bg-white hover:bg-orange-50/50 transition-all text-left flex items-center gap-4"
+                  onClick={() => onViewChange('language-select')}
+                >
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#F9731615' }}>
+                    <Volume2 className="w-6 h-6" style={{ color: '#F97316' }} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold" style={{ color: '#1A2332' }}>Langue de l&apos;examen</p>
+                    <p className="text-sm text-gray-500">Choisissez parmi 4 langues nationales</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
+                    {languageConfig.nativeName}
+                  </Badge>
+                </button>
+              </div>
+
+              {/* Progress */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-gray-600">Score requis: 35/40</span>
+                  <span className="text-sm font-semibold" style={{ color: successRate >= 88 ? '#009460' : '#CE1126' }}>
+                    Meilleur score: {mockExamResults.length > 0 ? `${mockExamResults[0].score}/${mockExamResults[0].totalQuestions}` : 'N/A'}
+                  </span>
+                </div>
+                <Progress value={successRate} className="h-3" />
+                <p className="text-sm text-gray-500 mt-2">
+                  {successRate >= 88
+                    ? 'Félicitations ! Vous avez atteint le score requis pour réussir l\'examen.'
+                    : 'Continuez à vous entraîner pour atteindre le score minimum de 35/40.'
+                  }
+                </p>
               </div>
             </CardContent>
           </Card>

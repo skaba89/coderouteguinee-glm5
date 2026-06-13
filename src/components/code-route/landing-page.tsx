@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -15,7 +15,15 @@ import {
   ChevronRight,
   Shield,
   Clock,
-  Smartphone
+  Smartphone,
+  Globe,
+  Volume2,
+  Eye,
+  BookOpen,
+  CheckCircle,
+  BarChart3,
+  ArrowRight,
+  Play
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -23,35 +31,75 @@ interface LandingPageProps {
   onRegister: () => void;
 }
 
+/* ───────────────────── Animated Counter ───────────────────── */
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let start = 0;
-    const duration = 2000;
-    const increment = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= target) {
-        setCount(target);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 16);
-    return () => clearInterval(timer);
-  }, [target]);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          let start = 0;
+          const duration = 2000;
+          const increment = target / (duration / 16);
+          const timer = setInterval(() => {
+            start += increment;
+            if (start >= target) {
+              setCount(target);
+              clearInterval(timer);
+            } else {
+              setCount(Math.floor(start));
+            }
+          }, 16);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, hasAnimated]);
 
-  return <span>{count.toLocaleString('fr-FR')}{suffix}</span>;
+  return (
+    <div ref={ref}>
+      <span>{count.toLocaleString('fr-FR')}{suffix}</span>
+    </div>
+  );
 }
 
+/* ───────────────────── Waveform Icon ───────────────────── */
+function WaveformIcon() {
+  return (
+    <svg width="32" height="16" viewBox="0 0 32 16" fill="none" className="opacity-50">
+      <rect x="0" y="6" width="2" height="4" rx="1" fill="currentColor" />
+      <rect x="4" y="3" width="2" height="10" rx="1" fill="currentColor" />
+      <rect x="8" y="1" width="2" height="14" rx="1" fill="currentColor" />
+      <rect x="12" y="4" width="2" height="8" rx="1" fill="currentColor" />
+      <rect x="16" y="2" width="2" height="12" rx="1" fill="currentColor" />
+      <rect x="20" y="5" width="2" height="6" rx="1" fill="currentColor" />
+      <rect x="24" y="3" width="2" height="10" rx="1" fill="currentColor" />
+      <rect x="28" y="6" width="2" height="4" rx="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+/* ───────────────────── Main Component ───────────────────── */
 export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
+  /* ── Step data (5 steps) ── */
   const steps = [
     {
       icon: UserPlus,
       title: 'Inscription',
       desc: 'Créez votre compte avec vos informations d\'identité',
       color: '#CE1126'
+    },
+    {
+      icon: Globe,
+      title: 'Choix de langue',
+      desc: 'Sélectionnez votre langue maternelle parmi 4 options',
+      color: '#E97316'
     },
     {
       icon: CalendarCheck,
@@ -62,77 +110,184 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
     {
       icon: FileCheck,
       title: 'Examen',
-      desc: 'Passez votre examen théorique dans un centre agréé',
+      desc: 'Passez avec panneaux, vidéos et audio dans votre langue',
       color: '#009460'
     },
     {
       icon: Award,
       title: 'Résultat',
-      desc: 'Recevez votre résultat immédiatement avec certificat',
+      desc: 'Résultat immédiat avec certificat sécurisé par QR code',
       color: '#1A2332'
     }
   ];
 
-  const avantages = [
+  /* ── Nouveautés features ── */
+  const nouveautes = [
     {
-      icon: Shield,
-      title: 'Anti-fraude',
-      desc: 'Système biométrique et QR code pour garantir l\'authenticité'
+      icon: Eye,
+      title: 'Panneaux & Scénarios visuels',
+      desc: 'Des images réelles de panneaux routiers et des scénarios photographiés pour mieux comprendre les situations de conduite',
+      accent: '#CE1126'
     },
     {
-      icon: Clock,
-      title: 'Résultats instantanés',
-      desc: 'Correction automatique et résultat immédiat après l\'examen'
+      icon: Volume2,
+      title: 'Lecture en langues nationales',
+      desc: 'Écoutez les questions en Soussou, Poular ou Malinké. Pour ceux qui ne lisent pas le français ou préfèrent leur langue maternelle',
+      accent: '#009460'
     },
     {
-      icon: Smartphone,
-      title: 'Accessibilité',
-      desc: 'Plateforme disponible sur tous les appareils, partout en Guinée'
+      icon: BookOpen,
+      title: 'Formation interactive',
+      desc: 'Des cours structurés par catégorie avec exercices pratiques, vidéos explicatives et suivi de progression',
+      accent: '#E97316'
     }
+  ];
+
+  /* ── Languages ── */
+  const languages = [
+    {
+      flag: '🇫🇷',
+      name: 'Français',
+      native: 'Langue officielle',
+      regions: 'Toutes les régions',
+      population: '',
+      emoji: ''
+    },
+    {
+      flag: '🌊',
+      name: 'Soussou',
+      native: 'Sossoxui',
+      regions: 'Conakry, Kindia, Boké',
+      population: '~3M',
+      emoji: ''
+    },
+    {
+      flag: '⛰️',
+      name: 'Poular',
+      native: 'Pulaar',
+      regions: 'Labé, Mamou, Faranah',
+      population: '~5M',
+      emoji: ''
+    },
+    {
+      flag: '🌳',
+      name: 'Malinké',
+      native: 'Maninka',
+      regions: 'Kankan, Kouroussa, Siguiri',
+      population: '~4M',
+      emoji: ''
+    }
+  ];
+
+  /* ── Comparison data ── */
+  const comparisons = [
+    { feature: 'Multi-langue', us: true, other: false },
+    { feature: 'Panneaux visuels', us: true, other: 'partial' },
+    { feature: 'Scénarios photo', us: true, other: false },
+    { feature: 'Lecture audio', us: true, other: false },
+    { feature: 'Anti-fraude biométrique', us: true, other: 'partial' },
+    { feature: 'Certification QR code', us: true, other: false }
+  ];
+
+  /* ── Stats ── */
+  const stats = [
+    { icon: Users, value: 50000, suffix: '+', label: 'Candidats inscrits', color: '#FCD116' },
+    { icon: Building2, value: 15, suffix: '+', label: 'Centres agréés', color: '#FCD116' },
+    { icon: Globe, value: 4, suffix: '', label: 'Langues disponibles', color: '#FCD116' },
+    { icon: ThumbsUp, value: 98, suffix: '%', label: 'Taux de satisfaction', color: '#FCD116' }
   ];
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Hero Section */}
+      {/* ═══════════════════════════════════════════════════════
+          1. HERO SECTION
+          ═══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1A2332] via-[#0d1a2d] to-[#1A2332]"></div>
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-full h-1.5 flex">
-          <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
-          <div className="flex-1" style={{ backgroundColor: '#FCD116' }}></div>
-          <div className="flex-1" style={{ backgroundColor: '#009460' }}></div>
-        </div>
-        <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-10" style={{ backgroundColor: '#009460' }}></div>
-        <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full opacity-10" style={{ backgroundColor: '#FCD116' }}></div>
+        {/* Dark gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1A2332] via-[#0d1a2d] to-[#1A2332]" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36">
+        {/* Guinea flag stripe at very top */}
+        <div className="absolute top-0 left-0 w-full h-2 flex z-10">
+          <div className="flex-1" style={{ backgroundColor: '#CE1126' }} />
+          <div className="flex-1" style={{ backgroundColor: '#FCD116' }} />
+          <div className="flex-1" style={{ backgroundColor: '#009460' }} />
+        </div>
+
+        {/* Decorative geometric patterns */}
+        <div className="absolute top-20 right-10 w-80 h-80 rounded-full opacity-[0.06]" style={{ backgroundColor: '#009460' }} />
+        <div className="absolute bottom-10 left-10 w-64 h-64 rounded-full opacity-[0.06]" style={{ backgroundColor: '#FCD116' }} />
+        <div className="absolute top-40 left-1/4 w-96 h-96 rounded-full opacity-[0.03]" style={{ backgroundColor: '#CE1126' }} />
+
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+
+        {/* Floating sign icons */}
+        <div className="absolute top-32 left-[8%] opacity-10 text-white animate-pulse" style={{ animationDuration: '4s' }}>
+          <Shield className="w-10 h-10" />
+        </div>
+        <div className="absolute top-48 right-[12%] opacity-10 text-white animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }}>
+          <Car className="w-12 h-12" />
+        </div>
+        <div className="absolute bottom-32 left-[15%] opacity-10 text-white animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }}>
+          <Volume2 className="w-8 h-8" />
+        </div>
+        <div className="absolute bottom-24 right-[8%] opacity-10 text-white animate-pulse" style={{ animationDuration: '4.5s', animationDelay: '0.5s' }}>
+          <Eye className="w-10 h-10" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 sm:pt-20 sm:pb-28 lg:pt-28 lg:pb-36">
           <div className="text-center">
-            {/* Republic mention */}
-            <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/80 text-sm">
-              <span className="font-medium">🇬🇳 République de Guinée</span>
-              <span className="text-white/40">|</span>
-              <span>Ministère des Transports</span>
+            {/* Republic mention badge */}
+            <div className="inline-flex items-center gap-2 mb-8 px-5 py-2.5 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.1]">
+              <span className="font-medium text-white/90 text-sm">🇬🇳 République de Guinée</span>
+              <span className="text-white/30">|</span>
+              <span className="text-white/70 text-sm">Ministère des Transports</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight">
+            {/* Title */}
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight">
               CodeRoute{' '}
-              <span style={{ color: '#FCD116' }}>Guinée</span>
+              <span className="relative inline-block">
+                <span style={{ color: '#FCD116' }}>Guinée</span>
+                <span className="absolute -bottom-1 left-0 w-full h-1 rounded-full" style={{ backgroundColor: '#FCD116', opacity: 0.4 }} />
+              </span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-4">
+            {/* Subtitle */}
+            <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-3 leading-relaxed">
               Plateforme nationale digitale pour l&apos;examen théorique du permis de conduire
             </p>
 
-            <p className="text-base text-gray-400 max-w-xl mx-auto mb-10">
-              Réduisez la fraude, améliorez la traçabilité et modernisez le processus
-              de délivrance des permis de conduire en Guinée
+            {/* New tagline */}
+            <p className="text-base sm:text-lg font-medium max-w-xl mx-auto mb-8" style={{ color: '#FCD116' }}>
+              Avec panneaux, vidéos et lecture en langues nationales
             </p>
 
+            {/* Feature pills */}
+            <div className="flex flex-wrap justify-center gap-3 mb-10">
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
+                🪧 Panneaux routiers
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
+                📷 Scénarios visuels
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
+                🔊 4 langues nationales
+              </span>
+            </div>
+
+            {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className="text-white font-semibold px-8 py-6 text-lg"
-                style={{ backgroundColor: '#009460', hover: { backgroundColor: '#007a4e' } }}
+                className="text-white font-semibold px-8 py-6 text-lg rounded-xl shadow-lg shadow-[#009460]/30 hover:shadow-xl hover:shadow-[#009460]/40 transition-all duration-300 hover:scale-[1.02]"
+                style={{ backgroundColor: '#009460' }}
                 onClick={onRegister}
               >
                 <UserPlus className="w-5 h-5 mr-2" />
@@ -142,7 +297,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
               <Button
                 size="lg"
                 variant="outline"
-                className="font-semibold px-8 py-6 text-lg border-white/30 text-white hover:bg-white/10"
+                className="font-semibold px-8 py-6 text-lg border-white/25 text-white hover:bg-white/10 rounded-xl transition-all duration-300 hover:scale-[1.02]"
                 onClick={onLogin}
               >
                 Se connecter
@@ -152,7 +307,9 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
         </div>
       </section>
 
-      {/* How it works */}
+      {/* ═══════════════════════════════════════════════════════
+          2. COMMENT ÇA MARCHE (5 steps)
+          ═══════════════════════════════════════════════════════ */}
       <section className="py-16 sm:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
@@ -160,25 +317,62 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
               Comment ça marche
             </h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto">
-              Un processus simple et sécurisé en 4 étapes
+              Un processus simple et sécurisé en 5 étapes
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 relative">
             {steps.map((step, index) => (
-              <Card key={index} className="relative border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardContent className="p-6 text-center">
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: step.color }}>
-                    {index + 1}
+              <React.Fragment key={index}>
+                <Card className="relative border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <CardContent className="p-6 text-center">
+                    {/* Step number badge */}
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md" style={{ backgroundColor: step.color }}>
+                      {index + 1}
+                    </div>
+                    <div className="w-14 h-14 rounded-xl mx-auto mt-4 mb-4 flex items-center justify-center" style={{ backgroundColor: `${step.color}15` }}>
+                      <step.icon className="w-7 h-7" style={{ color: step.color }} />
+                    </div>
+                    <h3 className="font-bold text-lg mb-2" style={{ color: '#1A2332' }}>{step.title}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
+                  </CardContent>
+                </Card>
+                {/* Arrow between cards */}
+                {index < steps.length - 1 && (
+                  <ChevronRight className="hidden lg:block absolute top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 z-10" style={{ left: `calc(${((index) * 20) + 19}% )` }} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          3. CE QUI NOUS DISTINGUE (Nouveautés)
+          ═══════════════════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#CE1126' }}>Nouveautés</p>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
+              Ce qui nous distingue
+            </h2>
+            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+              Des innovations uniques pour un examen accessible à tous les Guinéens
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {nouveautes.map((item, index) => (
+              <Card key={index} className="group border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                <CardContent className="p-8">
+                  {/* Accent top border */}
+                  <div className="h-1 w-16 rounded-full mb-6 transition-all duration-300 group-hover:w-24" style={{ backgroundColor: item.accent }} />
+                  <div className="w-14 h-14 rounded-2xl mb-5 flex items-center justify-center" style={{ backgroundColor: `${item.accent}12` }}>
+                    <item.icon className="w-7 h-7" style={{ color: item.accent }} />
                   </div>
-                  <div className="w-14 h-14 rounded-xl mx-auto mt-4 mb-4 flex items-center justify-center" style={{ backgroundColor: `${step.color}15` }}>
-                    <step.icon className="w-7 h-7" style={{ color: step.color }} />
-                  </div>
-                  <h3 className="font-bold text-lg mb-2" style={{ color: '#1A2332' }}>{step.title}</h3>
-                  <p className="text-gray-500 text-sm">{step.desc}</p>
-                  {index < steps.length - 1 && (
-                    <ChevronRight className="hidden lg:block absolute right-[-16px] top-1/2 -translate-y-1/2 w-6 h-6 text-gray-300" />
-                  )}
+                  <h3 className="font-bold text-xl mb-3" style={{ color: '#1A2332' }}>{item.title}</h3>
+                  <p className="text-gray-500 leading-relaxed">{item.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -186,120 +380,215 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
         </div>
       </section>
 
-      {/* Advantages */}
-      <section className="py-16 sm:py-24 bg-white">
+      {/* ═══════════════════════════════════════════════════════
+          4. 4 LANGUES NATIONALES
+          ═══════════════════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24" style={{ backgroundColor: '#1A2332' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
-              Pourquoi CodeRoute Guinée ?
+            <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#FCD116' }}>Accessibilité</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              L&apos;examen dans votre langue
             </h2>
-            <p className="text-gray-500 text-lg max-w-xl mx-auto">
-              Une plateforme moderne au service de la sécurité routière
+            <p className="text-gray-400 text-lg max-w-xl mx-auto">
+              Passez votre examen dans la langue que vous maîtrisez le mieux
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {avantages.map((av, index) => (
-              <div key={index} className="text-center p-6 rounded-2xl hover:bg-gray-50 transition-colors">
-                <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center" style={{ backgroundColor: '#00946015' }}>
-                  <av.icon className="w-8 h-8" style={{ color: '#009460' }} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {languages.map((lang, index) => (
+              <Card key={index} className="group border-0 bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] hover:bg-white/[0.10] transition-all duration-300 hover:-translate-y-1" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl mb-3">{lang.flag}</div>
+                  <h3 className="text-xl font-bold text-white mb-1">{lang.name}</h3>
+                  <p className="text-sm font-medium mb-2" style={{ color: '#FCD116' }}>{lang.native}</p>
+                  <p className="text-gray-400 text-sm mb-3">{lang.regions}</p>
+                  {lang.population && (
+                    <p className="text-gray-500 text-xs mb-3">{lang.population} locuteurs</p>
+                  )}
+                  {/* Waveform audio indicator */}
+                  <div className="flex items-center justify-center gap-2 text-white/40">
+                    <Volume2 className="w-4 h-4" />
+                    <WaveformIcon />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Button
+              size="lg"
+              className="font-semibold px-8 py-5 rounded-xl text-[#1A2332] shadow-lg transition-all duration-300 hover:scale-[1.02]"
+              style={{ backgroundColor: '#FCD116' }}
+              onClick={onRegister}
+            >
+              <Globe className="w-5 h-5 mr-2" />
+              Choisir ma langue lors de l&apos;inscription
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          5. STATISTICS
+          ═══════════════════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-[#1A2332] via-[#1e2d42] to-[#1A2332]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            {stats.map((stat, index) => (
+              <div key={index} className="group">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.08] group-hover:bg-white/[0.12] transition-colors">
+                    <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+                  </div>
                 </div>
-                <h3 className="font-bold text-xl mb-3" style={{ color: '#1A2332' }}>{av.title}</h3>
-                <p className="text-gray-500">{av.desc}</p>
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+                  <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+                </div>
+                <p className="text-gray-400 text-sm sm:text-base">{stat.label}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Statistics */}
-      <section className="py-16 sm:py-24" style={{ backgroundColor: '#1A2332' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Users className="w-6 h-6" style={{ color: '#FCD116' }} />
-              </div>
-              <div className="text-4xl sm:text-5xl font-bold text-white mb-2">
-                <AnimatedCounter target={50000} suffix="+" />
-              </div>
-              <p className="text-gray-400 text-lg">Candidats inscrits</p>
-            </div>
-            <div>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Building2 className="w-6 h-6" style={{ color: '#FCD116' }} />
-              </div>
-              <div className="text-4xl sm:text-5xl font-bold text-white mb-2">
-                <AnimatedCounter target={15} suffix="+" />
-              </div>
-              <p className="text-gray-400 text-lg">Centres agréés</p>
-            </div>
-            <div>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <ThumbsUp className="w-6 h-6" style={{ color: '#FCD116' }} />
-              </div>
-              <div className="text-4xl sm:text-5xl font-bold text-white mb-2">
-                <AnimatedCounter target={98} suffix="%" />
-              </div>
-              <p className="text-gray-400 text-lg">Taux de satisfaction</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 sm:py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="p-8 sm:p-12 rounded-2xl shadow-xl" style={{ backgroundColor: '#009460' }}>
-            <Car className="w-12 h-12 text-white/80 mx-auto mb-6" />
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Prêt à passer votre code ?
+      {/* ═══════════════════════════════════════════════════════
+          6. COMPARAISON INTERNATIONALE
+          ═══════════════════════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#009460' }}>Benchmark</p>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
+              En avance sur les standards mondiaux
             </h2>
-            <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
-              Inscrivez-vous maintenant et réservez votre examen dans le centre agréé le plus proche
+            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+              CodeRoute Guinée dépasse les plateformes internationales
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="font-semibold px-8 py-6 text-lg"
-                style={{ backgroundColor: '#FCD116', color: '#1A2332' }}
-                onClick={onRegister}
-              >
-                <UserPlus className="w-5 h-5 mr-2" />
-                Créer un compte
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="font-semibold px-8 py-6 text-lg border-white/50 text-white hover:bg-white/10"
-                onClick={onLogin}
-              >
-                J&apos;ai déjà un compte
-              </Button>
-            </div>
+          </div>
+
+          <Card className="border-0 shadow-xl overflow-hidden">
+            <CardContent className="p-0">
+              {/* Table header */}
+              <div className="grid grid-cols-3 bg-gray-50 border-b border-gray-100">
+                <div className="p-4 sm:p-5 font-semibold text-gray-600 text-sm sm:text-base">Fonctionnalité</div>
+                <div className="p-4 sm:p-5 font-semibold text-center text-sm sm:text-base" style={{ color: '#009460' }}>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Car className="w-4 h-4" />
+                    CodeRoute Guinée
+                  </div>
+                </div>
+                <div className="p-4 sm:p-5 font-semibold text-center text-gray-400 text-sm sm:text-base">Autres plateformes</div>
+              </div>
+
+              {/* Table rows */}
+              {comparisons.map((row, index) => (
+                <div
+                  key={index}
+                  className={`grid grid-cols-3 items-center ${index !== comparisons.length - 1 ? 'border-b border-gray-50' : ''} hover:bg-gray-50/50 transition-colors`}
+                >
+                  <div className="p-4 sm:p-5 text-sm sm:text-base font-medium" style={{ color: '#1A2332' }}>
+                    {row.feature}
+                  </div>
+                  <div className="p-4 sm:p-5 text-center">
+                    {row.us === true ? (
+                      <CheckCircle className="w-6 h-6 mx-auto" style={{ color: '#009460' }} />
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
+                  </div>
+                  <div className="p-4 sm:p-5 text-center">
+                    {row.other === true ? (
+                      <CheckCircle className="w-6 h-6 mx-auto text-green-500" />
+                    ) : row.other === 'partial' ? (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-500 text-xs font-bold mx-auto">⚠</span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-50 text-red-400 text-lg mx-auto">×</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          7. CTA SECTION
+          ═══════════════════════════════════════════════════════ */}
+      <section className="py-16 sm:py-20 relative overflow-hidden" style={{ backgroundColor: '#009460' }}>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10 bg-white -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-10 bg-white translate-y-1/2 -translate-x-1/2" />
+
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Car className="w-12 h-12 text-white/60 mx-auto mb-6" />
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Prêt à passer votre code ?
+          </h2>
+          <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
+            Inscrivez-vous et choisissez votre langue maternelle
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              size="lg"
+              className="font-semibold px-8 py-6 text-lg rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.02]"
+              style={{ backgroundColor: '#FCD116', color: '#1A2332' }}
+              onClick={onRegister}
+            >
+              <UserPlus className="w-5 h-5 mr-2" />
+              Créer un compte
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="font-semibold px-8 py-6 text-lg border-white/40 text-white hover:bg-white/10 rounded-xl transition-all duration-300 hover:scale-[1.02]"
+              onClick={onLogin}
+            >
+              J&apos;ai déjà un compte
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ═══════════════════════════════════════════════════════
+          8. FOOTER
+          ═══════════════════════════════════════════════════════ */}
       <footer className="py-10" style={{ backgroundColor: '#1A2332' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#009460' }}>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#009460' }}>
                 <Car className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-white">CodeRoute <span style={{ color: '#FCD116' }}>Guinée</span></span>
+              <span className="font-bold text-white text-lg">
+                CodeRoute <span style={{ color: '#FCD116' }}>Guinée</span>
+              </span>
             </div>
+
+            {/* Links */}
+            <div className="flex items-center gap-6 text-sm text-gray-400">
+              <a href="#" className="hover:text-white transition-colors">À propos</a>
+              <a href="#" className="hover:text-white transition-colors">Centres</a>
+              <a href="#" className="hover:text-white transition-colors">Aide</a>
+              <a href="#" className="hover:text-white transition-colors">Contact</a>
+            </div>
+
+            {/* Republic branding */}
             <div className="text-center sm:text-right">
               <p className="text-gray-400 text-sm">🇬🇳 République de Guinée — Ministère des Transports</p>
               <p className="text-gray-500 text-xs mt-1">© 2026 CodeRoute Guinée. Tous droits réservés.</p>
             </div>
           </div>
-          <div className="mt-4 flex gap-1 justify-center">
-            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: '#CE1126' }}></div>
-            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: '#FCD116' }}></div>
-            <div className="h-1 flex-1 rounded-full" style={{ backgroundColor: '#009460' }}></div>
+
+          {/* Flag stripe at bottom */}
+          <div className="mt-8 flex gap-0.5 rounded-full overflow-hidden">
+            <div className="h-1.5 flex-1" style={{ backgroundColor: '#CE1126' }} />
+            <div className="h-1.5 flex-1" style={{ backgroundColor: '#FCD116' }} />
+            <div className="h-1.5 flex-1" style={{ backgroundColor: '#009460' }} />
           </div>
         </div>
       </footer>

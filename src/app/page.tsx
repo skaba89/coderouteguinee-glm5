@@ -2,7 +2,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
-import { ViewType, ExamResult } from '@/lib/types';
+import { LanguageProvider } from '@/lib/language-context';
+import { ViewType, ExamResult, NationalLanguage } from '@/lib/types';
 import Navigation from '@/components/code-route/navigation';
 import LandingPage from '@/components/code-route/landing-page';
 import AuthModals from '@/components/code-route/auth-modals';
@@ -11,6 +12,8 @@ import ExamBooking from '@/components/code-route/exam-booking';
 import ExamTaking from '@/components/code-route/exam-taking';
 import Results from '@/components/code-route/results';
 import AdminDashboard from '@/components/code-route/admin-dashboard';
+import LanguageSelection from '@/components/code-route/language-selection';
+import CoursesPage from '@/components/code-route/courses-page';
 
 function AppContent() {
   const { user, isLoggedIn } = useAuth();
@@ -18,6 +21,7 @@ function AppContent() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [latestResult, setLatestResult] = useState<ExamResult | null>(null);
+  const [examLanguage, setExamLanguage] = useState<NationalLanguage>('fr');
 
   const handleViewChange = useCallback((view: ViewType) => {
     setCurrentView(view);
@@ -35,11 +39,17 @@ function AppContent() {
     setLatestResult(result);
   }, []);
 
+  const handleLanguageSelect = useCallback((lang: NationalLanguage) => {
+    setExamLanguage(lang);
+    // After language selection, go to exam or course depending on context
+    setCurrentView('exam-taking');
+  }, []);
+
   const isExamTaking = currentView === 'exam-taking' || currentView === 'practice-test';
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isExamTaking && (
+      {!isExamTaking && currentView !== 'language-select' && (
         <Navigation currentView={currentView} onViewChange={handleViewChange} />
       )}
 
@@ -53,6 +63,9 @@ function AppContent() {
         {currentView === 'candidate-dashboard' && (
           <CandidateDashboard onViewChange={handleViewChange} />
         )}
+        {currentView === 'courses' && (
+          <CoursesPage onViewChange={handleViewChange} />
+        )}
         {currentView === 'exam-booking' && (
           <ExamBooking onViewChange={handleViewChange} />
         )}
@@ -61,6 +74,7 @@ function AppContent() {
             isPractice={false}
             onViewChange={handleViewChange}
             onExamComplete={handleExamComplete}
+            preselectedLanguage={examLanguage}
           />
         )}
         {currentView === 'practice-test' && (
@@ -68,6 +82,7 @@ function AppContent() {
             isPractice={true}
             onViewChange={handleViewChange}
             onExamComplete={handleExamComplete}
+            preselectedLanguage={examLanguage}
           />
         )}
         {currentView === 'results' && (
@@ -75,6 +90,22 @@ function AppContent() {
         )}
         {currentView === 'admin-dashboard' && (
           <AdminDashboard />
+        )}
+        {currentView === 'analytics' && (
+          <AdminDashboard />
+        )}
+        {currentView === 'fraud-monitoring' && (
+          <AdminDashboard />
+        )}
+        {currentView === 'center-management' && (
+          <AdminDashboard />
+        )}
+        {currentView === 'language-select' && (
+          <LanguageSelection
+            onViewChange={handleViewChange}
+            onSelect={handleLanguageSelect}
+            context="exam"
+          />
         )}
       </main>
 
@@ -94,7 +125,9 @@ function AppContent() {
 export default function Home() {
   return (
     <AuthProvider>
-      <AppContent />
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
     </AuthProvider>
   );
 }

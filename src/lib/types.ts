@@ -1,6 +1,23 @@
-export type UserRole = 'candidat' | 'auto-ecole' | 'centre-agree' | 'administration';
+// ============================================================
+// CodeRoute Guinée — Institutional SaaS Data Model
+// ============================================================
 
-export type ExamStatus = 'passe' | 'reussi' | 'echoue' | 'programme' | 'en_cours';
+// --- Languages ---
+export type NationalLanguage = 'fr' | 'ss' | 'fu' | 'ml';
+
+export interface LanguageConfig {
+  code: NationalLanguage;
+  name: string;
+  nativeName: string;
+  flag: string;
+  regions: string[];
+  population: string;
+}
+
+// --- User & Roles ---
+export type UserRole = 'candidat' | 'auto-ecole' | 'centre-agree' | 'administration' | 'super-admin';
+
+export type ExamStatus = 'passe' | 'reussi' | 'echoue' | 'programme' | 'en_cours' | 'annule';
 
 export type ViewType =
   | 'landing'
@@ -9,7 +26,13 @@ export type ViewType =
   | 'exam-taking'
   | 'results'
   | 'admin-dashboard'
-  | 'practice-test';
+  | 'practice-test'
+  | 'language-select'
+  | 'courses'
+  | 'center-management'
+  | 'fraud-monitoring'
+  | 'analytics'
+  | 'settings';
 
 export interface User {
   id: string;
@@ -20,10 +43,23 @@ export interface User {
   telephone: string;
   email: string;
   ville: string;
+  region: string;
   categoriePermis: string;
   role: UserRole;
   numeroUnique: string;
+  langueMaternelle: NationalLanguage;
   photo?: string;
+  createdAt?: string;
+  lastLogin?: string;
+}
+
+// --- Question & Multimedia ---
+export type MediaType = 'text' | 'sign' | 'scenario' | 'video' | 'sign+scenario';
+
+export interface QuestionTranslation {
+  texte: string;
+  options: string[];
+  explication: string;
 }
 
 export interface Question {
@@ -32,10 +68,54 @@ export interface Question {
   options: string[];
   bonneReponse: number;
   categorie: string;
-  image?: string;
-  explication?: string;
+  difficulte: 'facile' | 'moyen' | 'difficile';
+  mediaType: MediaType;
+  signImage?: string;
+  scenarioImage?: string;
+  videoUrl?: string;
+  videoThumbnail?: string;
+  audioFr?: string;
+  translations: Partial<Record<NationalLanguage, QuestionTranslation>>;
+  explication: string;
+  points: number;
+  tempsEstime: number; // seconds
+  tags: string[];
+  actif: boolean;
 }
 
+// --- Course & Learning ---
+export type CourseStatus = 'brouillon' | 'publie' | 'archive';
+export type LessonType = 'video' | 'sign' | 'text' | 'quiz' | 'interactive';
+
+export interface Lesson {
+  id: string;
+  titre: string;
+  description: string;
+  type: LessonType;
+  contenu: string;
+  mediaUrl?: string;
+  signImage?: string;
+  scenarioImage?: string;
+  duree: number; // minutes
+  ordre: number;
+  translations: Partial<Record<NationalLanguage, { titre: string; description: string; contenu: string }>>;
+}
+
+export interface Course {
+  id: string;
+  titre: string;
+  description: string;
+  categorie: string;
+  status: CourseStatus;
+  lessons: Lesson[];
+  imageCover?: string;
+  dureeTotale: number;
+  nbInscrits: number;
+  rating: number;
+  translations: Partial<Record<NationalLanguage, { titre: string; description: string }>>;
+}
+
+// --- Center & Regions ---
 export interface Centre {
   id: string;
   nom: string;
@@ -46,6 +126,14 @@ export interface Centre {
   telephone: string;
   email: string;
   actif: boolean;
+  accreditation?: {
+    dateDebut: string;
+    dateFin: string;
+    statut: 'actif' | 'en_renouvellement' | 'expire' | 'suspendu';
+    scoreQualite: number;
+  };
+  equipements?: string[];
+  languesDisponibles: NationalLanguage[];
 }
 
 export interface Region {
@@ -60,6 +148,7 @@ export interface Ville {
   centres: Centre[];
 }
 
+// --- Exam ---
 export interface ExamSession {
   id: string;
   candidatId: string;
@@ -67,11 +156,16 @@ export interface ExamSession {
   centreNom: string;
   date: string;
   heure: string;
+  langue: NationalLanguage;
   statut: ExamStatus;
   score?: number;
   totalQuestions: number;
   reponses?: number[];
   dateInscription: string;
+  ipAdresse?: string;
+  navigateur?: string;
+  dureeEffective?: number;
+  alertesFraude?: FraudAlert[];
 }
 
 export interface ExamResult {
@@ -82,6 +176,7 @@ export interface ExamResult {
   reussi: boolean;
   details: CategoryResult[];
   datePassage: string;
+  certificatUrl?: string;
 }
 
 export interface CategoryResult {
@@ -90,6 +185,23 @@ export interface CategoryResult {
   correct: number;
 }
 
+// --- Fraud ---
+export type FraudSeverity = 'info' | 'low' | 'medium' | 'high' | 'critical';
+export type FraudStatus = 'active' | 'investigating' | 'resolved' | 'dismissed';
+
+export interface FraudAlert {
+  id: string;
+  type: string;
+  description: string;
+  severity: FraudSeverity;
+  status: FraudStatus;
+  candidatId?: string;
+  centreId?: string;
+  timestamp: string;
+  details?: Record<string, unknown>;
+}
+
+// --- Booking ---
 export interface BookingStep1 {
   region: string;
   ville: string;
@@ -109,4 +221,40 @@ export interface BookingData {
   step1: BookingStep1;
   step2: BookingStep2;
   step3: BookingStep3;
+  langue: NationalLanguage;
+}
+
+// --- Analytics ---
+export interface DailyStat {
+  date: string;
+  exams: number;
+  passed: number;
+  failed: number;
+  cancelled: number;
+  avgScore: number;
+}
+
+export interface RegionalStat {
+  region: string;
+  centres: number;
+  candidates: number;
+  examsPassed: number;
+  successRate: number;
+  revenue: number;
+}
+
+// --- Tenant (SaaS Multi-tenant) ---
+export interface Tenant {
+  id: string;
+  nom: string;
+  pays: string;
+  logo?: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  domain?: string;
+  plan: 'starter' | 'professional' | 'enterprise';
+  actif: boolean;
+  createdAt: string;
+  expiresAt: string;
 }

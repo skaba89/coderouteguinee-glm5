@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { User, UserRole } from './types';
+import { User, UserRole, NationalLanguage } from './types';
 import { generateCandidateNumber } from './mock-data';
 
 interface AuthContextType {
@@ -48,9 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         telephone: '+224 622 00 00 00',
         email: email,
         ville: 'Conakry',
+        region: 'Conakry',
         categoriePermis: 'B',
         role: 'candidat' as UserRole,
-        numeroUnique: generateCandidateNumber()
+        numeroUnique: generateCandidateNumber(),
+        langueMaternelle: 'fr' as NationalLanguage
       };
       users.push(found);
       localStorage.setItem('coderoute_users', JSON.stringify(users));
@@ -96,9 +98,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       telephone: '+224 622 00 00 01',
       email: 'admin@coderoute.gn',
       ville: 'Conakry',
+      region: 'Conakry',
       categoriePermis: 'B',
       role: 'administration' as UserRole,
-      numeroUnique: 'GN-CODE-ADMIN-001'
+      numeroUnique: 'GN-CODE-ADMIN-001',
+      langueMaternelle: 'fr' as NationalLanguage
     };
     setUser(adminUser);
     localStorage.setItem('coderoute_user', JSON.stringify(adminUser));
