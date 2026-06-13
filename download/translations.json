@@ -1,0 +1,322 @@
+{
+  "Q1": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Panneau STOP (octogone rouge) impose un arrêt absolu avant de continuer."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Panneau STOP (octogone rouge) impose un arrêt absolu avant de continuer."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Panneau STOP (octogone rouge) impose un arrêt absolu avant de continuer."
+    }
+  },
+  "Q2": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Un panneau circulaire avec bord rouge indique une interdiction. Ici, sens interdit."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Un panneau circulaire avec bord rouge indique une interdiction. Ici, sens interdit."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Un panneau circulaire avec bord rouge indique une interdiction. Ici, sens interdit."
+    }
+  },
+  "Q3": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Le panneau triangulaire inversé (cédez le passage) impose de laisser passer les autres véhicules."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Le panneau triangulaire inversé (cédez le passage) impose de laisser passer les autres véhicules."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Le panneau triangulaire inversé (cédez le passage) impose de laisser passer les autres véhicules."
+    }
+  },
+  "Q4": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Le panneau en losange indique une priorité, ici la priorité à l'intersection."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Le panneau en losange indique une priorité, ici la priorité à l'intersection."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Le panneau en losange indique une priorité, ici la priorité à l'intersection."
+    }
+  },
+  "Q5": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Un panneau circulaire avec bord rouge et chiffre indique une limitation de vitesse maximale."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Un panneau circulaire avec bord rouge et chiffre indique une limitation de vitesse maximale."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Un panneau circulaire avec bord rouge et chiffre indique une limitation de vitesse maximale."
+    }
+  },
+  "Q6": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Ce panneau interdit le dépassement de véhicules pour tous les conducteurs."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Ce panneau interdit le dépassement de véhicules pour tous les conducteurs."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Ce panneau interdit le dépassement de véhicules pour tous les conducteurs."
+    }
+  },
+  "Q7": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Le panneau bleu carré avec piéton indique un passage pour piétons."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Le panneau bleu carré avec piéton indique un passage pour piétons."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Le panneau bleu carré avec piéton indique un passage pour piétons."
+    }
+  },
+  "Q8": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Le panneau rond bleu avec flèche indique une direction obligatoire."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Le panneau rond bleu avec flèche indique une direction obligatoire."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Le panneau rond bleu avec flèche indique une direction obligatoire."
+    }
+  },
+  "Q9": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Le triangle rouge avec flèche courbe signale un virage dangereux, il faut ralentir."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Le triangle rouge avec flèche courbe signale un virage dangereux, il faut ralentir."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Le triangle rouge avec flèche courbe signale un virage dangereux, il faut ralentir."
+    }
+  },
+  "Q10": {
+    "ss": {
+      "texte": "Ɲɛnɛɛnɛɛ minɛɛnɛɛ?",
+      "options": [
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ",
+        "Ɲɛɛnɛɛ ɓɛɛrɛ"
+      ],
+      "explication": "Le panneau bleu avec flèches circulaires indique un rond-point. Les véhicules dans le rond-point ont la priorité."
+    },
+    "fu": {
+      "texte": "Ɓe ɗum ɗemngal ngol?",
+      "options": [
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu",
+        "Ɓe ɗum ɓesdu"
+      ],
+      "explication": "Le panneau bleu avec flèches circulaires indique un rond-point. Les véhicules dans le rond-point ont la priorité."
+    },
+    "ml": {
+      "texte": "Kɛ min bɛ?",
+      "options": [
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ",
+        "Kɛ bɛ"
+      ],
+      "explication": "Le panneau bleu avec flèches circulaires indique un rond-point. Les véhicules dans le rond-point ont la priorité."
+    }
+  }
+}

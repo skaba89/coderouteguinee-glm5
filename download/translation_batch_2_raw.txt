@@ -1,0 +1,149 @@
+```json
+{
+  "translations": {
+    "Q11": {
+      "ss": {
+        "texte": "Ɲɔ kɛ bɛɛnɛn, a bɛɛnɛn min bɛ tɛɛri ?",
+        "options": ["A yɛ", "a yɛ kɛ o yɛri tɛɛri", "Ɲɛɛrɛ min bɛ fɛɛrɛ", "a bɛ fɛɛrɛ kɛ", "Ɲɛɛrɛ min bɛ kɛrɛnɛ", "A yɛ min bɛ yɛrɛ kɛrɛnɛ"],
+        "explication": "Ɲɛɛrɛ min bɛ fɛɛrɛ kɛ, a bɛ tɛɛri ɲɛɛrɛ min bɛ kɛrɛ fɛɛrɛ kɛ."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo, ɓe njiiɗo moɗoɓe ɓe woodi ?",
+        "options": ["Ɓe", "ɓe ɗum ɗum ɓe woodi ɓe njiiɗo ɓe ɓeɓe", "Keewɗo ɓe ɓeɓe", "o woodi nder jaŋnde", "Keewɗe ɓe njooɗi", "Moɗoɓe ɓe njiiɗo ɓe woodi"],
+        "explication": "Ɓe njiiɗo ɓe woodi nder jaŋnde ɗen ɓe njiiɗo ɗum ɓe njiiɗo ɓe woodi ɗum ɓe njiiɗo ɗum."
+      },
+      "ml": {
+        "texte": "A bɛ kɛnɛ kɛnɛ, a bɛ tɛɛri min bɛ tɛɛri ?",
+        "options": ["A yɛ", "a yɛ kɛ o yɛri tɛɛri", "Ɲɛɛrɛ min bɛ fɛɛrɛ", "a bɛ fɛɛrɛ kɛ", "Ɲɛɛrɛ min bɛ kɛrɛnɛ", "A yɛ min bɛ yɛrɛ kɛrɛnɛ"],
+        "explication": "Ɲɛɛrɛ min bɛ fɛɛrɛ kɛ, a bɛ tɛɛri ɲɛɛrɛ min bɛ kɛrɛ fɛɛrɛ kɛ."
+      }
+    },
+    "Q12": {
+      "ss": {
+        "texte": "Ɲɔ kɛ bɛɛnɛn, a bɛ se ka se ?",
+        "options": ["Ɲɛɛrɛ ka kɛrɛnɛ", "Tɛɛri ka tɛɛri ɲɛɛrɛ min bɛ kɛrɛ", "Klaxɔn ka yɛlɛ", "Kɛrɛnɛ ka kɛrɛnɛ"],
+        "explication": "Ɲɔ kɛ ɲɛɛrɛ min bɛ kɛrɛ, a bɛ tɛɛri ka tɛɛri ɲɛɛrɛ min bɛ kɛrɛ."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo, ɗum ɓe woodi mo ?",
+        "options": ["Ɗum ɗum ɓe njiiɗo", "Ɓe tawaa ɗum ɓe njiiɗo keewɗe ɓe njooɗi", "Ɓe ɓeydi ɗum ɓe njiiɗo", "Ɗum ɓe njiiɗo ɗum ɗum"],
+        "explication": "Ɓe njiiɗo ɓe njiiɗo keewɗe ɓe njooɗi, ɓe tawaa ɗum ɓe njiiɗo."
+      },
+      "ml": {
+        "texte": "A bɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["Ɲɛɛrɛ ka kɛrɛnɛ", "Tɛɛri ka tɛɛri ɲɛɛrɛ min bɛ kɛrɛ", "Klaxɔn ka yɛlɛ", "Kɛrɛnɛ ka kɛrɛnɛ"],
+        "explication": "A bɛ kɛnɛ ɲɛɛrɛ min bɛ kɛrɛ, a bɛ tɛɛri ka tɛɛri ɲɛɛrɛ min bɛ kɛrɛ."
+      }
+    },
+    "Q13": {
+      "ss": {
+        "texte": "Ɲɔ kɛ bɛɛnɛn, a bɛ se ka se ?",
+        "options": ["Iye", "a bɛɛnɛn bɛɛnɛn", "Iye", "a bɛɛnɛn bɛɛnɛn", "Iye", "a bɛɛnɛn bɛɛnɛn"],
+        "explication": "A bɛ se ka se kɛ a bɛɛnɛn bɛɛnɛn, a bɛɛnɛn bɛɛnɛn."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo, ɓe njiiɓe ɗum ?",
+        "options": ["Ii", "ɗuuɓe ɗum", "Kii", "ɓe njiiɗo ɗum ɗum", "Ii", "ɓe njiiɗo ɓe njiiɗo ɓe njiiɗo"],
+        "explication": "Ɓe njiiɓe ɗum ɗum ɓe njiiɗo ɗum ɗum ɗum ɗum ɗum."
+      },
+      "ml": {
+        "texte": "A bɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["Iye", "a bɛɛnɛn bɛɛnɛn", "Iye", "a bɛɛnɛn bɛɛnɛn", "Iye", "a bɛɛnɛn bɛɛnɛn"],
+        "explication": "A bɛ se ka se kɛ a bɛɛnɛn bɛɛnɛn, a bɛɛnɛn bɛɛnɛn."
+      }
+    },
+    "Q14": {
+      "ss": {
+        "texte": "Ɲɔ kɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["40 km/h", "50 km/h", "60 km/h", "80 km/h"],
+        "explication": "Ɲɔ kɛ kɛnɛ kɛnɛ, a bɛ se ka se 50 km/h."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo ɗum ɓe njiiɗo, ɗum ɓe njiiɗo ?",
+        "options": ["40 km/h", "50 km/h", "60 km/h", "80 km/h"],
+        "explication": "Ɓe njiiɗo ɗum ɓe njiiɗo ɗum ɓe njiiɗo 50 km/h."
+      },
+      "ml": {
+        "texte": "A bɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["40 km/h", "50 km/h", "60 km/h", "80 km/h"],
+        "explication": "A bɛ se ka se 50 km/h."
+      }
+    },
+    "Q15": {
+      "ss": {
+        "texte": "Ɲɔ kɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"],
+        "explication": "Ɲɔ kɛ kɛnɛ kɛnɛ, a bɛ se ka se 0,5 g/l."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo ɗum ɓe njiiɗo, ɗum ɓe njiiɗo ?",
+        "options": ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"],
+        "explication": "Ɓe njiiɗo ɗum ɓe njiiɗo ɗum ɓe njiiɗo 0,5 g/l."
+      },
+      "ml": {
+        "texte": "A bɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"],
+        "explication": "A bɛ se ka se 0,5 g/l."
+      }
+    },
+    "Q16": {
+      "ss": {
+        "texte": "Ɲɔ kɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["Ɲɛɛrɛ min bɛ tɛɛri", "Permis ka carte grise", "Paspor", "Attestation de domicile"],
+        "explication": "Permis ka carte grise bɛ se ka se."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo ɗum ɓe njiiɗo, ɗum ɓe njiiɗo ?",
+        "options": ["Ɗum ɓe njiiɗo ɓe njiiɗo", "Permis ka carte grise", "Paspor", "Attestation de domicile"],
+        "explication": "Permis ka carte grise ɓe njiiɗo."
+      },
+      "ml": {
+        "texte": "A bɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["Ɲɛɛrɛ min bɛ tɛɛri", "Permis ka carte grise", "Paspor", "Attestation de domicile"],
+        "explication": "Permis ka carte grise bɛ se ka se."
+      }
+    },
+    "Q17": {
+      "ss": {
+        "texte": "Ɲɔ kɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["Tɛɛri ka tɛɛri", "Feu ka tɛɛri", "Tɛɛri", "Passage ka tɛɛri", "Tɛɛri ka tɛɛri"],
+        "explication": "Feu orange ka tɛɛri ka tɛɛri."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo ɗum ɓe njiiɗo, ɗum ɓe njiiɗo ?",
+        "options": ["Ɗum ɓe njiiɗo ɓe njiiɗo", "Ɗum ɓe njiiɗo ɓe njiiɗo", "Ɗum ɓe njiiɗo", "Ɗum ɓe njiiɗo ɓe njiiɗo", "Ɗum ɓe njiiɗo ɓe njiiɗo"],
+        "explication": "Ɗum orange ɓe njiiɗo ɓe njiiɗo."
+      },
+      "ml": {
+        "texte": "A bɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["Tɛɛri ka tɛɛri", "Feu ka tɛɛri", "Tɛɛri", "Passage ka tɛɛri", "Tɛɛri ka tɛɛri"],
+        "explication": "Feu orange ka tɛɛri ka tɛɛri."
+      }
+    },
+    "Q18": {
+      "ss": {
+        "texte": "Ɲɔ kɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["3 mɛtrɛ", "5 mɛtrɛ", "10 mɛtrɛ", "15 mɛtrɛ"],
+        "explication": "A bɛ se ka se 5 mɛtrɛ."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo ɗum ɓe njiiɗo, ɗum ɓe njiiɗo ?",
+        "options": ["3 mɛtrɛ", "5 mɛtrɛ", "10 mɛtrɛ", "15 mɛtrɛ"],
+        "explication": "Ɓe njiiɗo ɗum ɓe njiiɗo 5 mɛtrɛ."
+      },
+      "ml": {
+        "texte": "A bɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["3 mɛtrɛ", "5 mɛtrɛ", "10 mɛtrɛ", "15 mɛtrɛ"],
+        "explication": "A bɛ se ka se 5 mɛtrɛ."
+      }
+    },
+    "Q19": {
+      "ss": {
+        "texte": "Ɲɔ kɛ kɛnɛ kɛnɛ, a bɛ se ka se ?",
+        "options": ["Ɲɛɛrɛ min bɛ kɛrɛnɛ", "Ɲɛɛrɛ min bɛ yɛri tɛɛri", "Ɲɛɛrɛ min bɛ yɛri tɛɛri", "Ɲɛɛrɛ min bɛ kɛrɛnɛ"],
+        "explication": "Ɲɛɛrɛ min bɛ yɛri tɛɛri bɛ se ka se."
+      },
+      "fu": {
+        "texte": "Ɓe woodi ɗum ɓe njiiɗo ɗum ɓe njiiɗo, ɗum ɓe njiiɗo ?",
+        "options": ["Keewɗo ɓe njiiɗo", "Keewɗo ɓe njiiɗo ɓe ɓeɓe", "Keewɗo ɓe njiiɗo ɓe ɓeɓe", "Keewɗo ɓe njiiɗo"],
+        "explication": "Keewɗo ɓe njiiɗo
