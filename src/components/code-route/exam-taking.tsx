@@ -19,6 +19,8 @@ import { Question, ViewType, ExamResult, CategoryResult, NationalLanguage } from
 import { getRandomQuestions, getQuestionInLanguage, languages } from '@/lib/mock-data';
 import { useAuth } from '@/lib/auth-context';
 import { useLanguage } from '@/lib/language-context';
+import { RoadSignDisplay } from '@/components/code-route/road-signs';
+import TTSPlayer from '@/components/code-route/tts-player';
 import {
   Clock,
   ChevronLeft,
@@ -29,13 +31,15 @@ import {
   XCircle,
   Shield,
   Volume2,
-  VolumeX,
   Image as ImageIcon,
   Play,
   Eye,
   Globe,
   Maximize2,
-  Pause
+  Pause,
+  X,
+  Video,
+  Film,
 } from 'lucide-react';
 
 interface ExamTakingProps {
@@ -43,6 +47,124 @@ interface ExamTakingProps {
   onViewChange: (view: ViewType) => void;
   onExamComplete: (result: ExamResult) => void;
   preselectedLanguage?: NationalLanguage;
+}
+
+// ─── Mock Video Player Component ──────────────────────────────
+function MockVideoPlayer({
+  thumbnailUrl,
+  title,
+}: {
+  thumbnailUrl?: string;
+  title?: string;
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          setIsPlaying(false);
+          return 100;
+        }
+        return prev + 0.5;
+      });
+    }, 100);
+    return () => clearInterval(timer);
+  }, [isPlaying]);
+
+  return (
+    <div className="relative rounded-xl overflow-hidden border-2 border-white/10 shadow-lg bg-gray-900">
+      {/* Player area */}
+      <div className="relative aspect-video max-h-56 flex items-center justify-center">
+        {/* Scenario thumbnail or placeholder */}
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={title || 'Scenario video'}
+            className={`w-full h-full object-cover transition-opacity ${isPlaying ? 'opacity-60' : 'opacity-80'}`}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1A2332 0%, #2A3A52 100%)' }}>
+            <Film className="w-16 h-16 text-white/20" />
+          </div>
+        )}
+
+        {/* Play button overlay */}
+        {!isPlaying && (
+          <button
+            className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors cursor-pointer"
+            onClick={() => setIsPlaying(true)}
+          >
+            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm border-2 border-white/40 hover:bg-white/30 hover:scale-110 transition-all">
+              <Play className="w-8 h-8 text-white ml-1" />
+            </div>
+          </button>
+        )}
+
+        {/* Pause overlay when playing */}
+        {isPlaying && (
+          <button
+            className="absolute inset-0 flex items-center justify-center cursor-pointer"
+            onClick={() => setIsPlaying(false)}
+          >
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity">
+              <Pause className="w-6 h-6 text-white" />
+            </div>
+          </button>
+        )}
+
+        {/* Video label */}
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <Badge className="text-[10px] px-2 py-0.5 bg-red-600 text-white border-0">
+            <Video className="w-3 h-3 mr-1" />
+            VIDEO
+          </Badge>
+        </div>
+
+        {/* Time indicator */}
+        {isPlaying && (
+          <div className="absolute top-3 right-3 bg-black/60 rounded-md px-2 py-0.5 text-white text-xs font-mono">
+            {Math.floor(progress * 0.3).toString().padStart(1, '0')}:{(Math.floor((progress * 0.3) % 1 * 60)).toString().padStart(2, '0')} / 0:30
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-1 bg-gray-700">
+        <div
+          className="h-full transition-all duration-100"
+          style={{
+            width: `${progress}%`,
+            backgroundColor: progress >= 100 ? '#009460' : '#CE1126',
+          }}
+        />
+      </div>
+
+      {/* Controls bar */}
+      <div className="flex items-center gap-3 px-4 py-2 bg-gray-800">
+        <button
+          className="text-white hover:text-green-400 transition-colors"
+          onClick={() => {
+            if (isPlaying) setIsPlaying(false);
+            else {
+              setProgress(0);
+              setIsPlaying(true);
+            }
+          }}
+        >
+          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+        </button>
+        <div className="flex-1">
+          <div className="text-xs text-gray-400">{title || 'Scénario vidéo'}</div>
+        </div>
+        <span className="text-xs text-gray-500 font-mono">
+          {Math.floor(progress * 0.3)}s
+        </span>
+      </div>
+    </div>
+  );
 }
 
 export default function ExamTaking({ isPractice = false, onViewChange, onExamComplete, preselectedLanguage }: ExamTakingProps) {
@@ -65,7 +187,6 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showSignModal, setShowSignModal] = useState(false);
   const [showScenarioModal, setShowScenarioModal] = useState(false);
-  const [showLanguageSelect, setShowLanguageSelect] = useState(false);
 
   const autoSubmitRef = useRef(false);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -136,7 +257,6 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
     utterance.rate = 0.9;
     utterance.pitch = 1;
 
-    // Try to find a French voice
     const voices = window.speechSynthesis.getVoices();
     const frenchVoice = voices.find(v => v.lang.startsWith('fr'));
     if (frenchVoice) utterance.voice = frenchVoice;
@@ -274,7 +394,9 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                         onClick={() => setExamLanguage(lang.code)}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{lang.flag}</span>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: lang.code === 'fr' ? '#1A2332' : lang.code === 'ss' ? '#0891b2' : lang.code === 'fu' ? '#b45309' : '#047857' }}>
+                            {lang.code.toUpperCase()}
+                          </div>
                           <div>
                             <p className="font-semibold text-sm" style={{ color: '#1A2332' }}>{lang.name}</p>
                             <p className="text-xs text-gray-400">{lang.nativeName}</p>
@@ -459,7 +581,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="font-mono text-xs" style={{ borderColor: '#009460', color: '#009460' }}>
-              {isPractice ? 'ENTRAÎNEMENT' : 'EXAMEN OFFICIEL'}
+              {isPractice ? 'ENTRAINEMENT' : 'EXAMEN OFFICIEL'}
             </Badge>
             <Badge variant="outline" className="text-xs">
               {user?.numeroUnique}
@@ -495,7 +617,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                   Question {currentQuestion + 1}/{totalQuestions}
                 </Badge>
                 <Badge variant="outline" className="text-xs">{q.categorie}</Badge>
-                <Badge variant="outline" className="text-xs" style={{ 
+                <Badge variant="outline" className="text-xs" style={{
                   borderColor: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#FCD116' : '#CE1126',
                   color: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#B8960F' : '#CE1126'
                 }}>
@@ -503,16 +625,13 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
-                {/* Audio button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={isSpeaking ? 'text-orange-500 bg-orange-50' : 'text-gray-400 hover:text-orange-500'}
-                  onClick={speakCurrentQuestion}
-                  title={isSpeaking ? 'Arrêter la lecture' : 'Lire la question'}
-                >
-                  {isSpeaking ? <Pause className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                </Button>
+                {/* TTS compact player for question */}
+                <TTSPlayer
+                  text={`${qLang.texte}. ${qLang.options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`}
+                  language={examLanguage}
+                  compact
+                  showLanguageBadge={examLanguage !== 'fr'}
+                />
                 <Button
                   variant="ghost"
                   size="sm"
@@ -524,65 +643,93 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
               </div>
             </div>
 
-            {/* Media Section - Road Sign / Scenario Image */}
-            {(q.mediaType === 'sign' || q.mediaType === 'scenario' || q.mediaType === 'sign+scenario') && (
+            {/* Media Section - Road Sign SVG */}
+            {(q.mediaType === 'sign' || q.mediaType === 'sign+scenario') && q.signImage && (
               <div className="mb-6">
-                <div className="flex gap-4 items-start">
-                  {/* Road Sign Image */}
-                  {q.signImage && (
-                    <div className="relative group">
-                      <div className="w-32 h-32 rounded-xl overflow-hidden border-2 border-white/20 shadow-lg bg-white flex items-center justify-center cursor-pointer"
-                        onClick={() => setShowSignModal(true)}>
-                        <img
-                          src={q.signImage}
-                          alt="Panneau de signalisation"
-                          className="w-full h-full object-contain p-2"
-                        />
-                      </div>
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white/90 rounded-full px-2 py-0.5 flex items-center gap-1">
-                        <Maximize2 className="w-3 h-3 text-gray-500" />
-                        <span className="text-xs text-gray-500">Agrandir</span>
-                      </div>
-                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#009460' }}>
-                        <ImageIcon className="w-3 h-3 text-white" />
-                      </div>
+                <Card className="border-0 shadow-lg bg-white overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <ImageIcon className="w-4 h-4" style={{ color: '#009460' }} />
+                      <span className="text-sm font-semibold" style={{ color: '#1A2332' }}>Panneau de signalisation</span>
                     </div>
-                  )}
-
-                  {/* Scenario Image */}
-                  {q.scenarioImage && (
-                    <div className="relative group flex-1">
-                      <div className="rounded-xl overflow-hidden border-2 border-white/20 shadow-lg cursor-pointer"
-                        onClick={() => setShowScenarioModal(true)}>
-                        <img
-                          src={q.scenarioImage}
-                          alt="Scénario routier"
-                          className="w-full h-48 object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
-                          <span className="text-white text-sm font-medium flex items-center gap-1">
-                            <Eye className="w-4 h-4" /> Voir en grand
-                          </span>
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                      {/* SVG Road Sign */}
+                      <div
+                        className="relative cursor-pointer group"
+                        onClick={() => setShowSignModal(true)}
+                      >
+                        <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-2xl flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-100 shadow-inner transition-transform group-hover:scale-105">
+                          <RoadSignDisplay signImage={q.signImage} size="xl" />
+                        </div>
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white/90 rounded-full px-2.5 py-0.5 flex items-center gap-1 shadow-sm border">
+                          <Maximize2 className="w-3 h-3 text-gray-500" />
+                          <span className="text-[10px] text-gray-500">Agrandir</span>
                         </div>
                       </div>
-                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#7C3AED' }}>
-                        <Eye className="w-3 h-3 text-white" />
+                      {/* Question context next to sign */}
+                      <div className="flex-1 text-center sm:text-left">
+                        <p className="text-sm text-gray-500 italic">Observez ce panneau et répondez à la question ci-dessous</p>
+                        <div className="mt-3 flex items-center gap-2 justify-center sm:justify-start">
+                          <Badge variant="outline" className="text-xs" style={{ borderColor: '#009460', color: '#009460' }}>
+                            {q.categorie}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs" style={{
+                            borderColor: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#FCD116' : '#CE1126',
+                            color: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#B8960F' : '#CE1126'
+                          }}>
+                            {q.difficulte}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Media Section - Scenario Image */}
+            {(q.mediaType === 'scenario' || q.mediaType === 'sign+scenario') && q.scenarioImage && (
+              <div className="mb-6">
+                <div className="relative group">
+                  <div className="rounded-xl overflow-hidden border-2 border-white/20 shadow-lg cursor-pointer"
+                    onClick={() => setShowScenarioModal(true)}>
+                    <img
+                      src={q.scenarioImage}
+                      alt="Scénario routier"
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
+                      <span className="text-white text-sm font-medium flex items-center gap-1">
+                        <Eye className="w-4 h-4" /> Voir en grand
+                      </span>
+                    </div>
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#7C3AED' }}>
+                    <Eye className="w-3 h-3 text-white" />
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Video placeholder */}
-            {q.mediaType === 'video' && q.videoUrl && (
+            {/* Video Player */}
+            {q.mediaType === 'video' && (
               <div className="mb-6">
-                <div className="w-full h-48 rounded-xl bg-gray-800 flex items-center justify-center border-2 border-white/10">
-                  <Button variant="ghost" className="text-white flex items-center gap-2" onClick={() => {}}>
-                    <Play className="w-8 h-8" />
-                    <span>Lancer la vidéo</span>
-                  </Button>
-                </div>
+                <MockVideoPlayer
+                  thumbnailUrl={q.videoThumbnail || q.scenarioImage}
+                  title="Scénario vidéo — Code de la route"
+                />
+              </div>
+            )}
+
+            {/* TTS Player (full mode, shown when language is not French) */}
+            {examLanguage !== 'fr' && (
+              <div className="mb-4">
+                <TTSPlayer
+                  text={qLang.texte}
+                  language={examLanguage}
+                  showLanguageBadge
+                  label="Lecture de la question"
+                />
               </div>
             )}
 
@@ -624,13 +771,13 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                     }`}>
                       {String.fromCharCode(65 + optIndex)}
                     </div>
-                    <span className={`font-medium ${answers[currentQuestion] === optIndex ? 'text-green-700' : ''}`} style={answers[currentQuestion] !== optIndex ? { color: '#1A2332' } : {}}>
+                    <span className={`font-medium flex-1 ${answers[currentQuestion] === optIndex ? 'text-green-700' : ''}`} style={answers[currentQuestion] !== optIndex ? { color: '#1A2332' } : {}}>
                       {option}
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="ml-auto opacity-50 hover:opacity-100"
+                      className="opacity-50 hover:opacity-100"
                       onClick={(e) => {
                         e.stopPropagation();
                         speakText(option);
@@ -659,7 +806,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                       ? 'bg-yellow-100 text-yellow-700'
                       : answers[i] !== null
                       ? 'bg-green-100 text-green-700'
-                      : examQuestions[i]?.mediaType === 'sign' || examQuestions[i]?.mediaType === 'scenario'
+                      : examQuestions[i]?.mediaType === 'sign' || examQuestions[i]?.mediaType === 'scenario' || examQuestions[i]?.mediaType === 'video'
                       ? 'bg-blue-50 text-blue-600'
                       : 'bg-gray-100 text-gray-500'
                   }`}
@@ -667,14 +814,14 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                   onClick={() => setCurrentQuestion(i)}
                   title={examQuestions[i]?.mediaType !== 'text' ? `Question ${i+1} (avec image)` : `Question ${i+1}`}
                 >
-                  {examQuestions[i]?.mediaType === 'sign' ? '🪧' : examQuestions[i]?.mediaType === 'scenario' ? '📷' : i + 1}
+                  {examQuestions[i]?.mediaType === 'sign' ? <ImageIcon className="w-3.5 h-3.5" /> : examQuestions[i]?.mediaType === 'scenario' ? <Eye className="w-3.5 h-3.5" /> : examQuestions[i]?.mediaType === 'video' ? <Play className="w-3.5 h-3.5" /> : i + 1}
                 </button>
               ))}
             </div>
             <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-green-100"></div> Répondu</span>
               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-yellow-100"></div> Marqué</span>
-              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-blue-50"></div> Avec image</span>
+              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-blue-50"></div> Avec média</span>
             </div>
           </div>
         </div>
@@ -726,9 +873,13 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
       {showSignModal && q.signImage && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowSignModal(false)}>
           <div className="max-w-lg w-full bg-white rounded-2xl p-6 relative" onClick={e => e.stopPropagation()}>
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl" onClick={() => setShowSignModal(false)}>&times;</button>
+            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" onClick={() => setShowSignModal(false)}>
+              <X className="w-5 h-5" />
+            </button>
             <h3 className="font-semibold mb-4" style={{ color: '#1A2332' }}>Panneau de signalisation</h3>
-            <img src={q.signImage} alt="Panneau" className="w-full max-w-sm mx-auto object-contain" />
+            <div className="flex items-center justify-center p-8 bg-gray-50 rounded-xl">
+              <RoadSignDisplay signImage={q.signImage} size="xl" />
+            </div>
             <p className="text-center mt-4 text-gray-600">{qLang.explication}</p>
           </div>
         </div>
@@ -738,7 +889,9 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
       {showScenarioModal && q.scenarioImage && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowScenarioModal(false)}>
           <div className="max-w-3xl w-full bg-white rounded-2xl p-6 relative" onClick={e => e.stopPropagation()}>
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl" onClick={() => setShowScenarioModal(false)}>&times;</button>
+            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" onClick={() => setShowScenarioModal(false)}>
+              <X className="w-5 h-5" />
+            </button>
             <h3 className="font-semibold mb-4" style={{ color: '#1A2332' }}>Scénario routier</h3>
             <img src={q.scenarioImage} alt="Scénario" className="w-full rounded-lg object-cover" />
             <p className="text-center mt-4 text-gray-600">{qLang.explication}</p>

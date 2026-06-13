@@ -23,7 +23,15 @@ import {
   CheckCircle,
   BarChart3,
   ArrowRight,
-  Play
+  Play,
+  Image as ImageIcon,
+  AlertTriangle,
+  Flag,
+  Waves,
+  Mountain,
+  TreePine,
+  Languages,
+  LucideIcon,
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -63,71 +71,47 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
   }, [target, hasAnimated]);
 
   return (
-    <div ref={ref}>
-      <span>{count.toLocaleString('fr-FR')}{suffix}</span>
-    </div>
+    <span ref={ref}>
+      {count.toLocaleString('fr-FR')}{suffix}
+    </span>
   );
 }
 
 /* ───────────────────── Waveform Icon ───────────────────── */
 function WaveformIcon() {
   return (
-    <svg width="32" height="16" viewBox="0 0 32 16" fill="none" className="opacity-50">
+    <svg width="32" height="16" viewBox="0 0 32 16" fill="none" className="opacity-40">
       <rect x="0" y="6" width="2" height="4" rx="1" fill="currentColor" />
-      <rect x="4" y="3" width="2" height="10" rx="1" fill="currentColor" />
-      <rect x="8" y="1" width="2" height="14" rx="1" fill="currentColor" />
-      <rect x="12" y="4" width="2" height="8" rx="1" fill="currentColor" />
-      <rect x="16" y="2" width="2" height="12" rx="1" fill="currentColor" />
-      <rect x="20" y="5" width="2" height="6" rx="1" fill="currentColor" />
-      <rect x="24" y="3" width="2" height="10" rx="1" fill="currentColor" />
-      <rect x="28" y="6" width="2" height="4" rx="1" fill="currentColor" />
+      <rect x="4" y="4" width="2" height="8" rx="1" fill="currentColor" />
+      <rect x="8" y="2" width="2" height="12" rx="1" fill="currentColor" />
+      <rect x="12" y="5" width="2" height="6" rx="1" fill="currentColor" />
+      <rect x="16" y="3" width="2" height="10" rx="1" fill="currentColor" />
+      <rect x="20" y="4" width="2" height="8" rx="1" fill="currentColor" />
+      <rect x="24" y="6" width="2" height="4" rx="1" fill="currentColor" />
+      <rect x="28" y="5" width="2" height="6" rx="1" fill="currentColor" />
     </svg>
   );
 }
 
 /* ───────────────────── Main Component ───────────────────── */
 export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
-  /* ── Step data (5 steps) ── */
+
+  /* ── 5 Steps ── */
   const steps = [
-    {
-      icon: UserPlus,
-      title: 'Inscription',
-      desc: 'Créez votre compte avec vos informations d\'identité',
-      color: '#CE1126'
-    },
-    {
-      icon: Globe,
-      title: 'Choix de langue',
-      desc: 'Sélectionnez votre langue maternelle parmi 4 options',
-      color: '#E97316'
-    },
-    {
-      icon: CalendarCheck,
-      title: 'Réservation',
-      desc: 'Choisissez votre centre, date et créneau horaire',
-      color: '#FCD116'
-    },
-    {
-      icon: FileCheck,
-      title: 'Examen',
-      desc: 'Passez avec panneaux, vidéos et audio dans votre langue',
-      color: '#009460'
-    },
-    {
-      icon: Award,
-      title: 'Résultat',
-      desc: 'Résultat immédiat avec certificat sécurisé par QR code',
-      color: '#1A2332'
-    }
+    { icon: UserPlus, title: 'Inscription', desc: 'Créez votre compte avec votre pièce d\'identité et choisissez votre langue maternelle', color: '#009460' },
+    { icon: CalendarCheck, title: 'Réservation', desc: 'Choisissez votre centre, date et créneau horaire. Paiement Mobile Money sécurisé', color: '#FCD116' },
+    { icon: BookOpen, title: 'Préparation', desc: 'Étudiez avec des panneaux visuels, vidéos et cours en langues nationales', color: '#0EA5E9' },
+    { icon: FileCheck, title: 'Examen', desc: 'Passez votre examen en toute sécurité avec surveillance anti-fraude biométrique', color: '#CE1126' },
+    { icon: Award, title: 'Permis', desc: 'Recevez votre certificat avec QR code vérifiable, transmis directement à l\'administration', color: '#7C3AED' },
   ];
 
-  /* ── Nouveautés features ── */
+  /* ── Nouveautes ── */
   const nouveautes = [
     {
-      icon: Eye,
-      title: 'Panneaux & Scénarios visuels',
-      desc: 'Des images réelles de panneaux routiers et des scénarios photographiés pour mieux comprendre les situations de conduite',
-      accent: '#CE1126'
+      icon: ImageIcon,
+      title: 'Panneaux et scénarios visuels',
+      desc: 'Chaque question affiche le panneau routier réel ou une photo de situation de conduite pour une compréhension immédiate, même sans savoir lire',
+      accent: '#1A2332'
     },
     {
       icon: Volume2,
@@ -144,38 +128,38 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
   ];
 
   /* ── Languages ── */
-  const languages = [
+  const languages: { icon: LucideIcon; name: string; native: string; regions: string; population: string; accentColor: string }[] = [
     {
-      flag: '🇫🇷',
+      icon: Flag,
       name: 'Français',
       native: 'Langue officielle',
       regions: 'Toutes les régions',
       population: '',
-      emoji: ''
+      accentColor: '#3b5998'
     },
     {
-      flag: '🌊',
+      icon: Waves,
       name: 'Soussou',
       native: 'Sossoxui',
       regions: 'Conakry, Kindia, Boké',
       population: '~3M',
-      emoji: ''
+      accentColor: '#0891b2'
     },
     {
-      flag: '⛰️',
+      icon: Mountain,
       name: 'Poular',
       native: 'Pulaar',
       regions: 'Labé, Mamou, Faranah',
       population: '~5M',
-      emoji: ''
+      accentColor: '#b45309'
     },
     {
-      flag: '🌳',
+      icon: TreePine,
       name: 'Malinké',
       native: 'Maninka',
       regions: 'Kankan, Kouroussa, Siguiri',
       population: '~4M',
-      emoji: ''
+      accentColor: '#047857'
     }
   ];
 
@@ -245,7 +229,8 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
           <div className="text-center">
             {/* Republic mention badge */}
             <div className="inline-flex items-center gap-2 mb-8 px-5 py-2.5 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.1]">
-              <span className="font-medium text-white/90 text-sm">🇬🇳 République de Guinée</span>
+              <Flag className="w-4 h-4" style={{ color: '#FCD116' }} />
+              <span className="font-medium text-white/90 text-sm">République de Guinée</span>
               <span className="text-white/30">|</span>
               <span className="text-white/70 text-sm">Ministère des Transports</span>
             </div>
@@ -272,13 +257,13 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
             {/* Feature pills */}
             <div className="flex flex-wrap justify-center gap-3 mb-10">
               <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
-                🪧 Panneaux routiers
+                <ImageIcon className="w-4 h-4" /> Panneaux routiers
               </span>
               <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
-                📷 Scénarios visuels
+                <Eye className="w-4 h-4" /> Scénarios visuels
               </span>
               <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
-                🔊 4 langues nationales
+                <Volume2 className="w-4 h-4" /> 4 langues nationales
               </span>
             </div>
 
@@ -396,24 +381,29 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {languages.map((lang, index) => (
-              <Card key={index} className="group border-0 bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] hover:bg-white/[0.10] transition-all duration-300 hover:-translate-y-1" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                <CardContent className="p-6 text-center">
-                  <div className="text-4xl mb-3">{lang.flag}</div>
-                  <h3 className="text-xl font-bold text-white mb-1">{lang.name}</h3>
-                  <p className="text-sm font-medium mb-2" style={{ color: '#FCD116' }}>{lang.native}</p>
-                  <p className="text-gray-400 text-sm mb-3">{lang.regions}</p>
-                  {lang.population && (
-                    <p className="text-gray-500 text-xs mb-3">{lang.population} locuteurs</p>
-                  )}
-                  {/* Waveform audio indicator */}
-                  <div className="flex items-center justify-center gap-2 text-white/40">
-                    <Volume2 className="w-4 h-4" />
-                    <WaveformIcon />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {languages.map((lang, index) => {
+              const IconComp = lang.icon;
+              return (
+                <Card key={index} className="group border-0 bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] hover:bg-white/[0.10] transition-all duration-300 hover:-translate-y-1" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                  <CardContent className="p-6 text-center">
+                    <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: `${lang.accentColor}20` }}>
+                      <IconComp className="w-7 h-7" style={{ color: lang.accentColor }} />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-1">{lang.name}</h3>
+                    <p className="text-sm font-medium mb-2" style={{ color: '#FCD116' }}>{lang.native}</p>
+                    <p className="text-gray-400 text-sm mb-3">{lang.regions}</p>
+                    {lang.population && (
+                      <p className="text-gray-500 text-xs mb-3">{lang.population} locuteurs</p>
+                    )}
+                    {/* Waveform audio indicator */}
+                    <div className="flex items-center justify-center gap-2 text-white/40">
+                      <Volume2 className="w-4 h-4" />
+                      <WaveformIcon />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           <div className="text-center mt-10">
@@ -503,7 +493,9 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                     {row.other === true ? (
                       <CheckCircle className="w-6 h-6 mx-auto text-green-500" />
                     ) : row.other === 'partial' ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-500 text-xs font-bold mx-auto">⚠</span>
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-500 mx-auto">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                      </span>
                     ) : (
                       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-50 text-red-400 text-lg mx-auto">×</span>
                     )}
@@ -579,7 +571,10 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
 
             {/* Republic branding */}
             <div className="text-center sm:text-right">
-              <p className="text-gray-400 text-sm">🇬🇳 République de Guinée — Ministère des Transports</p>
+              <div className="flex items-center gap-1.5 justify-center sm:justify-end">
+                <Flag className="w-4 h-4" style={{ color: '#FCD116' }} />
+                <span className="text-gray-400 text-sm">République de Guinée — Ministère des Transports</span>
+              </div>
               <p className="text-gray-500 text-xs mt-1">© 2026 CodeRoute Guinée. Tous droits réservés.</p>
             </div>
           </div>

@@ -1,0 +1,938 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useState, useCallback, useRef, useEffect } from 'react';
+     4→     4→import { Button } from '@/components/ui/button';
+     5→     5→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     6→     6→import { Badge } from '@/components/ui/badge';
+     7→     7→import { Progress } from '@/components/ui/progress';
+     8→     8→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+     9→     9→import { ViewType, Course, NationalLanguage, Lesson, LessonType } from '@/lib/types';
+    10→    10→import { courses, getLanguageName } from '@/lib/mock-data';
+    11→    11→import { useLanguage } from '@/lib/language-context';
+    12→    12→import {
+    13→    13→  BookOpen,
+    14→    14→  Play,
+    15→    15→  ChevronRight,
+    16→    16→  Star,
+    17→    17→  Clock,
+    18→    18→  Users,
+    19→    19→  Award,
+    20→    20→  CheckCircle,
+    21→    21→  Image as ImageIcon,
+    22→    22→  Video,
+    23→    23→  FileText,
+    24→    24→  Headphones,
+    25→    25→  ChevronDown,
+    26→    26→  Volume2,
+    27→    27→  VolumeX,
+    28→    28→  Loader2,
+    29→    29→} from 'lucide-react';
+    30→    30→
+    31→    31→// ─── Color palette ──────────────────────────────────────────
+    32→    32→const COLORS = {
+    33→    33→  primaryDark: '#1A2332',
+    34→    34→  red: '#CE1126',
+    35→    35→  yellow: '#FCD116',
+    36→    36→  green: '#009460',
+    37→    37→};
+    38→    38→
+    39→    39→// ─── Category config ────────────────────────────────────────
+    40→    40→const categoryConfig: Record<string, { color: string; bg: string; border: string }> = {
+    41→    41→  Signalisation: { color: '#1A2332', bg: '#E8F0FE', border: '#1A2332' },
+    42→    42→  Priorité: { color: '#CE1126', bg: '#FDEAEA', border: '#CE1126' },
+    43→    43→  Sécurité: { color: '#009460', bg: '#E6F5EE', border: '#009460' },
+    44→    44→};
+    45→    45→
+    46→    46→function getCategoryStyle(cat: string) {
+    47→    47→  return categoryConfig[cat] || { color: '#1A2332', bg: '#F3F4F6', border: '#1A2332' };
+    48→    48→}
+    49→    49→
+    50→    50→// ─── Lesson type icon ───────────────────────────────────────
+    51→    51→function LessonTypeIcon({ type, className }: { type: LessonType; className?: string }) {
+    52→    52→  const cls = className || 'h-4 w-4';
+    53→    53→  switch (type) {
+    54→    54→    case 'sign':
+    55→    55→      return <ImageIcon className={cls} />;
+    56→    56→    case 'video':
+    57→    57→      return <Video className={cls} />;
+    58→    58→    case 'text':
+    59→    59→      return <FileText className={cls} />;
+    60→    60→    case 'quiz':
+    61→    61→      return <Award className={cls} />;
+    62→    62→    case 'interactive':
+    63→    63→      return <Play className={cls} />;
+    64→    64→    default:
+    65→    65→      return <BookOpen className={cls} />;
+    66→    66→  }
+    67→    67→}
+    68→    68→
+    69→    69→// ─── Helpers ────────────────────────────────────────────────
+    70→    70→function getLocalizedCourseTitle(course: Course, lang: NationalLanguage): string {
+    71→    71→  if (lang !== 'fr' && course.translations[lang]?.titre) {
+    72→    72→    return course.translations[lang]!.titre;
+    73→    73→  }
+    74→    74→  return course.titre;
+    75→    75→}
+    76→    76→
+    77→    77→function getLocalizedCourseDesc(course: Course, lang: NationalLanguage): string {
+    78→    78→  if (lang !== 'fr' && course.translations[lang]?.description) {
+    79→    79→    return course.translations[lang]!.description;
+    80→    80→  }
+    81→    81→  return course.description;
+    82→    82→}
+    83→    83→
+    84→    84→function getLocalizedLessonTitle(lesson: Lesson, lang: NationalLanguage): string {
+    85→    85→  if (lang !== 'fr' && lesson.translations[lang]?.titre) {
+    86→    86→    return lesson.translations[lang]!.titre;
+    87→    87→  }
+    88→    88→  return lesson.titre;
+    89→    89→}
+    90→    90→
+    91→    91→function getLocalizedLessonDesc(lesson: Lesson, lang: NationalLanguage): string {
+    92→    92→  if (lang !== 'fr' && lesson.translations[lang]?.description) {
+    93→    93→    return lesson.translations[lang]!.description;
+    94→    94→  }
+    95→    95→  return lesson.description;
+    96→    96→}
+    97→    97→
+    98→    98→function getLocalizedLessonContent(lesson: Lesson, lang: NationalLanguage): string {
+    99→    99→  if (lang !== 'fr' && lesson.translations[lang]?.contenu) {
+   100→   100→    return lesson.translations[lang]!.contenu;
+   101→   101→  }
+   102→   102→  return lesson.contenu;
+   103→   103→}
+   104→   104→
+   105→   105→function formatNumber(n: number): string {
+   106→   106→  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+   107→   107→  return n.toString();
+   108→   108→}
+   109→   109→
+   110→   110→function renderStars(rating: number) {
+   111→   111→  const full = Math.floor(rating);
+   112→   112→  const hasHalf = rating - full >= 0.3;
+   113→   113→  const stars = [];
+   114→   114→  for (let i = 0; i < 5; i++) {
+   115→   115→    if (i < full) {
+   116→   116→      stars.push(<Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />);
+   117→   117→    } else if (i === full && hasHalf) {
+   118→   118→      stars.push(
+   119→   119→        <div key={i} className="relative">
+   120→   120→          <Star className="h-3.5 w-3.5 text-gray-300" />
+   121→   121→          <div className="absolute inset-0 overflow-hidden w-[50%]">
+   122→   122→            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+   123→   123→          </div>
+   124→   124→        </div>
+   125→   125→      );
+   126→   126→    } else {
+   127→   127→      stars.push(<Star key={i} className="h-3.5 w-3.5 text-gray-300" />);
+   128→   128→    }
+   129→   129→  }
+   130→   130→  return stars;
+   131→   131→}
+   132→   132→
+   133→   133→// ─── Mock progress generator ────────────────────────────────
+   134→   134→function getMockProgress(courseId: string): number {
+   135→   135→  const map: Record<string, number> = {
+   136→   136→    'CRS-001': 35,
+   137→   137→    'CRS-002': 0,
+   138→   138→    'CRS-003': 100,
+   139→   139→  };
+   140→   140→  return map[courseId] ?? 0;
+   141→   141→}
+   142→   142→
+   143→   143→// ─── Main Component ─────────────────────────────────────────
+   144→   144→export default function CoursesPage({ onViewChange }: { onViewChange: (view: ViewType) => void }) {
+   145→   145→  const { currentLanguage, languageConfig } = useLanguage();
+   146→   146→
+   147→   147→  // State
+   148→   148→  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+   149→   149→  const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
+   150→   150→  const [activeTab, setActiveTab] = useState('all');
+   151→   151→  const [speakingLessonId, setSpeakingLessonId] = useState<string | null>(null);
+   152→   152→  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+   153→   153→
+   154→   154→  // Cleanup speech on unmount
+   155→   155→  useEffect(() => {
+   156→   156→    return () => {
+   157→   157→      if (typeof window !== 'undefined' && window.speechSynthesis) {
+   158→   158→        window.speechSynthesis.cancel();
+   159→   159→      }
+   160→   160→    };
+   161→   161→  }, []);
+   162→   162→
+   163→   163→  // ── Speech handler ──
+   164→   164→  const handleSpeak = useCallback((lesson: Lesson) => {
+   165→   165→    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+   166→   166→
+   167→   167→    // If currently speaking this lesson, stop
+   168→   168→    if (speakingLessonId === lesson.id) {
+   169→   169→      window.speechSynthesis.cancel();
+   170→   170→      setSpeakingLessonId(null);
+   171→   171→      return;
+   172→   172→    }
+   173→   173→
+   174→   174→    // Cancel any ongoing speech
+   175→   175→    window.speechSynthesis.cancel();
+   176→   176→
+   177→   177→    const content = getLocalizedLessonContent(lesson, currentLanguage);
+   178→   178→    const utterance = new SpeechSynthesisUtterance(content);
+   179→   179→    utterance.lang = 'fr-FR';
+   180→   180→    utterance.rate = 0.9;
+   181→   181→    utterance.pitch = 1;
+   182→   182→
+   183→   183→    // Try to find a French voice
+   184→   184→    const voices = window.speechSynthesis.getVoices();
+   185→   185→    const frenchVoice = voices.find((v) => v.lang.startsWith('fr'));
+   186→   186→    if (frenchVoice) {
+   187→   187→      utterance.voice = frenchVoice;
+   188→   188→    }
+   189→   189→
+   190→   190→    utterance.onend = () => setSpeakingLessonId(null);
+   191→   191→    utterance.onerror = () => setSpeakingLessonId(null);
+   192→   192→
+   193→   193→    speechRef.current = utterance;
+   194→   194→    setSpeakingLessonId(lesson.id);
+   195→   195→    window.speechSynthesis.speak(utterance);
+   196→   196→  }, [currentLanguage, speakingLessonId]);
+   197→   197→
+   198→   198→  // ── Filter courses ──
+   199→   199→  const filteredCourses = courses.filter((course) => {
+   200→   200→    const progress = getMockProgress(course.id);
+   201→   201→    switch (activeTab) {
+   202→   202→      case 'in-progress':
+   203→   203→        return progress > 0 && progress < 100;
+   204→   204→      case 'completed':
+   205→   205→        return progress === 100;
+   206→   206→      case 'signalisation':
+   207→   207→        return course.categorie === 'Signalisation';
+   208→   208→      case 'priorite':
+   209→   209→        return course.categorie === 'Priorité';
+   210→   210→      case 'securite':
+   211→   211→        return course.categorie === 'Sécurité';
+   212→   212→      default:
+   213→   213→        return true;
+   214→   214→    }
+   215→   215→  });
+   216→   216→
+   217→   217→  // ── Stats ──
+   218→   218→  const totalLessons = courses.reduce((acc, c) => acc + c.lessons.length, 0);
+   219→   219→  const totalDuration = courses.reduce((acc, c) => acc + c.dureeTotale, 0);
+   220→   220→
+   221→   221→  return (
+   222→   222→    <div className="min-h-screen bg-gray-50" style={{ backgroundColor: '#F7F8FA' }}>
+   223→   223→      {/* ── Header ── */}
+   224→   224→      <div
+   225→   225→        className="relative overflow-hidden"
+   226→   226→        style={{
+   227→   227→          background: `linear-gradient(135deg, ${COLORS.primaryDark} 0%, #2A3A52 50%, ${COLORS.primaryDark} 100%)`,
+   228→   228→        }}
+   229→   229→      >
+   230→   230→        {/* Decorative elements */}
+   231→   231→        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+   232→   232→          <div
+   233→   233→            className="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-10"
+   234→   234→            style={{ background: COLORS.green }}
+   235→   235→          />
+   236→   236→          <div
+   237→   237→            className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full opacity-10"
+   238→   238→            style={{ background: COLORS.yellow }}
+   239→   239→          />
+   240→   240→          <div
+   241→   241→            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-5"
+   242→   242→            style={{ background: COLORS.red }}
+   243→   243→          />
+   244→   244→        </div>
+   245→   245→
+   246→   246→        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+   247→   247→          {/* Language badge */}
+   248→   248→          <div className="flex items-center justify-end mb-6">
+   249→   249→            <div
+   250→   250→              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+   251→   251→              style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: '#fff' }}
+   252→   252→            >
+   253→   253→              <span>{languageConfig.flag}</span>
+   254→   254→              <span>
+   255→   255→                {getLanguageName(currentLanguage)} · {languageConfig.nativeName}
+   256→   256→              </span>
+   257→   257→            </div>
+   258→   258→          </div>
+   259→   259→
+   260→   260→          {/* Title */}
+   261→   261→          <div className="text-center mb-8">
+   262→   262→            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight">
+   263→   263→              Cours et{' '}
+   264→   264→              <span style={{ color: COLORS.green }}>formation</span>
+   265→   265→            </h1>
+   266→   266→            <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto">
+   267→   267→              Préparez-vous à l&apos;examen du code de la route
+   268→   268→            </p>
+   269→   269→          </div>
+   270→   270→
+   271→   271→          {/* Stats row */}
+   272→   272→          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+   273→   273→            <StatItem
+   274→   274→              icon={<BookOpen className="h-5 w-5" style={{ color: COLORS.green }} />}
+   275→   275→              value={courses.length.toString()}
+   276→   276→              label="Cours"
+   277→   277→            />
+   278→   278→            <StatItem
+   279→   279→              icon={<FileText className="h-5 w-5" style={{ color: COLORS.yellow }} />}
+   280→   280→              value={totalLessons.toString()}
+   281→   281→              label="Leçons"
+   282→   282→            />
+   283→   283→            <StatItem
+   284→   284→              icon={<Clock className="h-5 w-5" style={{ color: COLORS.red }} />}
+   285→   285→              value={`${totalDuration} min`}
+   286→   286→              label="De contenu"
+   287→   287→            />
+   288→   288→          </div>
+   289→   289→
+   290→   290→          {/* Guinea stripe */}
+   291→   291→          <div className="mt-8 flex h-1.5 rounded-full overflow-hidden max-w-md mx-auto">
+   292→   292→            <div className="flex-1" style={{ backgroundColor: COLORS.red }} />
+   293→   293→            <div className="flex-1" style={{ backgroundColor: COLORS.yellow }} />
+   294→   294→            <div className="flex-1" style={{ backgroundColor: COLORS.green }} />
+   295→   295→          </div>
+   296→   296→        </div>
+   297→   297→      </div>
+   298→   298→
+   299→   299→      {/* ── Content ── */}
+   300→   300→      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+   301→   301→        {/* Tabs */}
+   302→   302→        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+   303→   303→          <TabsList
+   304→   304→            className="h-auto p-1 bg-white rounded-xl shadow-sm flex flex-wrap gap-1"
+   305→   305→            style={{ border: '1px solid #E5E7EB' }}
+   306→   306→          >
+   307→   307→            <TabsTrigger
+   308→   308→              value="all"
+   309→   309→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   310→   310→              style={
+   311→   311→                activeTab === 'all'
+   312→   312→                  ? { backgroundColor: COLORS.primaryDark }
+   313→   313→                  : {}
+   314→   314→              }
+   315→   315→            >
+   316→   316→              Tous les cours
+   317→   317→            </TabsTrigger>
+   318→   318→            <TabsTrigger
+   319→   319→              value="in-progress"
+   320→   320→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   321→   321→              style={
+   322→   322→                activeTab === 'in-progress'
+   323→   323→                  ? { backgroundColor: COLORS.green }
+   324→   324→                  : {}
+   325→   325→              }
+   326→   326→            >
+   327→   327→              En cours
+   328→   328→            </TabsTrigger>
+   329→   329→            <TabsTrigger
+   330→   330→              value="completed"
+   331→   331→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   332→   332→              style={
+   333→   333→                activeTab === 'completed'
+   334→   334→                  ? { backgroundColor: COLORS.green }
+   335→   335→                  : {}
+   336→   336→              }
+   337→   337→            >
+   338→   338→              Terminés
+   339→   339→            </TabsTrigger>
+   340→   340→            <TabsTrigger
+   341→   341→              value="signalisation"
+   342→   342→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   343→   343→              style={
+   344→   344→                activeTab === 'signalisation'
+   345→   345→                  ? { backgroundColor: COLORS.primaryDark }
+   346→   346→                  : {}
+   347→   347→              }
+   348→   348→            >
+   349→   349→              Signalisation
+   350→   350→            </TabsTrigger>
+   351→   351→            <TabsTrigger
+   352→   352→              value="priorite"
+   353→   353→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   354→   354→              style={
+   355→   355→                activeTab === 'priorite'
+   356→   356→                  ? { backgroundColor: COLORS.red }
+   357→   357→                  : {}
+   358→   358→              }
+   359→   359→            >
+   360→   360→              Priorité
+   361→   361→            </TabsTrigger>
+   362→   362→            <TabsTrigger
+   363→   363→              value="securite"
+   364→   364→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   365→   365→              style={
+   366→   366→                activeTab === 'securite'
+   367→   367→                  ? { backgroundColor: COLORS.green }
+   368→   368→                  : {}
+   369→   369→              }
+   370→   370→            >
+   371→   371→              Sécurité
+   372→   372→            </TabsTrigger>
+   373→   373→          </TabsList>
+   374→   374→
+   375→   375→          {/* Render for each tab value (required by shadcn Tabs) */}
+   376→   376→          {['all', 'in-progress', 'completed', 'signalisation', 'priorite', 'securite'].map(
+   377→   377→            (tabVal) => (
+   378→   378→              <TabsContent key={tabVal} value={tabVal} className="mt-6">
+   379→   379→                {filteredCourses.length === 0 ? (
+   380→   380→                  <EmptyState tab={tabVal} />
+   381→   381→                ) : (
+   382→   382→                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+   383→   383→                    {filteredCourses.map((course) => (
+   384→   384→                      <CourseCard
+   385→   385→                        key={course.id}
+   386→   386→                        course={course}
+   387→   387→                        lang={currentLanguage}
+   388→   388→                        isExpanded={expandedCourseId === course.id}
+   389→   389→                        expandedLessonId={expandedLessonId}
+   390→   390→                        speakingLessonId={speakingLessonId}
+   391→   391→                        onToggleExpand={() =>
+   392→   392→                          setExpandedCourseId(
+   393→   393→                            expandedCourseId === course.id ? null : course.id
+   394→   394→                          )
+   395→   395→                        }
+   396→   396→                        onToggleLesson={(lessonId) =>
+   397→   397→                          setExpandedLessonId(
+   398→   398→                            expandedLessonId === lessonId ? null : lessonId
+   399→   399→                          )
+   400→   400→                        }
+   401→   401→                        onSpeak={handleSpeak}
+   402→   402→                      />
+   403→   403→                    ))}
+   404→   404→                  </div>
+   405→   405→                )}
+   406→   406→              </TabsContent>
+   407→   407→            )
+   408→   408→          )}
+   409→   409→        </Tabs>
+   410→   410→      </div>
+   411→   411→    </div>
+   412→   412→  );
+   413→   413→}
+   414→   414→
+   415→   415→// ─── Stat Item ──────────────────────────────────────────────
+   416→   416→function StatItem({
+   417→   417→  icon,
+   418→   418→  value,
+   419→   419→  label,
+   420→   420→}: {
+   421→   421→  icon: React.ReactNode;
+   422→   422→  value: string;
+   423→   423→  label: string;
+   424→   424→}) {
+   425→   425→  return (
+   426→   426→    <div className="flex items-center gap-3">
+   427→   427→      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
+   428→   428→        {icon}
+   429→   429→      </div>
+   430→   430→      <div>
+   431→   431→        <div className="text-xl sm:text-2xl font-bold text-white">{value}</div>
+   432→   432→        <div className="text-xs sm:text-sm text-gray-400">{label}</div>
+   433→   433→      </div>
+   434→   434→    </div>
+   435→   435→  );
+   436→   436→}
+   437→   437→
+   438→   438→// ─── Empty State ────────────────────────────────────────────
+   439→   439→function EmptyState({ tab }: { tab: string }) {
+   440→   440→  const messages: Record<string, string> = {
+   441→   441→    'in-progress': "Vous n'avez pas encore commencé de cours. Lancez-vous !",
+   442→   442→    completed: 'Aucun cours terminé pour le moment. Continuez vos études !',
+   443→   443→    signalisation: 'Aucun cours de signalisation disponible.',
+   444→   444→    priorite: 'Aucun cours sur les priorités disponible.',
+   445→   445→    securite: 'Aucun cours de sécurité disponible.',
+   446→   446→    all: 'Aucun cours disponible.',
+   447→   447→  };
+   448→   448→  return (
+   449→   449→    <div className="text-center py-16">
+   450→   450→      <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+   451→   451→      <p className="text-gray-500 text-lg">{messages[tab] || messages.all}</p>
+   452→   452→    </div>
+   453→   453→  );
+   454→   454→}
+   455→   455→
+   456→   456→// ─── Course Card ────────────────────────────────────────────
+   457→   457→function CourseCard({
+   458→   458→  course,
+   459→   459→  lang,
+   460→   460→  isExpanded,
+   461→   461→  expandedLessonId,
+   462→   462→  speakingLessonId,
+   463→   463→  onToggleExpand,
+   464→   464→  onToggleLesson,
+   465→   465→  onSpeak,
+   466→   466→}: {
+   467→   467→  course: Course;
+   468→   468→  lang: NationalLanguage;
+   469→   469→  isExpanded: boolean;
+   470→   470→  expandedLessonId: string | null;
+   471→   471→  speakingLessonId: string | null;
+   472→   472→  onToggleExpand: () => void;
+   473→   473→  onToggleLesson: (lessonId: string) => void;
+   474→   474→  onSpeak: (lesson: Lesson) => void;
+   475→   475→}) {
+   476→   476→  const progress = getMockProgress(course.id);
+   477→   477→  const catStyle = getCategoryStyle(course.categorie);
+   478→   478→  const coverImage = course.imageCover || course.lessons.find((l) => l.signImage)?.signImage;
+   479→   479→  const isCompleted = progress === 100;
+   480→   480→  const isInProgress = progress > 0 && progress < 100;
+   481→   481→
+   482→   482→  return (
+   483→   483→    <Card
+   484→   484→      className={`overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl rounded-2xl border-0 ${
+   485→   485→        isExpanded ? 'md:col-span-2 lg:col-span-3' : ''
+   486→   486→      }`}
+   487→   487→      style={{ backgroundColor: '#FFFFFF' }}
+   488→   488→    >
+   489→   489→      {/* Cover image */}
+   490→   490→      {!isExpanded && coverImage && (
+   491→   491→        <div className="relative h-40 overflow-hidden">
+   492→   492→          <div
+   493→   493→            className="w-full h-full flex items-center justify-center"
+   494→   494→            style={{
+   495→   495→              background: `linear-gradient(135deg, ${catStyle.bg} 0%, ${COLORS.primaryDark}15 100%)`,
+   496→   496→            }}
+   497→   497→          >
+   498→   498→            <div className="text-center">
+   499→   499→              <ImageIcon className="h-10 w-10 mx-auto mb-1 opacity-60" style={{ color: catStyle.color }} />
+   500→   500→              <span className="text-xs text-gray-400">Illustration</span>
+   501→   501→            </div>
+   502→   502→          </div>
+   503→   503→          {/* Category badge overlay */}
+   504→   504→          <div className="absolute top-3 left-3">
+   505→   505→            <Badge
+   506→   506→              className="font-semibold text-xs px-3 py-1 border-0 shadow-sm"
+   507→   507→              style={{
+   508→   508→                backgroundColor: catStyle.bg,
+   509→   509→                color: catStyle.color,
+   510→   510→              }}
+   511→   511→            >
+   512→   512→              {course.categorie}
+   513→   513→            </Badge>
+   514→   514→          </div>
+   515→   515→          {/* Completion overlay */}
+   516→   516→          {isCompleted && (
+   517→   517→            <div className="absolute top-3 right-3">
+   518→   518→              <div
+   519→   519→                className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+   520→   520→                style={{ backgroundColor: COLORS.green }}
+   521→   521→              >
+   522→   522→                <CheckCircle className="h-5 w-5 text-white" />
+   523→   523→              </div>
+   524→   524→            </div>
+   525→   525→          )}
+   526→   526→        </div>
+   527→   527→      )}
+   528→   528→
+   529→   529→      <CardHeader className={`${isExpanded ? 'pb-2' : 'pb-3'} pt-4 px-5`}>
+   530→   530→        <div className="flex items-start justify-between gap-3">
+   531→   531→          <div className="flex-1 min-w-0">
+   532→   532→            {/* Category badge (shown when expanded, no cover) */}
+   533→   533→            {isExpanded && (
+   534→   534→              <Badge
+   535→   535→                className="font-semibold text-xs px-3 py-1 border-0 shadow-sm mb-3"
+   536→   536→                style={{
+   537→   537→                  backgroundColor: catStyle.bg,
+   538→   538→                  color: catStyle.color,
+   539→   539→                }}
+   540→   540→              >
+   541→   541→                {course.categorie}
+   542→   542→              </Badge>
+   543→   543→            )}
+   544→   544→            <CardTitle
+   545→   545→              className="text-lg font-bold leading-snug"
+   546→   546→              style={{ color: COLORS.primaryDark }}
+   547→   547→            >
+   548→   548→              {getLocalizedCourseTitle(course, lang)}
+   549→   549→            </CardTitle>
+   550→   550→            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+   551→   551→              {getLocalizedCourseDesc(course, lang)}
+   552→   552→            </p>
+   553→   553→          </div>
+   554→   554→          {isExpanded && isCompleted && (
+   555→   555→            <div
+   556→   556→              className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
+   557→   557→              style={{ backgroundColor: COLORS.green }}
+   558→   558→            >
+   559→   559→              <CheckCircle className="h-5 w-5 text-white" />
+   560→   560→            </div>
+   561→   561→          )}
+   562→   562→        </div>
+   563→   563→      </CardHeader>
+   564→   564→
+   565→   565→      <CardContent className="px-5 pb-4 pt-0">
+   566→   566→        {/* Meta info */}
+   567→   567→        <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+   568→   568→          <div className="flex items-center gap-1">
+   569→   569→            {renderStars(course.rating)}
+   570→   570→            <span className="font-semibold text-gray-700 ml-1">{course.rating}</span>
+   571→   571→          </div>
+   572→   572→          <div className="flex items-center gap-1">
+   573→   573→            <Clock className="h-3.5 w-3.5" />
+   574→   574→            <span>{course.dureeTotale} min</span>
+   575→   575→          </div>
+   576→   576→          <div className="flex items-center gap-1">
+   577→   577→            <Users className="h-3.5 w-3.5" />
+   578→   578→            <span>{formatNumber(course.nbInscrits)}</span>
+   579→   579→          </div>
+   580→   580→        </div>
+   581→   581→
+   582→   582→        {/* Progress */}
+   583→   583→        <div className="mb-4">
+   584→   584→          <div className="flex items-center justify-between mb-1.5">
+   585→   585→            <span className="text-xs font-medium text-gray-600">
+   586→   586→              {isCompleted
+   587→   587→                ? 'Terminé'
+   588→   588→                : isInProgress
+   589→   589→                ? 'En cours'
+   590→   590→                : 'Non commencé'}
+   591→   591→            </span>
+   592→   592→            <span className="text-xs font-bold" style={{ color: isCompleted ? COLORS.green : COLORS.primaryDark }}>
+   593→   593→              {progress}%
+   594→   594→            </span>
+   595→   595→          </div>
+   596→   596→          <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+   597→   597→            <div
+   598→   598→              className="h-full rounded-full transition-all duration-500"
+   599→   599→              style={{
+   600→   600→                width: `${progress}%`,
+   601→   601→                backgroundColor: isCompleted ? COLORS.green : isInProgress ? COLORS.yellow : '#E5E7EB',
+   602→   602→              }}
+   603→   603→            />
+   604→   604→          </div>
+   605→   605→        </div>
+   606→   606→
+   607→   607→        {/* Action button */}
+   608→   608→        <div className="flex items-center gap-2">
+   609→   609→          <Button
+   610→   610→            className="flex-1 font-semibold text-sm rounded-xl h-10 shadow-sm transition-all"
+   611→   611→            style={{
+   612→   612→              backgroundColor: isInProgress || isCompleted ? COLORS.primaryDark : COLORS.green,
+   613→   613→              color: '#FFFFFF',
+   614→   614→            }}
+   615→   615→            onClick={onToggleExpand}
+   616→   616→          >
+   617→   617→            {isCompleted ? (
+   618→   618→              <>
+   619→   619→                <CheckCircle className="h-4 w-4 mr-2" />
+   620→   620→                Réviser
+   621→   621→              </>
+   622→   622→            ) : isInProgress ? (
+   623→   623→              <>
+   624→   624→                <Play className="h-4 w-4 mr-2" />
+   625→   625→                Continuer
+   626→   626→              </>
+   627→   627→            ) : (
+   628→   628→              <>
+   629→   629→                <BookOpen className="h-4 w-4 mr-2" />
+   630→   630→                Commencer
+   631→   631→              </>
+   632→   632→            )}
+   633→   633→          </Button>
+   634→   634→          <Button
+   635→   635→            variant="outline"
+   636→   636→            size="icon"
+   637→   637→            className="h-10 w-10 rounded-xl border-0 shadow-sm"
+   638→   638→            style={{ backgroundColor: '#F3F4F6' }}
+   639→   639→            onClick={onToggleExpand}
+   640→   640→          >
+   641→   641→            <ChevronRight
+   642→   642→              className={`h-4 w-4 transition-transform duration-300 ${
+   643→   643→                isExpanded ? 'rotate-90' : ''
+   644→   644→              }`}
+   645→   645→            />
+   646→   646→          </Button>
+   647→   647→        </div>
+   648→   648→
+   649→   649→        {/* ── Expanded: Lessons list ── */}
+   650→   650→        {isExpanded && (
+   651→   651→          <div className="mt-6 space-y-2">
+   652→   652→            <div className="flex items-center justify-between mb-3">
+   653→   653→              <h3 className="text-sm font-bold" style={{ color: COLORS.primaryDark }}>
+   654→   654→                Leçons ({course.lessons.length})
+   655→   655→              </h3>
+   656→   656→              <span className="text-xs text-gray-400">
+   657→   657→                {course.dureeTotale} min au total
+   658→   658→              </span>
+   659→   659→            </div>
+   660→   660→
+   661→   661→            <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+   662→   662→              {course.lessons
+   663→   663→                .sort((a, b) => a.ordre - b.ordre)
+   664→   664→                .map((lesson, idx) => {
+   665→   665→                  const isLessonExpanded = expandedLessonId === lesson.id;
+   666→   666→                  const isSpeaking = speakingLessonId === lesson.id;
+   667→   667→                  const lessonProgress = getLessonProgress(lesson, progress, course, idx);
+   668→   668→
+   669→   669→                  return (
+   670→   670→                    <div key={lesson.id} className="rounded-xl overflow-hidden">
+   671→   671→                      {/* Lesson row */}
+   672→   672→                      <button
+   673→   673→                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-left"
+   674→   674→                        style={{
+   675→   675→                          backgroundColor: isLessonExpanded ? '#F0F4F8' : '#FAFBFC',
+   676→   676→                        }}
+   677→   677→                        onClick={() => onToggleLesson(lesson.id)}
+   678→   678→                      >
+   679→   679→                        {/* Type icon */}
+   680→   680→                        <div
+   681→   681→                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+   682→   682→                          style={{
+   683→   683→                            backgroundColor: getLessonTypeBg(lesson.type),
+   684→   684→                          }}
+   685→   685→                        >
+   686→   686→                          <LessonTypeIcon
+   687→   687→                            type={lesson.type}
+   688→   688→                            className="h-4 w-4"
+   689→   689→                          />
+   690→   690→                        </div>
+   691→   691→
+   692→   692→                        {/* Lesson info */}
+   693→   693→                        <div className="flex-1 min-w-0">
+   694→   694→                          <div className="flex items-center gap-2">
+   695→   695→                            <span className="text-sm font-semibold text-gray-800 truncate">
+   696→   696→                              {getLocalizedLessonTitle(lesson, lang)}
+   697→   697→                            </span>
+   698→   698→                            {lessonProgress === 'completed' && (
+   699→   699→                              <CheckCircle className="h-4 w-4 flex-shrink-0" style={{ color: COLORS.green }} />
+   700→   700→                            )}
+   701→   701→                          </div>
+   702→   702→                          <div className="flex items-center gap-2 mt-0.5">
+   703→   703→                            <span className="text-xs text-gray-400">
+   704→   704→                              {lesson.duree} min
+   705→   705→                            </span>
+   706→   706→                            <span className="text-xs px-1.5 py-0.5 rounded-md font-medium" style={{
+   707→   707→                              backgroundColor: getLessonTypeBg(lesson.type),
+   708→   708→                              color: getLessonTypeColor(lesson.type),
+   709→   709→                            }}>
+   710→   710→                              {getLessonTypeLabel(lesson.type)}
+   711→   711→                            </span>
+   712→   712→                          </div>
+   713→   713→                        </div>
+   714→   714→
+   715→   715→                        {/* Expand chevron */}
+   716→   716→                        <ChevronDown
+   717→   717→                          className={`h-4 w-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
+   718→   718→                            isLessonExpanded ? 'rotate-180' : ''
+   719→   719→                          }`}
+   720→   720→                        />
+   721→   721→                      </button>
+   722→   722→
+   723→   723→                      {/* Expanded lesson content */}
+   724→   724→                      {isLessonExpanded && (
+   725→   725→                        <div className="px-4 pb-4 pt-2 space-y-3">
+   726→   726→                          {/* Lesson description */}
+   727→   727→                          <p className="text-sm text-gray-600">
+   728→   728→                            {getLocalizedLessonDesc(lesson, lang)}
+   729→   729→                          </p>
+   730→   730→
+   731→   731→                          {/* Sign image */}
+   732→   732→                          {lesson.type === 'sign' && lesson.signImage && (
+   733→   733→                            <div
+   734→   734→                              className="rounded-xl overflow-hidden flex items-center justify-center p-6"
+   735→   735→                              style={{
+   736→   736→                                background: `linear-gradient(135deg, #F0F4F8 0%, #E8EDF2 100%)`,
+   737→   737→                              }}
+   738→   738→                            >
+   739→   739→                              <div className="text-center">
+   740→   740→                                <div
+   741→   741→                                  className="w-32 h-32 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
+   742→   742→                                  style={{ backgroundColor: '#fff' }}
+   743→   743→                                >
+   744→   744→                                  <div className="text-center">
+   745→   745→                                    <ImageIcon className="h-12 w-12 mx-auto text-gray-300" />
+   746→   746→                                    <span className="text-xs text-gray-400 block mt-1">Panneau</span>
+   747→   747→                                  </div>
+   748→   748→                                </div>
+   749→   749→                                <span className="text-xs text-gray-500 italic">
+   750→   750→                                  {lesson.signImage}
+   751→   751→                                </span>
+   752→   752→                              </div>
+   753→   753→                            </div>
+   754→   754→                          )}
+   755→   755→
+   756→   756→                          {/* Scenario image */}
+   757→   757→                          {(lesson.type === 'interactive') && lesson.scenarioImage && (
+   758→   758→                            <div
+   759→   759→                              className="rounded-xl overflow-hidden flex items-center justify-center p-6"
+   760→   760→                              style={{
+   761→   761→                                background: `linear-gradient(135deg, #F0F4F8 0%, #E8EDF2 100%)`,
+   762→   762→                              }}
+   763→   763→                            >
+   764→   764→                              <div className="text-center">
+   765→   765→                                <div
+   766→   766→                                  className="w-full max-w-sm h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
+   767→   767→                                  style={{ backgroundColor: '#fff' }}
+   768→   768→                                >
+   769→   769→                                  <div className="text-center">
+   770→   770→                                    <Play className="h-10 w-10 mx-auto text-gray-300" />
+   771→   771→                                    <span className="text-xs text-gray-400 block mt-1">Scénario interactif</span>
+   772→   772→                                  </div>
+   773→   773→                                </div>
+   774→   774→                                <span className="text-xs text-gray-500 italic">
+   775→   775→                                  {lesson.scenarioImage}
+   776→   776→                                </span>
+   777→   777→                              </div>
+   778→   778→                            </div>
+   779→   779→                          )}
+   780→   780→
+   781→   781→                          {/* Video placeholder */}
+   782→   782→                          {lesson.type === 'video' && (
+   783→   783→                            <div
+   784→   784→                              className="rounded-xl overflow-hidden flex items-center justify-center p-6"
+   785→   785→                              style={{
+   786→   786→                                background: `linear-gradient(135deg, #1A233210 0%, #1A233205 100%)`,
+   787→   787→                              }}
+   788→   788→                            >
+   789→   789→                              <div className="text-center">
+   790→   790→                                <div
+   791→   791→                                  className="w-full max-w-sm h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
+   792→   792→                                  style={{ backgroundColor: '#1A23320A' }}
+   793→   793→                                >
+   794→   794→                                  <div className="text-center">
+   795→   795→                                    <div
+   796→   796→                                      className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-2"
+   797→   797→                                      style={{ backgroundColor: COLORS.red, color: '#fff' }}
+   798→   798→                                    >
+   799→   799→                                      <Play className="h-6 w-6 ml-1" />
+   800→   800→                                    </div>
+   801→   801→                                    <span className="text-xs text-gray-500">Lecteur vidéo</span>
+   802→   802→                                  </div>
+   803→   803→                                </div>
+   804→   804→                              </div>
+   805→   805→                            </div>
+   806→   806→                          )}
+   807→   807→
+   808→   808→                          {/* Lesson content text */}
+   809→   809→                          <div
+   810→   810→                            className="p-4 rounded-xl text-sm leading-relaxed"
+   811→   811→                            style={{
+   812→   812→                              backgroundColor: '#F8FAFB',
+   813→   813→                              color: COLORS.primaryDark,
+   814→   814→                              borderLeft: `3px solid ${COLORS.green}`,
+   815→   815→                            }}
+   816→   816→                          >
+   817→   817→                            {getLocalizedLessonContent(lesson, lang)}
+   818→   818→                          </div>
+   819→   819→
+   820→   820→                          {/* Audio button */}
+   821→   821→                          <div className="flex items-center gap-2">
+   822→   822→                            <Button
+   823→   823→                              variant="outline"
+   824→   824→                              size="sm"
+   825→   825→                              className="rounded-xl text-xs font-medium h-9"
+   826→   826→                              style={{
+   827→   827→                                borderColor: isSpeaking ? COLORS.red : COLORS.green,
+   828→   828→                                color: isSpeaking ? COLORS.red : COLORS.green,
+   829→   829→                              }}
+   830→   830→                              onClick={(e) => {
+   831→   831→                                e.stopPropagation();
+   832→   832→                                onSpeak(lesson);
+   833→   833→                              }}
+   834→   834→                            >
+   835→   835→                              {isSpeaking ? (
+   836→   836→                                <>
+   837→   837→                                  <VolumeX className="h-3.5 w-3.5 mr-1.5" />
+   838→   838→                                  Arrêter
+   839→   839→                                </>
+   840→   840→                              ) : (
+   841→   841→                                <>
+   842→   842→                                  <Headphones className="h-3.5 w-3.5 mr-1.5" />
+   843→   843→                                  Lire en {getLanguageName(lang)}
+   844→   844→                                </>
+   845→   845→                              )}
+   846→   846→                            </Button>
+   847→   847→                            {isSpeaking && (
+   848→   848→                              <div className="flex items-center gap-1">
+   849→   849→                                <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: COLORS.green }} />
+   850→   850→                                <span className="text-xs text-gray-400">
+   851→   851→                                  Lecture en cours...
+   852→   852→                                </span>
+   853→   853→                              </div>
+   854→   854→                            )}
+   855→   855→                          </div>
+   856→   856→                        </div>
+   857→   857→                      )}
+   858→   858→                    </div>
+   859→   859→                  );
+   860→   860→                })}
+   861→   861→            </div>
+   862→   862→          </div>
+   863→   863→        )}
+   864→   864→      </CardContent>
+   865→   865→    </Card>
+   866→   866→  );
+   867→   867→}
+   868→   868→
+   869→   869→// ─── Helpers for lesson display ─────────────────────────────
+   870→   870→function getLessonTypeBg(type: LessonType): string {
+   871→   871→  switch (type) {
+   872→   872→    case 'sign':
+   873→   873→      return '#E8F0FE';
+   874→   874→    case 'video':
+   875→   875→      return '#FDEAEA';
+   876→   876→    case 'text':
+   877→   877→      return '#E6F5EE';
+   878→   878→    case 'quiz':
+   879→   879→      return '#FFF8E1';
+   880→   880→    case 'interactive':
+   881→   881→      return '#F3E8FF';
+   882→   882→    default:
+   883→   883→      return '#F3F4F6';
+   884→   884→  }
+   885→   885→}
+   886→   886→
+   887→   887→function getLessonTypeColor(type: LessonType): string {
+   888→   888→  switch (type) {
+   889→   889→    case 'sign':
+   890→   890→      return '#1A2332';
+   891→   891→    case 'video':
+   892→   892→      return '#CE1126';
+   893→   893→    case 'text':
+   894→   894→      return '#009460';
+   895→   895→    case 'quiz':
+   896→   896→      return '#B8860B';
+   897→   897→    case 'interactive':
+   898→   898→      return '#7C3AED';
+   899→   899→    default:
+   900→   900→      return '#6B7280';
+   901→   901→  }
+   902→   902→}
+   903→   903→
+   904→   904→function getLessonTypeLabel(type: LessonType): string {
+   905→   905→  switch (type) {
+   906→   906→    case 'sign':
+   907→   907→      return 'Signalisation';
+   908→   908→    case 'video':
+   909→   909→      return 'Vidéo';
+   910→   910→    case 'text':
+   911→   911→      return 'Texte';
+   912→   912→    case 'quiz':
+   913→   913→      return 'Quiz';
+   914→   914→    case 'interactive':
+   915→   915→      return 'Interactif';
+   916→   916→    default:
+   917→   917→      return type;
+   918→   918→  }
+   919→   919→}
+   920→   920→
+   921→   921→function getLessonProgress(
+   922→   922→  lesson: Lesson,
+   923→   923→  courseProgress: number,
+   924→   924→  course: Course,
+   925→   925→  lessonIdx: number
+   926→   926→): 'completed' | 'in-progress' | 'not-started' {
+   927→   927→  if (courseProgress === 0) return 'not-started';
+   928→   928→  if (courseProgress === 100) return 'completed';
+   929→   929→
+   930→   930→  const sorted = [...course.lessons].sort((a, b) => a.ordre - b.ordre);
+   931→   931→  const lessonProgress = (courseProgress / 100) * sorted.length;
+   932→   932→  const completedCount = Math.floor(lessonProgress);
+   933→   933→
+   934→   934→  if (lessonIdx < completedCount) return 'completed';
+   935→   935→  if (lessonIdx === completedCount) return 'in-progress';
+   936→   936→  return 'not-started';
+   937→   937→}
+   938→   938→

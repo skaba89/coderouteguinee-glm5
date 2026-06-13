@@ -8,7 +8,7 @@ export const languages: LanguageConfig[] = [
     code: 'fr',
     name: 'Français',
     nativeName: 'Français',
-    flag: '🇫🇷',
+    flag: 'france',
     regions: ['Toutes les régions'],
     population: 'Langue officielle'
   },
@@ -16,7 +16,7 @@ export const languages: LanguageConfig[] = [
     code: 'ss',
     name: 'Soussou',
     nativeName: 'Sossoxui',
-    flag: '🌊',
+    flag: 'wave',
     regions: ['Conakry', 'Kindia', 'Boké'],
     population: '~3 millions'
   },
@@ -24,7 +24,7 @@ export const languages: LanguageConfig[] = [
     code: 'fu',
     name: 'Poular',
     nativeName: 'Pulaar',
-    flag: '⛰️',
+    flag: 'mountain',
     regions: ['Labé', 'Mamou', 'Faranah'],
     population: '~5 millions'
   },
@@ -32,7 +32,7 @@ export const languages: LanguageConfig[] = [
     code: 'ml',
     name: 'Malinké',
     nativeName: 'Maninka',
-    flag: '🌳',
+    flag: 'tree',
     regions: ['Kankan', 'Kouroussa', 'Siguiri'],
     population: '~4 millions'
   }

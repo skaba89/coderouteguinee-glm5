@@ -1,42 +1,29 @@
 ---
 Task ID: 1
-Agent: Main
-Task: Complete SaaS institutional upgrade of CodeRoute Guinée
+Agent: Main Agent
+Task: Fix hydration mismatch error + replace emojis + upgrade platform
 
 Work Log:
-- Generated 10 road sign images (stop, sens interdit, cédez le passage, priorité droite, limitation 50, interdiction dépasser, passage piétons, sens obligatoire, virage dangereux, rond-point)
-- Generated 3 scenario images (intersection Conakry, passage piétons approche, dépassement)
-- Updated types.ts with multimedia support, national languages, SaaS multi-tenant model
-- Created enriched mock-data.ts with 40 questions including road signs, scenarios, and translations in 4 languages (Français, Soussou, Poular, Malinké)
-- Added 3 complete courses with 12 lessons covering Signalisation, Priorité, and Sécurité
-- Created TTS API route at /api/tts for text-to-speech support
-- Created language-context.tsx for app-wide language management
-- Built language-selection.tsx component with 4 language cards and institutional design
-- Completely rewrote exam-taking.tsx with:
-  - Language selection before exam
-  - Road sign image display with zoom modal
-  - Scenario image display with zoom modal
-  - Audio playback using Web Speech API
-  - Individual answer audio playback
-  - Question navigator with media type indicators
-  - Difficulty badges
-  - French text shown below translated text
-- Built institutional landing page with 8 sections including language showcase, feature comparison
-- Built professional admin dashboard with recharts (LineChart, PieChart, BarChart, AreaChart)
-- Built courses-page.tsx with multimedia lessons, audio playback, progress tracking
-- Updated navigation.tsx with language badge, new nav items for courses and admin sections
-- Updated candidate-dashboard.tsx with multimedia features banner, course access, language switcher
-- Updated auth-context.tsx with langueMaternelle field
-- Updated page.tsx router with all new views and language integration
-- All 40 questions have translations in Soussou, Poular, and Malinké
-- Build successful, dev server running at http://localhost:3000
+- Fixed hydration mismatch in auth-context.tsx: moved localStorage reads to useEffect to ensure server/client consistency
+- Fixed hydration mismatch in language-context.tsx: same pattern, initial state is 'fr', hydrate in useEffect
+- Replaced all emojis across entire project with lucide-react icons:
+  - mock-data.ts: flag field changed from emojis to icon identifiers ('france', 'wave', 'mountain', 'tree')
+  - language-selection.tsx: replaced languageEmojis with lucide icon components (Flag, Waves, Mountain, TreePine)
+  - landing-page.tsx: replaced 🇬🇳🇫🇷🌊⛰️🌳🪧📷🔊⚠ with Flag, ImageIcon, Eye, Volume2, AlertTriangle icons
+  - exam-booking.tsx: replaced ⚠️ with AlertTriangle icon
+  - exam-taking.tsx: replaced 🪧📷 with ImageIcon/Eye components
+- Created road-signs.tsx: 14 SVG road sign components (STOP, Sens Interdit, Cédez le passage, etc.)
+- Created tts-player.tsx: Reusable TTS audio player with waveform animation, compact/full modes
+- Upgraded exam-taking.tsx: Road sign SVGs, mock video player, TTS integration
+- Upgraded courses-page.tsx: Road sign SVGs, video player, TTS player in lessons
+- Upgraded navigation.tsx: SaaS-style nav with search (Ctrl+K), notifications, user dropdown
+- Upgraded admin-dashboard.tsx: Sidebar nav, sparkline KPIs, data tables, export buttons, settings
+- Enhanced page.tsx: Language selection context routing (exam/practice/course/registration)
+- Build verified: npx next build succeeds with zero errors
 
 Stage Summary:
-- CodeRoute Guinée upgraded from MVP to institutional SaaS platform
-- Key new features: road sign images, scenario images, audio in 4 languages, course module
-- Professional dashboards with recharts analytics
-- Anti-fraud monitoring dashboard
-- Center management with accreditation workflow
-- Language selection for exam and courses (French, Soussou, Poular, Malinké)
-- Web Speech API integration for reading questions aloud
-- All images generated and served correctly
+- All 6 tasks completed successfully
+- No emojis remain in the project — all replaced with lucide-react icons
+- Hydration error fixed
+- Platform upgraded to institutional SaaS quality
+- New files: road-signs.tsx, tts-player.tsx

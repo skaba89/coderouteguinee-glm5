@@ -1,12 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { User, UserRole, NationalLanguage } from './types';
 import { generateCandidateNumber } from './mock-data';
 
 interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
+  mounted: boolean;
   login: (email: string, password: string) => boolean;
   register: (userData: Omit<User, 'id' | 'numeroUnique'>) => boolean;
   logout: () => void;
@@ -15,22 +16,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function getStoredUser(): User | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = localStorage.getItem('coderoute_user');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch {
-    localStorage.removeItem('coderoute_user');
-  }
-  return null;
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(getStoredUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [mounted, setMounted] = useState(false);
   const isLoggedIn = user !== null;
+
+  // Hydrate from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('coderoute_user');
+      if (stored) {
+        // Use a microtask to avoid synchronous setState in effect
+        queueMicrotask(() => setUser(JSON.parse(stored)));
+      }
+    } catch {
+      localStorage.removeItem('coderoute_user');
+    }
+    queueMicrotask(() => setMounted(true));
+  }, []);
 
   const login = useCallback((email: string, _password: string): boolean => {
     const stored = localStorage.getItem('coderoute_users');
@@ -109,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, login, register, logout, loginAsAdmin }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, mounted, login, register, logout, loginAsAdmin }}>
       {children}
     </AuthContext.Provider>
   );

@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ViewType, Course, NationalLanguage, Lesson, LessonType } from '@/lib/types';
 import { courses, getLanguageName } from '@/lib/mock-data';
 import { useLanguage } from '@/lib/language-context';
+import { RoadSignDisplay } from '@/components/code-route/road-signs';
+import TTSPlayer from '@/components/code-route/tts-player';
 import {
   BookOpen,
   Play,
@@ -26,6 +28,8 @@ import {
   Volume2,
   VolumeX,
   Loader2,
+  X,
+  Film,
 } from 'lucide-react';
 
 // ─── Color palette ──────────────────────────────────────────
@@ -149,51 +153,6 @@ export default function CoursesPage({ onViewChange }: { onViewChange: (view: Vie
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [speakingLessonId, setSpeakingLessonId] = useState<string | null>(null);
-  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
-
-  // Cleanup speech on unmount
-  useEffect(() => {
-    return () => {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
-  // ── Speech handler ──
-  const handleSpeak = useCallback((lesson: Lesson) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
-    // If currently speaking this lesson, stop
-    if (speakingLessonId === lesson.id) {
-      window.speechSynthesis.cancel();
-      setSpeakingLessonId(null);
-      return;
-    }
-
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    const content = getLocalizedLessonContent(lesson, currentLanguage);
-    const utterance = new SpeechSynthesisUtterance(content);
-    utterance.lang = 'fr-FR';
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-
-    // Try to find a French voice
-    const voices = window.speechSynthesis.getVoices();
-    const frenchVoice = voices.find((v) => v.lang.startsWith('fr'));
-    if (frenchVoice) {
-      utterance.voice = frenchVoice;
-    }
-
-    utterance.onend = () => setSpeakingLessonId(null);
-    utterance.onerror = () => setSpeakingLessonId(null);
-
-    speechRef.current = utterance;
-    setSpeakingLessonId(lesson.id);
-    window.speechSynthesis.speak(utterance);
-  }, [currentLanguage, speakingLessonId]);
 
   // ── Filter courses ──
   const filteredCourses = courses.filter((course) => {
@@ -236,10 +195,6 @@ export default function CoursesPage({ onViewChange }: { onViewChange: (view: Vie
           <div
             className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full opacity-10"
             style={{ background: COLORS.yellow }}
-          />
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-5"
-            style={{ background: COLORS.red }}
           />
         </div>
 
@@ -304,75 +259,25 @@ export default function CoursesPage({ onViewChange }: { onViewChange: (view: Vie
             className="h-auto p-1 bg-white rounded-xl shadow-sm flex flex-wrap gap-1"
             style={{ border: '1px solid #E5E7EB' }}
           >
-            <TabsTrigger
-              value="all"
-              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
-              style={
-                activeTab === 'all'
-                  ? { backgroundColor: COLORS.primaryDark }
-                  : {}
-              }
-            >
-              Tous les cours
-            </TabsTrigger>
-            <TabsTrigger
-              value="in-progress"
-              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
-              style={
-                activeTab === 'in-progress'
-                  ? { backgroundColor: COLORS.green }
-                  : {}
-              }
-            >
-              En cours
-            </TabsTrigger>
-            <TabsTrigger
-              value="completed"
-              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
-              style={
-                activeTab === 'completed'
-                  ? { backgroundColor: COLORS.green }
-                  : {}
-              }
-            >
-              Terminés
-            </TabsTrigger>
-            <TabsTrigger
-              value="signalisation"
-              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
-              style={
-                activeTab === 'signalisation'
-                  ? { backgroundColor: COLORS.primaryDark }
-                  : {}
-              }
-            >
-              Signalisation
-            </TabsTrigger>
-            <TabsTrigger
-              value="priorite"
-              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
-              style={
-                activeTab === 'priorite'
-                  ? { backgroundColor: COLORS.red }
-                  : {}
-              }
-            >
-              Priorité
-            </TabsTrigger>
-            <TabsTrigger
-              value="securite"
-              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
-              style={
-                activeTab === 'securite'
-                  ? { backgroundColor: COLORS.green }
-                  : {}
-              }
-            >
-              Sécurité
-            </TabsTrigger>
+            {[
+              { value: 'all', label: 'Tous les cours', color: COLORS.primaryDark },
+              { value: 'in-progress', label: 'En cours', color: COLORS.green },
+              { value: 'completed', label: 'Terminés', color: COLORS.green },
+              { value: 'signalisation', label: 'Signalisation', color: COLORS.primaryDark },
+              { value: 'priorite', label: 'Priorité', color: COLORS.red },
+              { value: 'securite', label: 'Sécurité', color: COLORS.green },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+                style={activeTab === tab.value ? { backgroundColor: tab.color } : {}}
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          {/* Render for each tab value (required by shadcn Tabs) */}
           {['all', 'in-progress', 'completed', 'signalisation', 'priorite', 'securite'].map(
             (tabVal) => (
               <TabsContent key={tabVal} value={tabVal} className="mt-6">
@@ -398,7 +303,11 @@ export default function CoursesPage({ onViewChange }: { onViewChange: (view: Vie
                             expandedLessonId === lessonId ? null : lessonId
                           )
                         }
-                        onSpeak={handleSpeak}
+                        onSpeak={(lessonId) =>
+                          setSpeakingLessonId(
+                            speakingLessonId === lessonId ? null : lessonId
+                          )
+                        }
                       />
                     ))}
                   </div>
@@ -471,7 +380,7 @@ function CourseCard({
   speakingLessonId: string | null;
   onToggleExpand: () => void;
   onToggleLesson: (lessonId: string) => void;
-  onSpeak: (lesson: Lesson) => void;
+  onSpeak: (lessonId: string) => void;
 }) {
   const progress = getMockProgress(course.id);
   const catStyle = getCategoryStyle(course.categorie);
@@ -486,7 +395,7 @@ function CourseCard({
       }`}
       style={{ backgroundColor: '#FFFFFF' }}
     >
-      {/* Cover image */}
+      {/* Cover image with road sign SVGs */}
       {!isExpanded && coverImage && (
         <div className="relative h-40 overflow-hidden">
           <div
@@ -496,8 +405,7 @@ function CourseCard({
             }}
           >
             <div className="text-center">
-              <ImageIcon className="h-10 w-10 mx-auto mb-1 opacity-60" style={{ color: catStyle.color }} />
-              <span className="text-xs text-gray-400">Illustration</span>
+              <RoadSignDisplay signImage={coverImage} size="lg" />
             </div>
           </div>
           {/* Category badge overlay */}
@@ -658,7 +566,7 @@ function CourseCard({
               </span>
             </div>
 
-            <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1">
               {course.lessons
                 .sort((a, b) => a.ordre - b.ordre)
                 .map((lesson, idx) => {
@@ -728,7 +636,7 @@ function CourseCard({
                             {getLocalizedLessonDesc(lesson, lang)}
                           </p>
 
-                          {/* Sign image */}
+                          {/* Road Sign SVG display */}
                           {lesson.type === 'sign' && lesson.signImage && (
                             <div
                               className="rounded-xl overflow-hidden flex items-center justify-center p-6"
@@ -737,17 +645,11 @@ function CourseCard({
                               }}
                             >
                               <div className="text-center">
-                                <div
-                                  className="w-32 h-32 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
-                                  style={{ backgroundColor: '#fff' }}
-                                >
-                                  <div className="text-center">
-                                    <ImageIcon className="h-12 w-12 mx-auto text-gray-300" />
-                                    <span className="text-xs text-gray-400 block mt-1">Panneau</span>
-                                  </div>
+                                <div className="mx-auto mb-3">
+                                  <RoadSignDisplay signImage={lesson.signImage} size="xl" />
                                 </div>
                                 <span className="text-xs text-gray-500 italic">
-                                  {lesson.signImage}
+                                  Panneau de signalisation
                                 </span>
                               </div>
                             </div>
@@ -778,29 +680,34 @@ function CourseCard({
                             </div>
                           )}
 
-                          {/* Video placeholder */}
+                          {/* Video placeholder with styled player */}
                           {lesson.type === 'video' && (
                             <div
-                              className="rounded-xl overflow-hidden flex items-center justify-center p-6"
+                              className="rounded-xl overflow-hidden"
                               style={{
-                                background: `linear-gradient(135deg, #1A233210 0%, #1A233205 100%)`,
+                                background: `linear-gradient(135deg, #1A2332 0%, #2A3A52 100%)`,
                               }}
                             >
-                              <div className="text-center">
-                                <div
-                                  className="w-full max-w-sm h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
-                                  style={{ backgroundColor: '#1A23320A' }}
-                                >
-                                  <div className="text-center">
-                                    <div
-                                      className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-2"
-                                      style={{ backgroundColor: COLORS.red, color: '#fff' }}
-                                    >
-                                      <Play className="h-6 w-6 ml-1" />
-                                    </div>
-                                    <span className="text-xs text-gray-500">Lecteur vidéo</span>
+                              <div className="relative aspect-video max-h-44 flex items-center justify-center">
+                                <Film className="w-12 h-12 text-white/20" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-12 h-12 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm border border-white/30 cursor-pointer hover:bg-white/30 transition-colors">
+                                    <Play className="w-6 h-6 text-white ml-0.5" />
                                   </div>
                                 </div>
+                                <div className="absolute top-2 left-2">
+                                  <Badge className="text-[10px] px-2 py-0.5 bg-red-600 text-white border-0">
+                                    <Video className="w-3 h-3 mr-1" />
+                                    VIDEO
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="h-1 bg-gray-700">
+                                <div className="h-full w-0 bg-red-600" />
+                              </div>
+                              <div className="flex items-center gap-3 px-3 py-2">
+                                <Play className="w-3.5 h-3.5 text-white" />
+                                <span className="text-xs text-gray-400 flex-1">Lecteur vidéo</span>
                               </div>
                             </div>
                           )}
@@ -817,42 +724,13 @@ function CourseCard({
                             {getLocalizedLessonContent(lesson, lang)}
                           </div>
 
-                          {/* Audio button */}
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="rounded-xl text-xs font-medium h-9"
-                              style={{
-                                borderColor: isSpeaking ? COLORS.red : COLORS.green,
-                                color: isSpeaking ? COLORS.red : COLORS.green,
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSpeak(lesson);
-                              }}
-                            >
-                              {isSpeaking ? (
-                                <>
-                                  <VolumeX className="h-3.5 w-3.5 mr-1.5" />
-                                  Arrêter
-                                </>
-                              ) : (
-                                <>
-                                  <Headphones className="h-3.5 w-3.5 mr-1.5" />
-                                  Lire en {getLanguageName(lang)}
-                                </>
-                              )}
-                            </Button>
-                            {isSpeaking && (
-                              <div className="flex items-center gap-1">
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: COLORS.green }} />
-                                <span className="text-xs text-gray-400">
-                                  Lecture en cours...
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                          {/* TTS Player */}
+                          <TTSPlayer
+                            text={getLocalizedLessonContent(lesson, lang)}
+                            language={lang}
+                            showLanguageBadge={lang !== 'fr'}
+                            label={`Leçon : ${getLocalizedLessonTitle(lesson, lang)}`}
+                          />
                         </div>
                       )}
                     </div>

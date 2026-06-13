@@ -1,0 +1,777 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback } from 'react';
+     4→import { Button } from '@/components/ui/button';
+     5→import { Card, CardContent } from '@/components/ui/card';
+     6→import { Progress } from '@/components/ui/progress';
+     7→import { Badge } from '@/components/ui/badge';
+     8→import {
+     9→  AlertDialog,
+    10→  AlertDialogAction,
+    11→  AlertDialogCancel,
+    12→  AlertDialogContent,
+    13→  AlertDialogDescription,
+    14→  AlertDialogFooter,
+    15→  AlertDialogHeader,
+    16→  AlertDialogTitle,
+    17→} from '@/components/ui/alert-dialog';
+    18→import { Question, ViewType, ExamResult, CategoryResult, NationalLanguage } from '@/lib/types';
+    19→import { getRandomQuestions, getQuestionInLanguage, languages } from '@/lib/mock-data';
+    20→import { useAuth } from '@/lib/auth-context';
+    21→import { useLanguage } from '@/lib/language-context';
+    22→import {
+    23→  Clock,
+    24→  ChevronLeft,
+    25→  ChevronRight,
+    26→  Flag,
+    27→  AlertTriangle,
+    28→  CheckCircle,
+    29→  XCircle,
+    30→  Shield,
+    31→  Volume2,
+    32→  VolumeX,
+    33→  Image as ImageIcon,
+    34→  Play,
+    35→  Eye,
+    36→  Globe,
+    37→  Maximize2,
+    38→  Pause
+    39→} from 'lucide-react';
+    40→
+    41→interface ExamTakingProps {
+    42→  isPractice?: boolean;
+    43→  onViewChange: (view: ViewType) => void;
+    44→  onExamComplete: (result: ExamResult) => void;
+    45→  preselectedLanguage?: NationalLanguage;
+    46→}
+    47→
+    48→export default function ExamTaking({ isPractice = false, onViewChange, onExamComplete, preselectedLanguage }: ExamTakingProps) {
+    49→  const { user } = useAuth();
+    50→  const { currentLanguage, setLanguage } = useLanguage();
+    51→  const totalQuestions = isPractice ? 20 : 40;
+    52→  const timeMinutes = isPractice ? 15 : 30;
+    53→  const passingScore = isPractice ? 14 : 35;
+    54→
+    55→  const [examLanguage, setExamLanguage] = useState<NationalLanguage>(preselectedLanguage || currentLanguage);
+    56→  const [examQuestions, setExamQuestions] = useState<Question[]>([]);
+    57→  const [currentQuestion, setCurrentQuestion] = useState(0);
+    58→  const [answers, setAnswers] = useState<(number | null)[]>([]);
+    59→  const [flagged, setFlagged] = useState<boolean[]>([]);
+    60→  const [timeLeft, setTimeLeft] = useState(timeMinutes * 60);
+    61→  const [showConfirm, setShowConfirm] = useState(false);
+    62→  const [examStarted, setExamStarted] = useState(false);
+    63→  const [examFinished, setExamFinished] = useState(false);
+    64→  const [result, setResult] = useState<ExamResult | null>(null);
+    65→  const [isSpeaking, setIsSpeaking] = useState(false);
+    66→  const [showSignModal, setShowSignModal] = useState(false);
+    67→  const [showScenarioModal, setShowScenarioModal] = useState(false);
+    68→  const [showLanguageSelect, setShowLanguageSelect] = useState(false);
+    69→
+    70→  const autoSubmitRef = useRef(false);
+    71→  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+    72→
+    73→  // Initialize exam
+    74→  useEffect(() => {
+    75→    const count = isPractice ? 20 : 40;
+    76→    const selected = getRandomQuestions(count);
+    77→    setExamQuestions(selected);
+    78→    setAnswers(new Array(count).fill(null));
+    79→    setFlagged(new Array(count).fill(false));
+    80→  }, [isPractice]);
+    81→
+    82→  // Timer
+    83→  useEffect(() => {
+    84→    if (!examStarted || examFinished) return;
+    85→    const timer = setInterval(() => {
+    86→      setTimeLeft(prev => {
+    87→        if (prev <= 1) {
+    88→          clearInterval(timer);
+    89→          autoSubmitRef.current = true;
+    90→          return 0;
+    91→        }
+    92→        return prev - 1;
+    93→      });
+    94→    }, 1000);
+    95→    return () => clearInterval(timer);
+    96→  }, [examStarted, examFinished]);
+    97→
+    98→  // Auto-submit
+    99→  useEffect(() => {
+   100→    if (autoSubmitRef.current && !examFinished) {
+   101→      autoSubmitRef.current = false;
+   102→      submitExam();
+   103→    }
+   104→  });
+   105→
+   106→  const formatTime = (seconds: number) => {
+   107→    const m = Math.floor(seconds / 60);
+   108→    const s = seconds % 60;
+   109→    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+   110→  };
+   111→
+   112→  const handleAnswer = (questionIndex: number, answerIndex: number) => {
+   113→    const newAnswers = [...answers];
+   114→    newAnswers[questionIndex] = answerIndex;
+   115→    setAnswers(newAnswers);
+   116→  };
+   117→
+   118→  const toggleFlag = (questionIndex: number) => {
+   119→    const newFlagged = [...flagged];
+   120→    newFlagged[questionIndex] = !newFlagged[questionIndex];
+   121→    setFlagged(newFlagged);
+   122→  };
+   123→
+   124→  // Text-to-Speech
+   125→  const speakText = useCallback((text: string) => {
+   126→    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+   127→
+   128→    if (isSpeaking) {
+   129→      window.speechSynthesis.cancel();
+   130→      setIsSpeaking(false);
+   131→      return;
+   132→    }
+   133→
+   134→    const utterance = new SpeechSynthesisUtterance(text);
+   135→    utterance.lang = examLanguage === 'fr' ? 'fr-FR' : 'fr-GN';
+   136→    utterance.rate = 0.9;
+   137→    utterance.pitch = 1;
+   138→
+   139→    // Try to find a French voice
+   140→    const voices = window.speechSynthesis.getVoices();
+   141→    const frenchVoice = voices.find(v => v.lang.startsWith('fr'));
+   142→    if (frenchVoice) utterance.voice = frenchVoice;
+   143→
+   144→    utterance.onend = () => setIsSpeaking(false);
+   145→    utterance.onerror = () => setIsSpeaking(false);
+   146→
+   147→    speechRef.current = utterance;
+   148→    window.speechSynthesis.speak(utterance);
+   149→    setIsSpeaking(true);
+   150→  }, [examLanguage, isSpeaking]);
+   151→
+   152→  const speakCurrentQuestion = useCallback(() => {
+   153→    const q = examQuestions[currentQuestion];
+   154→    if (!q) return;
+   155→    const { texte, options } = getQuestionInLanguage(q, examLanguage);
+   156→    const fullText = `${texte}. ${options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`;
+   157→    speakText(fullText);
+   158→  }, [examQuestions, currentQuestion, examLanguage, speakText]);
+   159→
+   160→  // Cleanup speech on unmount
+   161→  useEffect(() => {
+   162→    return () => {
+   163→      if (typeof window !== 'undefined' && window.speechSynthesis) {
+   164→        window.speechSynthesis.cancel();
+   165→      }
+   166→    };
+   167→  }, []);
+   168→
+   169→  const submitExam = () => {
+   170→    if (typeof window !== 'undefined' && window.speechSynthesis) {
+   171→      window.speechSynthesis.cancel();
+   172→    }
+   173→    setIsSpeaking(false);
+   174→
+   175→    let correct = 0;
+   176→    const categoryMap: Record<string, { total: number; correct: number }> = {};
+   177→
+   178→    examQuestions.forEach((q, i) => {
+   179→      if (!categoryMap[q.categorie]) {
+   180→        categoryMap[q.categorie] = { total: 0, correct: 0 };
+   181→      }
+   182→      categoryMap[q.categorie].total++;
+   183→      if (answers[i] === q.bonneReponse) {
+   184→        correct++;
+   185→        categoryMap[q.categorie].correct++;
+   186→      }
+   187→    });
+   188→
+   189→    const details: CategoryResult[] = Object.entries(categoryMap).map(([categorie, data]) => ({
+   190→      categorie,
+   191→      total: data.total,
+   192→      correct: data.correct,
+   193→    }));
+   194→
+   195→    const examResult: ExamResult = {
+   196→      id: `RES-${Date.now()}`,
+   197→      session: {
+   198→        id: `SES-${Date.now()}`,
+   199→        candidatId: user?.id || '',
+   200→        centreId: isPractice ? 'PRACTICE' : 'CTR-001',
+   201→        centreNom: isPractice ? 'Entraînement' : 'Centre RouteSafe Kaloum',
+   202→        date: new Date().toISOString().split('T')[0],
+   203→        heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+   204→        langue: examLanguage,
+   205→        statut: correct >= passingScore ? 'reussi' : 'echoue',
+   206→        score: correct,
+   207→        totalQuestions,
+   208→        reponses: answers as number[],
+   209→        dateInscription: new Date().toISOString().split('T')[0]
+   210→      },
+   211→      score: correct,
+   212→      totalQuestions,
+   213→      reussi: correct >= passingScore,
+   214→      details,
+   215→      datePassage: new Date().toISOString().split('T')[0]
+   216→    };
+   217→
+   218→    setResult(examResult);
+   219→    setExamFinished(true);
+   220→    onExamComplete(examResult);
+   221→  };
+   222→
+   223→  const answeredCount = answers.filter(a => a !== null).length;
+   224→  const progressPercent = (answeredCount / totalQuestions) * 100;
+   225→
+   226→  // Pre-exam screen with language selection
+   227→  if (!examStarted) {
+   228→    return (
+   229→      <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #1A2332 0%, #0d1a2d 100%)' }}>
+   230→        {/* Guinea stripe */}
+   231→        <div className="flex h-1.5">
+   232→          <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
+   233→          <div className="flex-1" style={{ backgroundColor: '#FCD116' }}></div>
+   234→          <div className="flex-1" style={{ backgroundColor: '#009460' }}></div>
+   235→        </div>
+   236→
+   237→        <div className="max-w-3xl mx-auto px-4 py-12">
+   238→          <Card className="border-0 shadow-2xl overflow-hidden">
+   239→            <div className="h-1.5 flex">
+   240→              <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
+   241→              <div className="flex-1" style={{ backgroundColor: '#FCD116' }}></div>
+   242→              <div className="flex-1" style={{ backgroundColor: '#009460' }}></div>
+   243→            </div>
+   244→            <CardContent className="p-8">
+   245→              <div className="text-center">
+   246→                <div className="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#1A233215' }}>
+   247→                  <Shield className="w-10 h-10" style={{ color: '#1A2332' }} />
+   248→                </div>
+   249→                <h1 className="text-2xl font-bold mb-2" style={{ color: '#1A2332' }}>
+   250→                  {isPractice ? "Test d'entraînement" : 'Examen du code de la route'}
+   251→                </h1>
+   252→                <p className="text-gray-500 mb-8">
+   253→                  {isPractice
+   254→                    ? 'Entraînez-vous avec des questions similaires à l\'examen officiel'
+   255→                    : 'Examen officiel du permis de conduire — République de Guinée'}
+   256→                </p>
+   257→
+   258→                {/* Language Selection */}
+   259→                <div className="mb-8">
+   260→                  <h3 className="font-semibold mb-4 flex items-center justify-center gap-2" style={{ color: '#1A2332' }}>
+   261→                    <Globe className="w-5 h-5" style={{ color: '#009460' }} />
+   262→                    Langue de l&apos;examen
+   263→                  </h3>
+   264→                  <p className="text-sm text-gray-500 mb-4">Choisissez la langue dans laquelle vous souhaitez passer l&apos;examen</p>
+   265→                  <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+   266→                    {languages.map((lang) => (
+   267→                      <button
+   268→                        key={lang.code}
+   269→                        className={`p-4 rounded-xl border-2 transition-all text-left ${
+   270→                          examLanguage === lang.code
+   271→                            ? 'border-green-500 bg-green-50 shadow-md'
+   272→                            : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+   273→                        }`}
+   274→                        onClick={() => setExamLanguage(lang.code)}
+   275→                      >
+   276→                        <div className="flex items-center gap-3">
+   277→                          <span className="text-2xl">{lang.flag}</span>
+   278→                          <div>
+   279→                            <p className="font-semibold text-sm" style={{ color: '#1A2332' }}>{lang.name}</p>
+   280→                            <p className="text-xs text-gray-400">{lang.nativeName}</p>
+   281→                          </div>
+   282→                        </div>
+   283→                        {examLanguage === lang.code && (
+   284→                          <div className="mt-2 flex items-center gap-1">
+   285→                            <CheckCircle className="w-3.5 h-3.5" style={{ color: '#009460' }} />
+   286→                            <span className="text-xs font-medium" style={{ color: '#009460' }}>Sélectionné</span>
+   287→                          </div>
+   288→                        )}
+   289→                      </button>
+   290→                    ))}
+   291→                  </div>
+   292→                </div>
+   293→
+   294→                {/* Exam Info Grid */}
+   295→                <div className="grid grid-cols-2 gap-4 mb-8">
+   296→                  <div className="p-4 bg-gray-50 rounded-xl text-center">
+   297→                    <p className="text-2xl font-bold" style={{ color: '#009460' }}>{totalQuestions}</p>
+   298→                    <p className="text-sm text-gray-500">Questions</p>
+   299→                  </div>
+   300→                  <div className="p-4 bg-gray-50 rounded-xl text-center">
+   301→                    <p className="text-2xl font-bold" style={{ color: '#FCD116' }}>{timeMinutes} min</p>
+   302→                    <p className="text-sm text-gray-500">Durée</p>
+   303→                  </div>
+   304→                  <div className="p-4 bg-gray-50 rounded-xl text-center">
+   305→                    <p className="text-2xl font-bold" style={{ color: '#CE1126' }}>{passingScore}/{totalQuestions}</p>
+   306→                    <p className="text-sm text-gray-500">Score requis</p>
+   307→                  </div>
+   308→                  <div className="p-4 bg-gray-50 rounded-xl text-center">
+   309→                    <p className="text-2xl font-bold flex items-center justify-center gap-1" style={{ color: '#1A2332' }}>
+   310→                      <Volume2 className="w-5 h-5" />
+   311→                      <span className="text-sm">{languages.find(l => l.code === examLanguage)?.nativeName}</span>
+   312→                    </p>
+   313→                    <p className="text-sm text-gray-500">Lecture audio</p>
+   314→                  </div>
+   315→                </div>
+   316→
+   317→                {/* Feature highlights */}
+   318→                <div className="grid grid-cols-3 gap-3 mb-6">
+   319→                  <div className="p-3 bg-blue-50 rounded-lg text-center">
+   320→                    <ImageIcon className="w-5 h-5 mx-auto mb-1 text-blue-600" />
+   321→                    <p className="text-xs text-blue-700 font-medium">Panneaux routiers</p>
+   322→                  </div>
+   323→                  <div className="p-3 bg-purple-50 rounded-lg text-center">
+   324→                    <Eye className="w-5 h-5 mx-auto mb-1 text-purple-600" />
+   325→                    <p className="text-xs text-purple-700 font-medium">Scénarios visuels</p>
+   326→                  </div>
+   327→                  <div className="p-3 bg-orange-50 rounded-lg text-center">
+   328→                    <Volume2 className="w-5 h-5 mx-auto mb-1 text-orange-600" />
+   329→                    <p className="text-xs text-orange-700 font-medium">Lecture vocale</p>
+   330→                  </div>
+   331→                </div>
+   332→
+   333→                {!isPractice && (
+   334→                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-left">
+   335→                    <div className="flex items-start gap-2">
+   336→                      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+   337→                      <div>
+   338→                        <p className="font-semibold text-red-700 text-sm">Anti-fraude</p>
+   339→                        <p className="text-sm text-red-600 mt-1">
+   340→                          Cet examen est surveillé. Toute tentative de triche entraînera l&apos;annulation immédiate de l&apos;examen et une interdiction de 6 mois.
+   341→                        </p>
+   342→                      </div>
+   343→                    </div>
+   344→                  </div>
+   345→                )}
+   346→
+   347→                <div className="flex gap-3 justify-center">
+   348→                  <Button
+   349→                    className="text-white font-semibold px-8 py-6 text-lg"
+   350→                    style={{ backgroundColor: '#009460' }}
+   351→                    onClick={() => {
+   352→                      setLanguage(examLanguage);
+   353→                      setExamStarted(true);
+   354→                    }}
+   355→                  >
+   356→                    Commencer l&apos;examen
+   357→                  </Button>
+   358→                  <Button variant="outline" className="py-6" onClick={() => onViewChange('candidate-dashboard')}>
+   359→                    Annuler
+   360→                  </Button>
+   361→                </div>
+   362→              </div>
+   363→            </CardContent>
+   364→          </Card>
+   365→        </div>
+   366→      </div>
+   367→    );
+   368→  }
+   369→
+   370→  // Results screen
+   371→  if (examFinished && result) {
+   372→    return (
+   373→      <div className="min-h-screen bg-gray-50">
+   374→        <div className="max-w-2xl mx-auto px-4 py-12">
+   375→          <Card className="border-0 shadow-xl overflow-hidden">
+   376→            <div className="h-2 flex">
+   377→              <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
+   378→              <div className="flex-1" style={{ backgroundColor: '#FCD116' }}></div>
+   379→              <div className="flex-1" style={{ backgroundColor: '#009460' }}></div>
+   380→            </div>
+   381→            <CardContent className="p-8 text-center">
+   382→              {result.reussi ? (
+   383→                <>
+   384→                  <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#00946015' }}>
+   385→                    <CheckCircle className="w-14 h-14" style={{ color: '#009460' }} />
+   386→                  </div>
+   387→                  <h2 className="text-3xl font-bold mb-2" style={{ color: '#009460' }}>Félicitations !</h2>
+   388→                  <p className="text-gray-500 text-lg mb-6">Vous avez réussi l&apos;examen du code de la route</p>
+   389→                </>
+   390→              ) : (
+   391→                <>
+   392→                  <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#CE112615' }}>
+   393→                    <XCircle className="w-14 h-14" style={{ color: '#CE1126' }} />
+   394→                  </div>
+   395→                  <h2 className="text-3xl font-bold mb-2" style={{ color: '#CE1126' }}>Non réussi</h2>
+   396→                  <p className="text-gray-500 text-lg mb-6">Vous n&apos;avez pas atteint le score requis cette fois-ci</p>
+   397→                </>
+   398→              )}
+   399→
+   400→              <div className="bg-gray-50 rounded-xl p-6 mb-6">
+   401→                <div className="text-5xl font-bold mb-2" style={{ color: result.reussi ? '#009460' : '#CE1126' }}>
+   402→                  {result.score}/{result.totalQuestions}
+   403→                </div>
+   404→                <p className="text-gray-500">Score minimum requis : {passingScore}/{totalQuestions}</p>
+   405→                <Progress value={(result.score / result.totalQuestions) * 100} className="h-3 mt-4" />
+   406→                <div className="mt-3 flex items-center justify-center gap-2">
+   407→                  <Globe className="w-4 h-4 text-gray-400" />
+   408→                  <span className="text-sm text-gray-500">
+   409→                    Langue : {languages.find(l => l.code === examLanguage)?.name} ({languages.find(l => l.code === examLanguage)?.nativeName})
+   410→                  </span>
+   411→                </div>
+   412→              </div>
+   413→
+   414→              <div className="text-left mb-6">
+   415→                <h3 className="font-semibold mb-3" style={{ color: '#1A2332' }}>Résultats par catégorie</h3>
+   416→                <div className="space-y-2">
+   417→                  {result.details.map((d, i) => (
+   418→                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+   419→                      <span className="text-sm font-medium">{d.categorie}</span>
+   420→                      <div className="flex items-center gap-2">
+   421→                        <span className="text-sm font-bold" style={{ color: d.correct >= d.total * 0.75 ? '#009460' : '#CE1126' }}>
+   422→                          {d.correct}/{d.total}
+   423→                        </span>
+   424→                        <Progress value={(d.correct / d.total) * 100} className="w-20 h-2" />
+   425→                      </div>
+   426→                    </div>
+   427→                  ))}
+   428→                </div>
+   429→              </div>
+   430→
+   431→              <div className="flex gap-3 justify-center">
+   432→                <Button
+   433→                  className="text-white font-semibold"
+   434→                  style={{ backgroundColor: '#009460' }}
+   435→                  onClick={() => onViewChange('results')}
+   436→                >
+   437→                  Voir les détails
+   438→                </Button>
+   439→                <Button variant="outline" onClick={() => onViewChange('candidate-dashboard')}>
+   440→                  Retour au tableau de bord
+   441→                </Button>
+   442→              </div>
+   443→            </CardContent>
+   444→          </Card>
+   445→        </div>
+   446→      </div>
+   447→    );
+   448→  }
+   449→
+   450→  const q = examQuestions[currentQuestion];
+   451→  if (!q) return null;
+   452→
+   453→  const qLang = getQuestionInLanguage(q, examLanguage);
+   454→
+   455→  return (
+   456→    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#1A2332' }}>
+   457→      {/* Top Bar */}
+   458→      <div className="bg-white shadow-md px-4 py-3">
+   459→        <div className="max-w-5xl mx-auto flex items-center justify-between">
+   460→          <div className="flex items-center gap-3">
+   461→            <Badge variant="outline" className="font-mono text-xs" style={{ borderColor: '#009460', color: '#009460' }}>
+   462→              {isPractice ? 'ENTRAÎNEMENT' : 'EXAMEN OFFICIEL'}
+   463→            </Badge>
+   464→            <Badge variant="outline" className="text-xs">
+   465→              {user?.numeroUnique}
+   466→            </Badge>
+   467→            <Badge variant="outline" className="text-xs flex items-center gap-1" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
+   468→              <Globe className="w-3 h-3" />
+   469→              {languages.find(l => l.code === examLanguage)?.nativeName}
+   470→            </Badge>
+   471→          </div>
+   472→          <div className="flex items-center gap-4">
+   473→            <div className="flex items-center gap-2">
+   474→              <Progress value={progressPercent} className="w-24 h-2" />
+   475→              <span className="text-xs text-gray-500">{answeredCount}/{totalQuestions}</span>
+   476→            </div>
+   477→            <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-mono font-bold ${
+   478→              timeLeft <= 300 ? 'bg-red-100 text-red-700 animate-pulse' : timeLeft <= 600 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100'
+   479→            }`}>
+   480→              <Clock className="w-4 h-4" />
+   481→              {formatTime(timeLeft)}
+   482→            </div>
+   483→          </div>
+   484→        </div>
+   485→      </div>
+   486→
+   487→      {/* Question Area */}
+   488→      <div className="flex-1 flex flex-col overflow-hidden">
+   489→        <div className="flex-1 overflow-y-auto pt-6 pb-4 px-4">
+   490→          <div className="w-full max-w-4xl mx-auto">
+   491→            {/* Question Header */}
+   492→            <div className="flex items-center justify-between mb-4">
+   493→              <div className="flex items-center gap-2">
+   494→                <Badge className="text-white" style={{ backgroundColor: '#009460' }}>
+   495→                  Question {currentQuestion + 1}/{totalQuestions}
+   496→                </Badge>
+   497→                <Badge variant="outline" className="text-xs">{q.categorie}</Badge>
+   498→                <Badge variant="outline" className="text-xs" style={{ 
+   499→                  borderColor: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#FCD116' : '#CE1126',
+   500→                  color: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#B8960F' : '#CE1126'
+   501→                }}>
+   502→                  {q.difficulte}
+   503→                </Badge>
+   504→              </div>
+   505→              <div className="flex items-center gap-2">
+   506→                {/* Audio button */}
+   507→                <Button
+   508→                  variant="ghost"
+   509→                  size="sm"
+   510→                  className={isSpeaking ? 'text-orange-500 bg-orange-50' : 'text-gray-400 hover:text-orange-500'}
+   511→                  onClick={speakCurrentQuestion}
+   512→                  title={isSpeaking ? 'Arrêter la lecture' : 'Lire la question'}
+   513→                >
+   514→                  {isSpeaking ? <Pause className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+   515→                </Button>
+   516→                <Button
+   517→                  variant="ghost"
+   518→                  size="sm"
+   519→                  className={flagged[currentQuestion] ? 'text-yellow-500' : 'text-gray-400'}
+   520→                  onClick={() => toggleFlag(currentQuestion)}
+   521→                >
+   522→                  <Flag className="w-4 h-4" />
+   523→                </Button>
+   524→              </div>
+   525→            </div>
+   526→
+   527→            {/* Media Section - Road Sign / Scenario Image */}
+   528→            {(q.mediaType === 'sign' || q.mediaType === 'scenario' || q.mediaType === 'sign+scenario') && (
+   529→              <div className="mb-6">
+   530→                <div className="flex gap-4 items-start">
+   531→                  {/* Road Sign Image */}
+   532→                  {q.signImage && (
+   533→                    <div className="relative group">
+   534→                      <div className="w-32 h-32 rounded-xl overflow-hidden border-2 border-white/20 shadow-lg bg-white flex items-center justify-center cursor-pointer"
+   535→                        onClick={() => setShowSignModal(true)}>
+   536→                        <img
+   537→                          src={q.signImage}
+   538→                          alt="Panneau de signalisation"
+   539→                          className="w-full h-full object-contain p-2"
+   540→                        />
+   541→                      </div>
+   542→                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white/90 rounded-full px-2 py-0.5 flex items-center gap-1">
+   543→                        <Maximize2 className="w-3 h-3 text-gray-500" />
+   544→                        <span className="text-xs text-gray-500">Agrandir</span>
+   545→                      </div>
+   546→                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#009460' }}>
+   547→                        <ImageIcon className="w-3 h-3 text-white" />
+   548→                      </div>
+   549→                    </div>
+   550→                  )}
+   551→
+   552→                  {/* Scenario Image */}
+   553→                  {q.scenarioImage && (
+   554→                    <div className="relative group flex-1">
+   555→                      <div className="rounded-xl overflow-hidden border-2 border-white/20 shadow-lg cursor-pointer"
+   556→                        onClick={() => setShowScenarioModal(true)}>
+   557→                        <img
+   558→                          src={q.scenarioImage}
+   559→                          alt="Scénario routier"
+   560→                          className="w-full h-48 object-cover"
+   561→                        />
+   562→                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
+   563→                          <span className="text-white text-sm font-medium flex items-center gap-1">
+   564→                            <Eye className="w-4 h-4" /> Voir en grand
+   565→                          </span>
+   566→                        </div>
+   567→                      </div>
+   568→                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#7C3AED' }}>
+   569→                        <Eye className="w-3 h-3 text-white" />
+   570→                      </div>
+   571→                    </div>
+   572→                  )}
+   573→                </div>
+   574→              </div>
+   575→            )}
+   576→
+   577→            {/* Video placeholder */}
+   578→            {q.mediaType === 'video' && q.videoUrl && (
+   579→              <div className="mb-6">
+   580→                <div className="w-full h-48 rounded-xl bg-gray-800 flex items-center justify-center border-2 border-white/10">
+   581→                  <Button variant="ghost" className="text-white flex items-center gap-2" onClick={() => {}}>
+   582→                    <Play className="w-8 h-8" />
+   583→                    <span>Lancer la vidéo</span>
+   584→                  </Button>
+   585→                </div>
+   586→              </div>
+   587→            )}
+   588→
+   589→            {/* Question Text */}
+   590→            <Card className="border-0 shadow-lg mb-6">
+   591→              <CardContent className="p-6">
+   592→                <div className="flex items-start gap-3">
+   593→                  <div className="flex-1">
+   594→                    <h2 className="text-lg font-semibold" style={{ color: '#1A2332' }}>
+   595→                      {qLang.texte}
+   596→                    </h2>
+   597→                    {examLanguage !== 'fr' && q.translations[examLanguage] && (
+   598→                      <p className="text-sm text-gray-400 mt-2 italic border-t pt-2">
+   599→                        FR : {q.texte}
+   600→                      </p>
+   601→                    )}
+   602→                  </div>
+   603→                </div>
+   604→              </CardContent>
+   605→            </Card>
+   606→
+   607→            {/* Options */}
+   608→            <div className="grid gap-3">
+   609→              {qLang.options.map((option, optIndex) => (
+   610→                <button
+   611→                  key={optIndex}
+   612→                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+   613→                    answers[currentQuestion] === optIndex
+   614→                      ? 'border-green-500 bg-green-50 shadow-md'
+   615→                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+   616→                  }`}
+   617→                  onClick={() => handleAnswer(currentQuestion, optIndex)}
+   618→                >
+   619→                  <div className="flex items-center gap-3">
+   620→                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+   621→                      answers[currentQuestion] === optIndex
+   622→                        ? 'bg-green-500 text-white'
+   623→                        : 'bg-gray-100 text-gray-600'
+   624→                    }`}>
+   625→                      {String.fromCharCode(65 + optIndex)}
+   626→                    </div>
+   627→                    <span className={`font-medium ${answers[currentQuestion] === optIndex ? 'text-green-700' : ''}`} style={answers[currentQuestion] !== optIndex ? { color: '#1A2332' } : {}}>
+   628→                      {option}
+   629→                    </span>
+   630→                    <Button
+   631→                      variant="ghost"
+   632→                      size="sm"
+   633→                      className="ml-auto opacity-50 hover:opacity-100"
+   634→                      onClick={(e) => {
+   635→                        e.stopPropagation();
+   636→                        speakText(option);
+   637→                      }}
+   638→                    >
+   639→                      <Volume2 className="w-3.5 h-3.5" />
+   640→                    </Button>
+   641→                  </div>
+   642→                </button>
+   643→              ))}
+   644→            </div>
+   645→          </div>
+   646→        </div>
+   647→
+   648→        {/* Question Navigator */}
+   649→        <div className="bg-white border-t px-4 py-3">
+   650→          <div className="max-w-4xl mx-auto">
+   651→            <div className="flex items-center gap-1 overflow-x-auto pb-1">
+   652→              {Array.from({ length: totalQuestions }, (_, i) => (
+   653→                <button
+   654→                  key={i}
+   655→                  className={`w-8 h-8 rounded-md text-xs font-medium flex-shrink-0 transition-all ${
+   656→                    i === currentQuestion
+   657→                      ? 'ring-2 ring-green-500 text-white'
+   658→                      : flagged[i]
+   659→                      ? 'bg-yellow-100 text-yellow-700'
+   660→                      : answers[i] !== null
+   661→                      ? 'bg-green-100 text-green-700'
+   662→                      : examQuestions[i]?.mediaType === 'sign' || examQuestions[i]?.mediaType === 'scenario'
+   663→                      ? 'bg-blue-50 text-blue-600'
+   664→                      : 'bg-gray-100 text-gray-500'
+   665→                  }`}
+   666→                  style={i === currentQuestion ? { backgroundColor: '#009460' } : {}}
+   667→                  onClick={() => setCurrentQuestion(i)}
+   668→                  title={examQuestions[i]?.mediaType !== 'text' ? `Question ${i+1} (avec image)` : `Question ${i+1}`}
+   669→                >
+   670→                  {examQuestions[i]?.mediaType === 'sign' ? '🪧' : examQuestions[i]?.mediaType === 'scenario' ? '📷' : i + 1}
+   671→                </button>
+   672→              ))}
+   673→            </div>
+   674→            <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+   675→              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-green-100"></div> Répondu</span>
+   676→              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-yellow-100"></div> Marqué</span>
+   677→              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-blue-50"></div> Avec image</span>
+   678→            </div>
+   679→          </div>
+   680→        </div>
+   681→
+   682→        {/* Bottom Navigation */}
+   683→        <div className="bg-white border-t px-4 py-4">
+   684→          <div className="max-w-4xl mx-auto flex justify-between items-center">
+   685→            <Button
+   686→              variant="outline"
+   687→              onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
+   688→              disabled={currentQuestion === 0}
+   689→            >
+   690→              <ChevronLeft className="w-4 h-4 mr-1" />
+   691→              Précédent
+   692→            </Button>
+   693→
+   694→            <div className="flex items-center gap-2">
+   695→              <Button
+   696→                variant="ghost"
+   697→                size="sm"
+   698→                className={isSpeaking ? 'text-orange-500' : 'text-gray-400'}
+   699→                onClick={speakCurrentQuestion}
+   700→              >
+   701→                {isSpeaking ? <Pause className="w-4 h-4 mr-1" /> : <Volume2 className="w-4 h-4 mr-1" />}
+   702→                {isSpeaking ? 'Arrêter' : 'Lire'}
+   703→              </Button>
+   704→              <Button
+   705→                className="text-white font-semibold"
+   706→                style={{ backgroundColor: '#CE1126' }}
+   707→                onClick={() => setShowConfirm(true)}
+   708→              >
+   709→                Terminer l&apos;examen
+   710→              </Button>
+   711→            </div>
+   712→
+   713→            <Button
+   714→              variant="outline"
+   715→              onClick={() => setCurrentQuestion(Math.min(totalQuestions - 1, currentQuestion + 1))}
+   716→              disabled={currentQuestion === totalQuestions - 1}
+   717→            >
+   718→              Suivant
+   719→              <ChevronRight className="w-4 h-4 ml-1" />
+   720→            </Button>
+   721→          </div>
+   722→        </div>
+   723→      </div>
+   724→
+   725→      {/* Sign Modal */}
+   726→      {showSignModal && q.signImage && (
+   727→        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowSignModal(false)}>
+   728→          <div className="max-w-lg w-full bg-white rounded-2xl p-6 relative" onClick={e => e.stopPropagation()}>
+   729→            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl" onClick={() => setShowSignModal(false)}>&times;</button>
+   730→            <h3 className="font-semibold mb-4" style={{ color: '#1A2332' }}>Panneau de signalisation</h3>
+   731→            <img src={q.signImage} alt="Panneau" className="w-full max-w-sm mx-auto object-contain" />
+   732→            <p className="text-center mt-4 text-gray-600">{qLang.explication}</p>
+   733→          </div>
+   734→        </div>
+   735→      )}
+   736→
+   737→      {/* Scenario Modal */}
+   738→      {showScenarioModal && q.scenarioImage && (
+   739→        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowScenarioModal(false)}>
+   740→          <div className="max-w-3xl w-full bg-white rounded-2xl p-6 relative" onClick={e => e.stopPropagation()}>
+   741→            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl" onClick={() => setShowScenarioModal(false)}>&times;</button>
+   742→            <h3 className="font-semibold mb-4" style={{ color: '#1A2332' }}>Scénario routier</h3>
+   743→            <img src={q.scenarioImage} alt="Scénario" className="w-full rounded-lg object-cover" />
+   744→            <p className="text-center mt-4 text-gray-600">{qLang.explication}</p>
+   745→          </div>
+   746→        </div>
+   747→      )}
+   748→
+   749→      {/* Submit Confirmation */}
+   750→      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+   751→        <AlertDialogContent>
+   752→          <AlertDialogHeader>
+   753→            <AlertDialogTitle>Terminer l&apos;examen ?</AlertDialogTitle>
+   754→            <AlertDialogDescription>
+   755→              Vous avez répondu à {answeredCount} questions sur {totalQuestions}.
+   756→              {answeredCount < totalQuestions && ` ${totalQuestions - answeredCount} questions sans réponse.`}
+   757→              {flagged.filter(f => f).length > 0 && ` ${flagged.filter(f => f).length} question(s) marquée(s) d'un drapeau.`}
+   758→              <br /><br />
+   759→              Cette action est irréversible.
+   760→            </AlertDialogDescription>
+   761→          </AlertDialogHeader>
+   762→          <AlertDialogFooter>
+   763→            <AlertDialogCancel>Continuer l&apos;examen</AlertDialogCancel>
+   764→            <AlertDialogAction
+   765→              onClick={() => { setShowConfirm(false); submitExam(); }}
+   766→              className="text-white"
+   767→              style={{ backgroundColor: '#CE1126' }}
+   768→            >
+   769→              Confirmer et soumettre
+   770→            </AlertDialogAction>
+   771→          </AlertDialogFooter>
+   772→        </AlertDialogContent>
+   773→      </AlertDialog>
+   774→    </div>
+   775→  );
+   776→}
+   777→

@@ -1,0 +1,938 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useCallback, useRef, useEffect } from 'react';
+     4→import { Button } from '@/components/ui/button';
+     5→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     6→import { Badge } from '@/components/ui/badge';
+     7→import { Progress } from '@/components/ui/progress';
+     8→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+     9→import { ViewType, Course, NationalLanguage, Lesson, LessonType } from '@/lib/types';
+    10→import { courses, getLanguageName } from '@/lib/mock-data';
+    11→import { useLanguage } from '@/lib/language-context';
+    12→import {
+    13→  BookOpen,
+    14→  Play,
+    15→  ChevronRight,
+    16→  Star,
+    17→  Clock,
+    18→  Users,
+    19→  Award,
+    20→  CheckCircle,
+    21→  Image as ImageIcon,
+    22→  Video,
+    23→  FileText,
+    24→  Headphones,
+    25→  ChevronDown,
+    26→  Volume2,
+    27→  VolumeX,
+    28→  Loader2,
+    29→} from 'lucide-react';
+    30→
+    31→// ─── Color palette ──────────────────────────────────────────
+    32→const COLORS = {
+    33→  primaryDark: '#1A2332',
+    34→  red: '#CE1126',
+    35→  yellow: '#FCD116',
+    36→  green: '#009460',
+    37→};
+    38→
+    39→// ─── Category config ────────────────────────────────────────
+    40→const categoryConfig: Record<string, { color: string; bg: string; border: string }> = {
+    41→  Signalisation: { color: '#1A2332', bg: '#E8F0FE', border: '#1A2332' },
+    42→  Priorité: { color: '#CE1126', bg: '#FDEAEA', border: '#CE1126' },
+    43→  Sécurité: { color: '#009460', bg: '#E6F5EE', border: '#009460' },
+    44→};
+    45→
+    46→function getCategoryStyle(cat: string) {
+    47→  return categoryConfig[cat] || { color: '#1A2332', bg: '#F3F4F6', border: '#1A2332' };
+    48→}
+    49→
+    50→// ─── Lesson type icon ───────────────────────────────────────
+    51→function LessonTypeIcon({ type, className }: { type: LessonType; className?: string }) {
+    52→  const cls = className || 'h-4 w-4';
+    53→  switch (type) {
+    54→    case 'sign':
+    55→      return <ImageIcon className={cls} />;
+    56→    case 'video':
+    57→      return <Video className={cls} />;
+    58→    case 'text':
+    59→      return <FileText className={cls} />;
+    60→    case 'quiz':
+    61→      return <Award className={cls} />;
+    62→    case 'interactive':
+    63→      return <Play className={cls} />;
+    64→    default:
+    65→      return <BookOpen className={cls} />;
+    66→  }
+    67→}
+    68→
+    69→// ─── Helpers ────────────────────────────────────────────────
+    70→function getLocalizedCourseTitle(course: Course, lang: NationalLanguage): string {
+    71→  if (lang !== 'fr' && course.translations[lang]?.titre) {
+    72→    return course.translations[lang]!.titre;
+    73→  }
+    74→  return course.titre;
+    75→}
+    76→
+    77→function getLocalizedCourseDesc(course: Course, lang: NationalLanguage): string {
+    78→  if (lang !== 'fr' && course.translations[lang]?.description) {
+    79→    return course.translations[lang]!.description;
+    80→  }
+    81→  return course.description;
+    82→}
+    83→
+    84→function getLocalizedLessonTitle(lesson: Lesson, lang: NationalLanguage): string {
+    85→  if (lang !== 'fr' && lesson.translations[lang]?.titre) {
+    86→    return lesson.translations[lang]!.titre;
+    87→  }
+    88→  return lesson.titre;
+    89→}
+    90→
+    91→function getLocalizedLessonDesc(lesson: Lesson, lang: NationalLanguage): string {
+    92→  if (lang !== 'fr' && lesson.translations[lang]?.description) {
+    93→    return lesson.translations[lang]!.description;
+    94→  }
+    95→  return lesson.description;
+    96→}
+    97→
+    98→function getLocalizedLessonContent(lesson: Lesson, lang: NationalLanguage): string {
+    99→  if (lang !== 'fr' && lesson.translations[lang]?.contenu) {
+   100→    return lesson.translations[lang]!.contenu;
+   101→  }
+   102→  return lesson.contenu;
+   103→}
+   104→
+   105→function formatNumber(n: number): string {
+   106→  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+   107→  return n.toString();
+   108→}
+   109→
+   110→function renderStars(rating: number) {
+   111→  const full = Math.floor(rating);
+   112→  const hasHalf = rating - full >= 0.3;
+   113→  const stars = [];
+   114→  for (let i = 0; i < 5; i++) {
+   115→    if (i < full) {
+   116→      stars.push(<Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />);
+   117→    } else if (i === full && hasHalf) {
+   118→      stars.push(
+   119→        <div key={i} className="relative">
+   120→          <Star className="h-3.5 w-3.5 text-gray-300" />
+   121→          <div className="absolute inset-0 overflow-hidden w-[50%]">
+   122→            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+   123→          </div>
+   124→        </div>
+   125→      );
+   126→    } else {
+   127→      stars.push(<Star key={i} className="h-3.5 w-3.5 text-gray-300" />);
+   128→    }
+   129→  }
+   130→  return stars;
+   131→}
+   132→
+   133→// ─── Mock progress generator ────────────────────────────────
+   134→function getMockProgress(courseId: string): number {
+   135→  const map: Record<string, number> = {
+   136→    'CRS-001': 35,
+   137→    'CRS-002': 0,
+   138→    'CRS-003': 100,
+   139→  };
+   140→  return map[courseId] ?? 0;
+   141→}
+   142→
+   143→// ─── Main Component ─────────────────────────────────────────
+   144→export default function CoursesPage({ onViewChange }: { onViewChange: (view: ViewType) => void }) {
+   145→  const { currentLanguage, languageConfig } = useLanguage();
+   146→
+   147→  // State
+   148→  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+   149→  const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
+   150→  const [activeTab, setActiveTab] = useState('all');
+   151→  const [speakingLessonId, setSpeakingLessonId] = useState<string | null>(null);
+   152→  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+   153→
+   154→  // Cleanup speech on unmount
+   155→  useEffect(() => {
+   156→    return () => {
+   157→      if (typeof window !== 'undefined' && window.speechSynthesis) {
+   158→        window.speechSynthesis.cancel();
+   159→      }
+   160→    };
+   161→  }, []);
+   162→
+   163→  // ── Speech handler ──
+   164→  const handleSpeak = useCallback((lesson: Lesson) => {
+   165→    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+   166→
+   167→    // If currently speaking this lesson, stop
+   168→    if (speakingLessonId === lesson.id) {
+   169→      window.speechSynthesis.cancel();
+   170→      setSpeakingLessonId(null);
+   171→      return;
+   172→    }
+   173→
+   174→    // Cancel any ongoing speech
+   175→    window.speechSynthesis.cancel();
+   176→
+   177→    const content = getLocalizedLessonContent(lesson, currentLanguage);
+   178→    const utterance = new SpeechSynthesisUtterance(content);
+   179→    utterance.lang = 'fr-FR';
+   180→    utterance.rate = 0.9;
+   181→    utterance.pitch = 1;
+   182→
+   183→    // Try to find a French voice
+   184→    const voices = window.speechSynthesis.getVoices();
+   185→    const frenchVoice = voices.find((v) => v.lang.startsWith('fr'));
+   186→    if (frenchVoice) {
+   187→      utterance.voice = frenchVoice;
+   188→    }
+   189→
+   190→    utterance.onend = () => setSpeakingLessonId(null);
+   191→    utterance.onerror = () => setSpeakingLessonId(null);
+   192→
+   193→    speechRef.current = utterance;
+   194→    setSpeakingLessonId(lesson.id);
+   195→    window.speechSynthesis.speak(utterance);
+   196→  }, [currentLanguage, speakingLessonId]);
+   197→
+   198→  // ── Filter courses ──
+   199→  const filteredCourses = courses.filter((course) => {
+   200→    const progress = getMockProgress(course.id);
+   201→    switch (activeTab) {
+   202→      case 'in-progress':
+   203→        return progress > 0 && progress < 100;
+   204→      case 'completed':
+   205→        return progress === 100;
+   206→      case 'signalisation':
+   207→        return course.categorie === 'Signalisation';
+   208→      case 'priorite':
+   209→        return course.categorie === 'Priorité';
+   210→      case 'securite':
+   211→        return course.categorie === 'Sécurité';
+   212→      default:
+   213→        return true;
+   214→    }
+   215→  });
+   216→
+   217→  // ── Stats ──
+   218→  const totalLessons = courses.reduce((acc, c) => acc + c.lessons.length, 0);
+   219→  const totalDuration = courses.reduce((acc, c) => acc + c.dureeTotale, 0);
+   220→
+   221→  return (
+   222→    <div className="min-h-screen bg-gray-50" style={{ backgroundColor: '#F7F8FA' }}>
+   223→      {/* ── Header ── */}
+   224→      <div
+   225→        className="relative overflow-hidden"
+   226→        style={{
+   227→          background: `linear-gradient(135deg, ${COLORS.primaryDark} 0%, #2A3A52 50%, ${COLORS.primaryDark} 100%)`,
+   228→        }}
+   229→      >
+   230→        {/* Decorative elements */}
+   231→        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+   232→          <div
+   233→            className="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-10"
+   234→            style={{ background: COLORS.green }}
+   235→          />
+   236→          <div
+   237→            className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full opacity-10"
+   238→            style={{ background: COLORS.yellow }}
+   239→          />
+   240→          <div
+   241→            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-5"
+   242→            style={{ background: COLORS.red }}
+   243→          />
+   244→        </div>
+   245→
+   246→        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+   247→          {/* Language badge */}
+   248→          <div className="flex items-center justify-end mb-6">
+   249→            <div
+   250→              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+   251→              style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: '#fff' }}
+   252→            >
+   253→              <span>{languageConfig.flag}</span>
+   254→              <span>
+   255→                {getLanguageName(currentLanguage)} · {languageConfig.nativeName}
+   256→              </span>
+   257→            </div>
+   258→          </div>
+   259→
+   260→          {/* Title */}
+   261→          <div className="text-center mb-8">
+   262→            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight">
+   263→              Cours et{' '}
+   264→              <span style={{ color: COLORS.green }}>formation</span>
+   265→            </h1>
+   266→            <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto">
+   267→              Préparez-vous à l&apos;examen du code de la route
+   268→            </p>
+   269→          </div>
+   270→
+   271→          {/* Stats row */}
+   272→          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+   273→            <StatItem
+   274→              icon={<BookOpen className="h-5 w-5" style={{ color: COLORS.green }} />}
+   275→              value={courses.length.toString()}
+   276→              label="Cours"
+   277→            />
+   278→            <StatItem
+   279→              icon={<FileText className="h-5 w-5" style={{ color: COLORS.yellow }} />}
+   280→              value={totalLessons.toString()}
+   281→              label="Leçons"
+   282→            />
+   283→            <StatItem
+   284→              icon={<Clock className="h-5 w-5" style={{ color: COLORS.red }} />}
+   285→              value={`${totalDuration} min`}
+   286→              label="De contenu"
+   287→            />
+   288→          </div>
+   289→
+   290→          {/* Guinea stripe */}
+   291→          <div className="mt-8 flex h-1.5 rounded-full overflow-hidden max-w-md mx-auto">
+   292→            <div className="flex-1" style={{ backgroundColor: COLORS.red }} />
+   293→            <div className="flex-1" style={{ backgroundColor: COLORS.yellow }} />
+   294→            <div className="flex-1" style={{ backgroundColor: COLORS.green }} />
+   295→          </div>
+   296→        </div>
+   297→      </div>
+   298→
+   299→      {/* ── Content ── */}
+   300→      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+   301→        {/* Tabs */}
+   302→        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+   303→          <TabsList
+   304→            className="h-auto p-1 bg-white rounded-xl shadow-sm flex flex-wrap gap-1"
+   305→            style={{ border: '1px solid #E5E7EB' }}
+   306→          >
+   307→            <TabsTrigger
+   308→              value="all"
+   309→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   310→              style={
+   311→                activeTab === 'all'
+   312→                  ? { backgroundColor: COLORS.primaryDark }
+   313→                  : {}
+   314→              }
+   315→            >
+   316→              Tous les cours
+   317→            </TabsTrigger>
+   318→            <TabsTrigger
+   319→              value="in-progress"
+   320→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   321→              style={
+   322→                activeTab === 'in-progress'
+   323→                  ? { backgroundColor: COLORS.green }
+   324→                  : {}
+   325→              }
+   326→            >
+   327→              En cours
+   328→            </TabsTrigger>
+   329→            <TabsTrigger
+   330→              value="completed"
+   331→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   332→              style={
+   333→                activeTab === 'completed'
+   334→                  ? { backgroundColor: COLORS.green }
+   335→                  : {}
+   336→              }
+   337→            >
+   338→              Terminés
+   339→            </TabsTrigger>
+   340→            <TabsTrigger
+   341→              value="signalisation"
+   342→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   343→              style={
+   344→                activeTab === 'signalisation'
+   345→                  ? { backgroundColor: COLORS.primaryDark }
+   346→                  : {}
+   347→              }
+   348→            >
+   349→              Signalisation
+   350→            </TabsTrigger>
+   351→            <TabsTrigger
+   352→              value="priorite"
+   353→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   354→              style={
+   355→                activeTab === 'priorite'
+   356→                  ? { backgroundColor: COLORS.red }
+   357→                  : {}
+   358→              }
+   359→            >
+   360→              Priorité
+   361→            </TabsTrigger>
+   362→            <TabsTrigger
+   363→              value="securite"
+   364→              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow-sm text-sm px-4 py-2"
+   365→              style={
+   366→                activeTab === 'securite'
+   367→                  ? { backgroundColor: COLORS.green }
+   368→                  : {}
+   369→              }
+   370→            >
+   371→              Sécurité
+   372→            </TabsTrigger>
+   373→          </TabsList>
+   374→
+   375→          {/* Render for each tab value (required by shadcn Tabs) */}
+   376→          {['all', 'in-progress', 'completed', 'signalisation', 'priorite', 'securite'].map(
+   377→            (tabVal) => (
+   378→              <TabsContent key={tabVal} value={tabVal} className="mt-6">
+   379→                {filteredCourses.length === 0 ? (
+   380→                  <EmptyState tab={tabVal} />
+   381→                ) : (
+   382→                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+   383→                    {filteredCourses.map((course) => (
+   384→                      <CourseCard
+   385→                        key={course.id}
+   386→                        course={course}
+   387→                        lang={currentLanguage}
+   388→                        isExpanded={expandedCourseId === course.id}
+   389→                        expandedLessonId={expandedLessonId}
+   390→                        speakingLessonId={speakingLessonId}
+   391→                        onToggleExpand={() =>
+   392→                          setExpandedCourseId(
+   393→                            expandedCourseId === course.id ? null : course.id
+   394→                          )
+   395→                        }
+   396→                        onToggleLesson={(lessonId) =>
+   397→                          setExpandedLessonId(
+   398→                            expandedLessonId === lessonId ? null : lessonId
+   399→                          )
+   400→                        }
+   401→                        onSpeak={handleSpeak}
+   402→                      />
+   403→                    ))}
+   404→                  </div>
+   405→                )}
+   406→              </TabsContent>
+   407→            )
+   408→          )}
+   409→        </Tabs>
+   410→      </div>
+   411→    </div>
+   412→  );
+   413→}
+   414→
+   415→// ─── Stat Item ──────────────────────────────────────────────
+   416→function StatItem({
+   417→  icon,
+   418→  value,
+   419→  label,
+   420→}: {
+   421→  icon: React.ReactNode;
+   422→  value: string;
+   423→  label: string;
+   424→}) {
+   425→  return (
+   426→    <div className="flex items-center gap-3">
+   427→      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
+   428→        {icon}
+   429→      </div>
+   430→      <div>
+   431→        <div className="text-xl sm:text-2xl font-bold text-white">{value}</div>
+   432→        <div className="text-xs sm:text-sm text-gray-400">{label}</div>
+   433→      </div>
+   434→    </div>
+   435→  );
+   436→}
+   437→
+   438→// ─── Empty State ────────────────────────────────────────────
+   439→function EmptyState({ tab }: { tab: string }) {
+   440→  const messages: Record<string, string> = {
+   441→    'in-progress': "Vous n'avez pas encore commencé de cours. Lancez-vous !",
+   442→    completed: 'Aucun cours terminé pour le moment. Continuez vos études !',
+   443→    signalisation: 'Aucun cours de signalisation disponible.',
+   444→    priorite: 'Aucun cours sur les priorités disponible.',
+   445→    securite: 'Aucun cours de sécurité disponible.',
+   446→    all: 'Aucun cours disponible.',
+   447→  };
+   448→  return (
+   449→    <div className="text-center py-16">
+   450→      <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+   451→      <p className="text-gray-500 text-lg">{messages[tab] || messages.all}</p>
+   452→    </div>
+   453→  );
+   454→}
+   455→
+   456→// ─── Course Card ────────────────────────────────────────────
+   457→function CourseCard({
+   458→  course,
+   459→  lang,
+   460→  isExpanded,
+   461→  expandedLessonId,
+   462→  speakingLessonId,
+   463→  onToggleExpand,
+   464→  onToggleLesson,
+   465→  onSpeak,
+   466→}: {
+   467→  course: Course;
+   468→  lang: NationalLanguage;
+   469→  isExpanded: boolean;
+   470→  expandedLessonId: string | null;
+   471→  speakingLessonId: string | null;
+   472→  onToggleExpand: () => void;
+   473→  onToggleLesson: (lessonId: string) => void;
+   474→  onSpeak: (lesson: Lesson) => void;
+   475→}) {
+   476→  const progress = getMockProgress(course.id);
+   477→  const catStyle = getCategoryStyle(course.categorie);
+   478→  const coverImage = course.imageCover || course.lessons.find((l) => l.signImage)?.signImage;
+   479→  const isCompleted = progress === 100;
+   480→  const isInProgress = progress > 0 && progress < 100;
+   481→
+   482→  return (
+   483→    <Card
+   484→      className={`overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl rounded-2xl border-0 ${
+   485→        isExpanded ? 'md:col-span-2 lg:col-span-3' : ''
+   486→      }`}
+   487→      style={{ backgroundColor: '#FFFFFF' }}
+   488→    >
+   489→      {/* Cover image */}
+   490→      {!isExpanded && coverImage && (
+   491→        <div className="relative h-40 overflow-hidden">
+   492→          <div
+   493→            className="w-full h-full flex items-center justify-center"
+   494→            style={{
+   495→              background: `linear-gradient(135deg, ${catStyle.bg} 0%, ${COLORS.primaryDark}15 100%)`,
+   496→            }}
+   497→          >
+   498→            <div className="text-center">
+   499→              <ImageIcon className="h-10 w-10 mx-auto mb-1 opacity-60" style={{ color: catStyle.color }} />
+   500→              <span className="text-xs text-gray-400">Illustration</span>
+   501→            </div>
+   502→          </div>
+   503→          {/* Category badge overlay */}
+   504→          <div className="absolute top-3 left-3">
+   505→            <Badge
+   506→              className="font-semibold text-xs px-3 py-1 border-0 shadow-sm"
+   507→              style={{
+   508→                backgroundColor: catStyle.bg,
+   509→                color: catStyle.color,
+   510→              }}
+   511→            >
+   512→              {course.categorie}
+   513→            </Badge>
+   514→          </div>
+   515→          {/* Completion overlay */}
+   516→          {isCompleted && (
+   517→            <div className="absolute top-3 right-3">
+   518→              <div
+   519→                className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+   520→                style={{ backgroundColor: COLORS.green }}
+   521→              >
+   522→                <CheckCircle className="h-5 w-5 text-white" />
+   523→              </div>
+   524→            </div>
+   525→          )}
+   526→        </div>
+   527→      )}
+   528→
+   529→      <CardHeader className={`${isExpanded ? 'pb-2' : 'pb-3'} pt-4 px-5`}>
+   530→        <div className="flex items-start justify-between gap-3">
+   531→          <div className="flex-1 min-w-0">
+   532→            {/* Category badge (shown when expanded, no cover) */}
+   533→            {isExpanded && (
+   534→              <Badge
+   535→                className="font-semibold text-xs px-3 py-1 border-0 shadow-sm mb-3"
+   536→                style={{
+   537→                  backgroundColor: catStyle.bg,
+   538→                  color: catStyle.color,
+   539→                }}
+   540→              >
+   541→                {course.categorie}
+   542→              </Badge>
+   543→            )}
+   544→            <CardTitle
+   545→              className="text-lg font-bold leading-snug"
+   546→              style={{ color: COLORS.primaryDark }}
+   547→            >
+   548→              {getLocalizedCourseTitle(course, lang)}
+   549→            </CardTitle>
+   550→            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+   551→              {getLocalizedCourseDesc(course, lang)}
+   552→            </p>
+   553→          </div>
+   554→          {isExpanded && isCompleted && (
+   555→            <div
+   556→              className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
+   557→              style={{ backgroundColor: COLORS.green }}
+   558→            >
+   559→              <CheckCircle className="h-5 w-5 text-white" />
+   560→            </div>
+   561→          )}
+   562→        </div>
+   563→      </CardHeader>
+   564→
+   565→      <CardContent className="px-5 pb-4 pt-0">
+   566→        {/* Meta info */}
+   567→        <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+   568→          <div className="flex items-center gap-1">
+   569→            {renderStars(course.rating)}
+   570→            <span className="font-semibold text-gray-700 ml-1">{course.rating}</span>
+   571→          </div>
+   572→          <div className="flex items-center gap-1">
+   573→            <Clock className="h-3.5 w-3.5" />
+   574→            <span>{course.dureeTotale} min</span>
+   575→          </div>
+   576→          <div className="flex items-center gap-1">
+   577→            <Users className="h-3.5 w-3.5" />
+   578→            <span>{formatNumber(course.nbInscrits)}</span>
+   579→          </div>
+   580→        </div>
+   581→
+   582→        {/* Progress */}
+   583→        <div className="mb-4">
+   584→          <div className="flex items-center justify-between mb-1.5">
+   585→            <span className="text-xs font-medium text-gray-600">
+   586→              {isCompleted
+   587→                ? 'Terminé'
+   588→                : isInProgress
+   589→                ? 'En cours'
+   590→                : 'Non commencé'}
+   591→            </span>
+   592→            <span className="text-xs font-bold" style={{ color: isCompleted ? COLORS.green : COLORS.primaryDark }}>
+   593→              {progress}%
+   594→            </span>
+   595→          </div>
+   596→          <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+   597→            <div
+   598→              className="h-full rounded-full transition-all duration-500"
+   599→              style={{
+   600→                width: `${progress}%`,
+   601→                backgroundColor: isCompleted ? COLORS.green : isInProgress ? COLORS.yellow : '#E5E7EB',
+   602→              }}
+   603→            />
+   604→          </div>
+   605→        </div>
+   606→
+   607→        {/* Action button */}
+   608→        <div className="flex items-center gap-2">
+   609→          <Button
+   610→            className="flex-1 font-semibold text-sm rounded-xl h-10 shadow-sm transition-all"
+   611→            style={{
+   612→              backgroundColor: isInProgress || isCompleted ? COLORS.primaryDark : COLORS.green,
+   613→              color: '#FFFFFF',
+   614→            }}
+   615→            onClick={onToggleExpand}
+   616→          >
+   617→            {isCompleted ? (
+   618→              <>
+   619→                <CheckCircle className="h-4 w-4 mr-2" />
+   620→                Réviser
+   621→              </>
+   622→            ) : isInProgress ? (
+   623→              <>
+   624→                <Play className="h-4 w-4 mr-2" />
+   625→                Continuer
+   626→              </>
+   627→            ) : (
+   628→              <>
+   629→                <BookOpen className="h-4 w-4 mr-2" />
+   630→                Commencer
+   631→              </>
+   632→            )}
+   633→          </Button>
+   634→          <Button
+   635→            variant="outline"
+   636→            size="icon"
+   637→            className="h-10 w-10 rounded-xl border-0 shadow-sm"
+   638→            style={{ backgroundColor: '#F3F4F6' }}
+   639→            onClick={onToggleExpand}
+   640→          >
+   641→            <ChevronRight
+   642→              className={`h-4 w-4 transition-transform duration-300 ${
+   643→                isExpanded ? 'rotate-90' : ''
+   644→              }`}
+   645→            />
+   646→          </Button>
+   647→        </div>
+   648→
+   649→        {/* ── Expanded: Lessons list ── */}
+   650→        {isExpanded && (
+   651→          <div className="mt-6 space-y-2">
+   652→            <div className="flex items-center justify-between mb-3">
+   653→              <h3 className="text-sm font-bold" style={{ color: COLORS.primaryDark }}>
+   654→                Leçons ({course.lessons.length})
+   655→              </h3>
+   656→              <span className="text-xs text-gray-400">
+   657→                {course.dureeTotale} min au total
+   658→              </span>
+   659→            </div>
+   660→
+   661→            <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+   662→              {course.lessons
+   663→                .sort((a, b) => a.ordre - b.ordre)
+   664→                .map((lesson, idx) => {
+   665→                  const isLessonExpanded = expandedLessonId === lesson.id;
+   666→                  const isSpeaking = speakingLessonId === lesson.id;
+   667→                  const lessonProgress = getLessonProgress(lesson, progress, course, idx);
+   668→
+   669→                  return (
+   670→                    <div key={lesson.id} className="rounded-xl overflow-hidden">
+   671→                      {/* Lesson row */}
+   672→                      <button
+   673→                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-left"
+   674→                        style={{
+   675→                          backgroundColor: isLessonExpanded ? '#F0F4F8' : '#FAFBFC',
+   676→                        }}
+   677→                        onClick={() => onToggleLesson(lesson.id)}
+   678→                      >
+   679→                        {/* Type icon */}
+   680→                        <div
+   681→                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+   682→                          style={{
+   683→                            backgroundColor: getLessonTypeBg(lesson.type),
+   684→                          }}
+   685→                        >
+   686→                          <LessonTypeIcon
+   687→                            type={lesson.type}
+   688→                            className="h-4 w-4"
+   689→                          />
+   690→                        </div>
+   691→
+   692→                        {/* Lesson info */}
+   693→                        <div className="flex-1 min-w-0">
+   694→                          <div className="flex items-center gap-2">
+   695→                            <span className="text-sm font-semibold text-gray-800 truncate">
+   696→                              {getLocalizedLessonTitle(lesson, lang)}
+   697→                            </span>
+   698→                            {lessonProgress === 'completed' && (
+   699→                              <CheckCircle className="h-4 w-4 flex-shrink-0" style={{ color: COLORS.green }} />
+   700→                            )}
+   701→                          </div>
+   702→                          <div className="flex items-center gap-2 mt-0.5">
+   703→                            <span className="text-xs text-gray-400">
+   704→                              {lesson.duree} min
+   705→                            </span>
+   706→                            <span className="text-xs px-1.5 py-0.5 rounded-md font-medium" style={{
+   707→                              backgroundColor: getLessonTypeBg(lesson.type),
+   708→                              color: getLessonTypeColor(lesson.type),
+   709→                            }}>
+   710→                              {getLessonTypeLabel(lesson.type)}
+   711→                            </span>
+   712→                          </div>
+   713→                        </div>
+   714→
+   715→                        {/* Expand chevron */}
+   716→                        <ChevronDown
+   717→                          className={`h-4 w-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
+   718→                            isLessonExpanded ? 'rotate-180' : ''
+   719→                          }`}
+   720→                        />
+   721→                      </button>
+   722→
+   723→                      {/* Expanded lesson content */}
+   724→                      {isLessonExpanded && (
+   725→                        <div className="px-4 pb-4 pt-2 space-y-3">
+   726→                          {/* Lesson description */}
+   727→                          <p className="text-sm text-gray-600">
+   728→                            {getLocalizedLessonDesc(lesson, lang)}
+   729→                          </p>
+   730→
+   731→                          {/* Sign image */}
+   732→                          {lesson.type === 'sign' && lesson.signImage && (
+   733→                            <div
+   734→                              className="rounded-xl overflow-hidden flex items-center justify-center p-6"
+   735→                              style={{
+   736→                                background: `linear-gradient(135deg, #F0F4F8 0%, #E8EDF2 100%)`,
+   737→                              }}
+   738→                            >
+   739→                              <div className="text-center">
+   740→                                <div
+   741→                                  className="w-32 h-32 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
+   742→                                  style={{ backgroundColor: '#fff' }}
+   743→                                >
+   744→                                  <div className="text-center">
+   745→                                    <ImageIcon className="h-12 w-12 mx-auto text-gray-300" />
+   746→                                    <span className="text-xs text-gray-400 block mt-1">Panneau</span>
+   747→                                  </div>
+   748→                                </div>
+   749→                                <span className="text-xs text-gray-500 italic">
+   750→                                  {lesson.signImage}
+   751→                                </span>
+   752→                              </div>
+   753→                            </div>
+   754→                          )}
+   755→
+   756→                          {/* Scenario image */}
+   757→                          {(lesson.type === 'interactive') && lesson.scenarioImage && (
+   758→                            <div
+   759→                              className="rounded-xl overflow-hidden flex items-center justify-center p-6"
+   760→                              style={{
+   761→                                background: `linear-gradient(135deg, #F0F4F8 0%, #E8EDF2 100%)`,
+   762→                              }}
+   763→                            >
+   764→                              <div className="text-center">
+   765→                                <div
+   766→                                  className="w-full max-w-sm h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
+   767→                                  style={{ backgroundColor: '#fff' }}
+   768→                                >
+   769→                                  <div className="text-center">
+   770→                                    <Play className="h-10 w-10 mx-auto text-gray-300" />
+   771→                                    <span className="text-xs text-gray-400 block mt-1">Scénario interactif</span>
+   772→                                  </div>
+   773→                                </div>
+   774→                                <span className="text-xs text-gray-500 italic">
+   775→                                  {lesson.scenarioImage}
+   776→                                </span>
+   777→                              </div>
+   778→                            </div>
+   779→                          )}
+   780→
+   781→                          {/* Video placeholder */}
+   782→                          {lesson.type === 'video' && (
+   783→                            <div
+   784→                              className="rounded-xl overflow-hidden flex items-center justify-center p-6"
+   785→                              style={{
+   786→                                background: `linear-gradient(135deg, #1A233210 0%, #1A233205 100%)`,
+   787→                              }}
+   788→                            >
+   789→                              <div className="text-center">
+   790→                                <div
+   791→                                  className="w-full max-w-sm h-40 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
+   792→                                  style={{ backgroundColor: '#1A23320A' }}
+   793→                                >
+   794→                                  <div className="text-center">
+   795→                                    <div
+   796→                                      className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-2"
+   797→                                      style={{ backgroundColor: COLORS.red, color: '#fff' }}
+   798→                                    >
+   799→                                      <Play className="h-6 w-6 ml-1" />
+   800→                                    </div>
+   801→                                    <span className="text-xs text-gray-500">Lecteur vidéo</span>
+   802→                                  </div>
+   803→                                </div>
+   804→                              </div>
+   805→                            </div>
+   806→                          )}
+   807→
+   808→                          {/* Lesson content text */}
+   809→                          <div
+   810→                            className="p-4 rounded-xl text-sm leading-relaxed"
+   811→                            style={{
+   812→                              backgroundColor: '#F8FAFB',
+   813→                              color: COLORS.primaryDark,
+   814→                              borderLeft: `3px solid ${COLORS.green}`,
+   815→                            }}
+   816→                          >
+   817→                            {getLocalizedLessonContent(lesson, lang)}
+   818→                          </div>
+   819→
+   820→                          {/* Audio button */}
+   821→                          <div className="flex items-center gap-2">
+   822→                            <Button
+   823→                              variant="outline"
+   824→                              size="sm"
+   825→                              className="rounded-xl text-xs font-medium h-9"
+   826→                              style={{
+   827→                                borderColor: isSpeaking ? COLORS.red : COLORS.green,
+   828→                                color: isSpeaking ? COLORS.red : COLORS.green,
+   829→                              }}
+   830→                              onClick={(e) => {
+   831→                                e.stopPropagation();
+   832→                                onSpeak(lesson);
+   833→                              }}
+   834→                            >
+   835→                              {isSpeaking ? (
+   836→                                <>
+   837→                                  <VolumeX className="h-3.5 w-3.5 mr-1.5" />
+   838→                                  Arrêter
+   839→                                </>
+   840→                              ) : (
+   841→                                <>
+   842→                                  <Headphones className="h-3.5 w-3.5 mr-1.5" />
+   843→                                  Lire en {getLanguageName(lang)}
+   844→                                </>
+   845→                              )}
+   846→                            </Button>
+   847→                            {isSpeaking && (
+   848→                              <div className="flex items-center gap-1">
+   849→                                <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: COLORS.green }} />
+   850→                                <span className="text-xs text-gray-400">
+   851→                                  Lecture en cours...
+   852→                                </span>
+   853→                              </div>
+   854→                            )}
+   855→                          </div>
+   856→                        </div>
+   857→                      )}
+   858→                    </div>
+   859→                  );
+   860→                })}
+   861→            </div>
+   862→          </div>
+   863→        )}
+   864→      </CardContent>
+   865→    </Card>
+   866→  );
+   867→}
+   868→
+   869→// ─── Helpers for lesson display ─────────────────────────────
+   870→function getLessonTypeBg(type: LessonType): string {
+   871→  switch (type) {
+   872→    case 'sign':
+   873→      return '#E8F0FE';
+   874→    case 'video':
+   875→      return '#FDEAEA';
+   876→    case 'text':
+   877→      return '#E6F5EE';
+   878→    case 'quiz':
+   879→      return '#FFF8E1';
+   880→    case 'interactive':
+   881→      return '#F3E8FF';
+   882→    default:
+   883→      return '#F3F4F6';
+   884→  }
+   885→}
+   886→
+   887→function getLessonTypeColor(type: LessonType): string {
+   888→  switch (type) {
+   889→    case 'sign':
+   890→      return '#1A2332';
+   891→    case 'video':
+   892→      return '#CE1126';
+   893→    case 'text':
+   894→      return '#009460';
+   895→    case 'quiz':
+   896→      return '#B8860B';
+   897→    case 'interactive':
+   898→      return '#7C3AED';
+   899→    default:
+   900→      return '#6B7280';
+   901→  }
+   902→}
+   903→
+   904→function getLessonTypeLabel(type: LessonType): string {
+   905→  switch (type) {
+   906→    case 'sign':
+   907→      return 'Signalisation';
+   908→    case 'video':
+   909→      return 'Vidéo';
+   910→    case 'text':
+   911→      return 'Texte';
+   912→    case 'quiz':
+   913→      return 'Quiz';
+   914→    case 'interactive':
+   915→      return 'Interactif';
+   916→    default:
+   917→      return type;
+   918→  }
+   919→}
+   920→
+   921→function getLessonProgress(
+   922→  lesson: Lesson,
+   923→  courseProgress: number,
+   924→  course: Course,
+   925→  lessonIdx: number
+   926→): 'completed' | 'in-progress' | 'not-started' {
+   927→  if (courseProgress === 0) return 'not-started';
+   928→  if (courseProgress === 100) return 'completed';
+   929→
+   930→  const sorted = [...course.lessons].sort((a, b) => a.ordre - b.ordre);
+   931→  const lessonProgress = (courseProgress / 100) * sorted.length;
+   932→  const completedCount = Math.floor(lessonProgress);
+   933→
+   934→  if (lessonIdx < completedCount) return 'completed';
+   935→  if (lessonIdx === completedCount) return 'in-progress';
+   936→  return 'not-started';
+   937→}
+   938→

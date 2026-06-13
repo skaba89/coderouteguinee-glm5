@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { NationalLanguage } from './types';
 import { languages } from './mock-data';
 
@@ -14,19 +14,19 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-function getStoredLanguage(): NationalLanguage {
-  if (typeof window === 'undefined') return 'fr';
-  try {
-    const stored = localStorage.getItem('coderoute_language');
-    if (stored && ['fr', 'ss', 'fu', 'ml'].includes(stored)) {
-      return stored as NationalLanguage;
-    }
-  } catch {}
-  return 'fr';
-}
-
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [currentLanguage, setCurrentLanguage] = useState<NationalLanguage>(getStoredLanguage);
+  const [currentLanguage, setCurrentLanguage] = useState<NationalLanguage>('fr');
+
+  // Hydrate from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('coderoute_language');
+      if (stored && ['fr', 'ss', 'fu', 'ml'].includes(stored)) {
+        // Use a microtask to avoid synchronous setState in effect
+        queueMicrotask(() => setCurrentLanguage(stored as NationalLanguage));
+      }
+    } catch {}
+  }, []);
 
   const setLanguage = useCallback((lang: NationalLanguage) => {
     setCurrentLanguage(lang);

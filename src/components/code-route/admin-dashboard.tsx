@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { ViewType, FraudAlert, FraudSeverity, RegionalStat } from '@/lib/types';
 import { useAuth } from '@/lib/auth-context';
 import { centres, languages } from '@/lib/mock-data';
@@ -50,6 +51,11 @@ import {
   CircleAlert,
   Ban,
   AlertOctagon,
+  Settings,
+  LayoutDashboard,
+  FileDown,
+  ChevronDown,
+  Bell,
 } from 'lucide-react';
 
 // ─── Color Palette ──────────────────────────────────────
@@ -116,20 +122,14 @@ const blacklistedCandidates = [
   { nom: 'Camara S.', id: 'GN-CODE-2025-112233', raison: 'Double inscription récurrente', date: '2026-02-20' },
 ];
 
-// Daily exam volume (last 30 days mock)
 const dailyExamVolume = Array.from({ length: 30 }, (_, i) => {
   const day = i + 1;
   const base = 120 + Math.floor(Math.sin(i * 0.5) * 30);
   const volume = base + Math.floor(Math.random() * 40);
   const passed = Math.floor(volume * (0.6 + Math.random() * 0.15));
-  return {
-    date: `Mar ${day}`,
-    examens: volume,
-    reussis: passed,
-  };
+  return { date: `Mar ${day}`, examens: volume, reussis: passed };
 });
 
-// Success rates by language
 const successByLanguage = [
   { langue: 'Français', taux: 71 },
   { langue: 'Soussou', taux: 58 },
@@ -137,7 +137,6 @@ const successByLanguage = [
   { langue: 'Malinké', taux: 62 },
 ];
 
-// Average scores by category
 const categoryScores = [
   { categorie: 'Signalisation', score: 78 },
   { categorie: 'Sécurité', score: 85 },
@@ -147,7 +146,6 @@ const categoryScores = [
   { categorie: 'Stationnement', score: 72 },
 ];
 
-// Top centres leaderboard
 const topCentres = [
   { nom: 'Centre RouteSafe Kaloum', region: 'Conakry', score: 92, taux: 78 },
   { nom: 'Centre Auto-Plus Dixinn', region: 'Conakry', score: 88, taux: 73 },
@@ -155,6 +153,14 @@ const topCentres = [
   { nom: 'Centre Routier Nzérékoré', region: 'Nzérékoré', score: 80, taux: 65 },
   { nom: 'Centre Auto-École Kindia', region: 'Kindia', score: 78, taux: 64 },
 ];
+
+// Sparkline data for KPI cards
+const sparklineData = {
+  candidates: [38, 42, 45, 44, 48, 52],
+  exams: [3200, 2800, 3500, 3100, 3900, 4200],
+  successRate: [69, 68, 70, 67, 65, 67],
+  centres: [12, 12, 13, 14, 14, 15],
+};
 
 // ─── Helpers ────────────────────────────────────────────
 function formatCurrency(amount: number): string {
@@ -218,6 +224,34 @@ function getQualityColor(score: number): string {
   return '#CE1126';
 }
 
+// ─── Sparkline component ──────────────────────────────
+function Sparkline({ data, color, width = 80, height = 32 }: { data: number[]; color: string; width?: number; height?: number }) {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const step = width / (data.length - 1);
+
+  const points = data.map((val, i) => {
+    const x = i * step;
+    const y = height - ((val - min) / range) * (height - 4) - 2;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 // ─── Custom Tooltip Component ───────────────────────────
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload) return null;
@@ -235,11 +269,21 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
+// ─── Sidebar nav items ──────────────────────────────────
+const sidebarItems = [
+  { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
+  { id: 'analytics', label: 'Analyses', icon: BarChart3 },
+  { id: 'fraud', label: 'Anti-fraude', icon: AlertOctagon },
+  { id: 'centers', label: 'Centres', icon: Building2 },
+  { id: 'settings', label: 'Paramètres', icon: Settings },
+];
+
 // ─── Component ──────────────────────────────────────────
 export default function AdminDashboard({ onViewChange }: { onViewChange?: (view: ViewType) => void }) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -251,49 +295,112 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   const timeStr = currentDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F0F2F5' }}>
-      {/* ─── Guinea Flag Accent Line ─── */}
-      <div className="w-full h-1 flex">
-        <div className="flex-1" style={{ backgroundColor: COLORS.red }} />
-        <div className="flex-1" style={{ backgroundColor: COLORS.yellow }} />
-        <div className="flex-1" style={{ backgroundColor: COLORS.green }} />
-      </div>
-
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* ─── Header Section ─── */}
-        <div className="mb-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div className="flex items-center gap-4">
-              {/* Republic Seal */}
-              <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 flex-shrink-0" style={{ borderColor: COLORS.primaryDark, backgroundColor: '#FFFFFF' }}>
-                <div className="text-center">
-                  <Shield className="w-7 h-7" style={{ color: COLORS.primaryDark }} />
-                </div>
+    <div className="min-h-screen flex" style={{ backgroundColor: '#F0F2F5' }}>
+      {/* ─── Sidebar ─── */}
+      <aside
+        className={`hidden lg:flex flex-col border-r bg-white transition-all duration-300 ${
+          sidebarCollapsed ? 'w-16' : 'w-56'
+        }`}
+        style={{ borderColor: '#E5E7EB' }}
+      >
+        {/* Logo area */}
+        <div className="h-14 flex items-center justify-between px-4 border-b" style={{ borderColor: '#E5E7EB' }}>
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: COLORS.green }}>
+                <Shield className="w-4 h-4 text-white" />
               </div>
+              <span className="font-bold text-sm" style={{ color: COLORS.primaryDark }}>Admin</span>
+            </div>
+          )}
+          <button
+            className="p-1 rounded hover:bg-gray-100 transition-colors"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          >
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${sidebarCollapsed ? 'rotate-90' : '-rotate-90'}`} />
+          </button>
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 py-3 px-2 space-y-1">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  isActive
+                    ? 'text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+                style={isActive ? { backgroundColor: COLORS.green } : {}}
+                onClick={() => setActiveTab(item.id)}
+                title={sidebarCollapsed ? item.label : undefined}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Bottom section */}
+        {!sidebarCollapsed && (
+          <div className="p-4 border-t" style={{ borderColor: '#E5E7EB' }}>
+            <div className="rounded-xl p-3" style={{ backgroundColor: '#F0F7F4' }}>
+              <p className="text-xs font-semibold" style={{ color: COLORS.green }}>République de Guinée</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Ministère des Transports</p>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* ─── Main Content ─── */}
+      <main className="flex-1 min-w-0">
+        {/* Guinea stripe */}
+        <div className="w-full h-0.5 flex">
+          <div className="flex-1" style={{ backgroundColor: COLORS.red }} />
+          <div className="flex-1" style={{ backgroundColor: COLORS.yellow }} />
+          <div className="flex-1" style={{ backgroundColor: COLORS.green }} />
+        </div>
+
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* ─── Breadcrumb ─── */}
+          <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
+            <span>Administration</span>
+            <ChevronRight className="w-3 h-3" />
+            <span className="font-medium text-gray-700">
+              {sidebarItems.find(s => s.id === activeTab)?.label || 'Vue d\'ensemble'}
+            </span>
+          </div>
+
+          {/* ─── Header Section ─── */}
+          <div className="mb-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight" style={{ color: COLORS.primaryDark }}>
                   Administration nationale
                 </h1>
-                <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>
-                  République de Guinée — Code de la Route
-                </p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <Badge className="px-3 py-1 text-xs font-semibold" style={{ backgroundColor: COLORS.primaryDark, color: '#FFFFFF' }}>
+                    <Shield className="w-3.5 h-3.5 mr-1.5" />
+                    Administrateur
+                  </Badge>
+                  <Badge variant="outline" className="px-3 py-1 text-xs font-medium" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+                    <Activity className="w-3.5 h-3.5 mr-1.5" />
+                    En ligne
+                  </Badge>
+                  <span className="text-xs text-gray-400 hidden sm:inline">
+                    <Clock className="w-3 h-3 inline mr-1" />
+                    {dateStr} — {timeStr}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Badge className="px-3 py-1.5 text-xs font-semibold" style={{ backgroundColor: COLORS.primaryDark, color: '#FFFFFF' }}>
-                  <Shield className="w-3.5 h-3.5 mr-1.5" />
-                  Administrateur Système
-                </Badge>
-                <Badge variant="outline" className="px-3 py-1.5 text-xs font-medium" style={{ borderColor: COLORS.green, color: COLORS.green }}>
-                  <Activity className="w-3.5 h-3.5 mr-1.5" />
-                  En ligne
-                </Badge>
-              </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" style={{ borderColor: COLORS.primaryDark, color: COLORS.primaryDark }}>
-                  <Download className="w-3.5 h-3.5" />
+                  <FileDown className="w-3.5 h-3.5" />
                   Exporter
                 </Button>
                 <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" style={{ borderColor: COLORS.green, color: COLORS.green }} onClick={handleRefresh} disabled={isRefreshing}>
@@ -303,306 +410,470 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-3 text-xs" style={{ color: '#9CA3AF' }}>
-            <Clock className="w-3.5 h-3.5" />
-            <span>{dateStr} — {timeStr} GMT</span>
-          </div>
-        </div>
 
-        {/* ─── KPI Stats Row ─── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[
-            { title: 'Candidats inscrits', value: '52 347', trend: '+12.5%', trendUp: true, icon: Users, color: COLORS.green, bgColor: '#00946012' },
-            { title: 'Centres agréés', value: '15', subtitle: '2 en attente', icon: Building2, color: COLORS.yellow, bgColor: '#FCD11612' },
-            { title: 'Examens ce mois', value: '4 200', trend: '+8.3%', trendUp: true, icon: FileCheck, color: COLORS.red, bgColor: '#CE112612' },
-            { title: 'Taux de réussite', value: '67%', trend: '-2.1%', trendUp: false, icon: TrendingUp, color: COLORS.primaryDark, bgColor: '#1A233212' },
-          ].map((stat, i) => (
-            <Card key={i} className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#9CA3AF' }}>{stat.title}</p>
-                    <p className="text-3xl font-bold mt-1" style={{ color: COLORS.primaryDark }}>{stat.value}</p>
-                    {stat.trend && (
-                      <div className="flex items-center gap-1 mt-1.5">
-                        {stat.trendUp ? (
-                          <TrendingUp className="w-3.5 h-3.5" style={{ color: COLORS.green }} />
-                        ) : (
-                          <TrendingUp className="w-3.5 h-3.5 rotate-180" style={{ color: COLORS.red }} />
-                        )}
-                        <span className="text-xs font-semibold" style={{ color: stat.trendUp ? COLORS.green : COLORS.red }}>
-                          {stat.trend}
-                        </span>
+          {/* ─── KPI Stats Row with Sparklines ─── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {[
+              { title: 'Candidats inscrits', value: '52 347', trend: '+12.5%', trendUp: true, icon: Users, color: COLORS.green, bgColor: '#00946012', sparkData: sparklineData.candidates, sparkColor: COLORS.green },
+              { title: 'Centres agréés', value: '15', subtitle: '2 en attente', icon: Building2, color: COLORS.yellow, bgColor: '#FCD11612', sparkData: sparklineData.centres, sparkColor: COLORS.yellow },
+              { title: 'Examens ce mois', value: '4 200', trend: '+8.3%', trendUp: true, icon: FileCheck, color: COLORS.red, bgColor: '#CE112612', sparkData: sparklineData.exams, sparkColor: COLORS.red },
+              { title: 'Taux de réussite', value: '67%', trend: '-2.1%', trendUp: false, icon: TrendingUp, color: COLORS.primaryDark, bgColor: '#1A233212', sparkData: sparklineData.successRate, sparkColor: COLORS.primaryDark },
+            ].map((stat, i) => (
+              <Card key={i} className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#9CA3AF' }}>{stat.title}</p>
+                      <div className="flex items-end gap-3 mt-1">
+                        <p className="text-3xl font-bold" style={{ color: COLORS.primaryDark }}>{stat.value}</p>
+                        <Sparkline data={stat.sparkData} color={stat.sparkColor} />
                       </div>
-                    )}
-                    {stat.subtitle && (
-                      <p className="text-xs mt-1.5" style={{ color: '#9CA3AF' }}>{stat.subtitle}</p>
-                    )}
-                  </div>
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: stat.bgColor }}>
-                    <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* ─── Tabbed Content ─── */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-white shadow-sm border-0 h-11 p-1 rounded-lg">
-            <TabsTrigger value="overview" className="text-xs font-medium px-4 data-[state=active]:shadow-sm rounded-md data-[state=active]:text-white" style={{ color: COLORS.primaryDark }}>
-              <BarChart3 className="w-4 h-4 mr-1.5" />
-              Vue d&apos;ensemble
-            </TabsTrigger>
-            <TabsTrigger value="fraud" className="text-xs font-medium px-4 data-[state=active]:shadow-sm rounded-md data-[state=active]:text-white" style={{ color: COLORS.primaryDark }}>
-              <AlertOctagon className="w-4 h-4 mr-1.5" />
-              Anti-fraude
-            </TabsTrigger>
-            <TabsTrigger value="centers" className="text-xs font-medium px-4 data-[state=active]:shadow-sm rounded-md data-[state=active]:text-white" style={{ color: COLORS.primaryDark }}>
-              <Building2 className="w-4 h-4 mr-1.5" />
-              Centres
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="text-xs font-medium px-4 data-[state=active]:shadow-sm rounded-md data-[state=active]:text-white" style={{ color: COLORS.primaryDark }}>
-              <Activity className="w-4 h-4 mr-1.5" />
-              Analyses
-            </TabsTrigger>
-          </TabsList>
-
-          {/* ═══════ TAB 1: Vue d'ensemble ═══════ */}
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Monthly Exam Trends LineChart */}
-              <Card className="border-0 shadow-sm bg-white lg:col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                    <TrendingUp className="w-4 h-4" style={{ color: COLORS.green }} />
-                    Tendances des examens mensuels
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlyExamData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={{ stroke: '#E5E7EB' }} />
-                        <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={{ stroke: '#E5E7EB' }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Line type="monotone" dataKey="totalExamens" name="Total examens" stroke={COLORS.green} strokeWidth={2.5} dot={{ r: 4, fill: COLORS.green }} activeDot={{ r: 6 }} />
-                        <Line type="monotone" dataKey="reussis" name="Réussis" stroke={COLORS.yellow} strokeWidth={2.5} dot={{ r: 4, fill: COLORS.yellow }} activeDot={{ r: 6 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Language Distribution PieChart */}
-              <Card className="border-0 shadow-sm bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                    <Globe className="w-4 h-4" style={{ color: COLORS.primaryDark }} />
-                    Répartition linguistique
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="h-56">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={languageDistribution}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={55}
-                          outerRadius={85}
-                          paddingAngle={3}
-                          dataKey="value"
-                          stroke="none"
-                        >
-                          {languageDistribution.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={LANGUAGE_PIE_COLORS[index]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value: number) => [`${value}%`, '']} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {languageDistribution.map((lang, i) => (
-                      <div key={lang.name} className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: LANGUAGE_PIE_COLORS[i] }} />
-                        <span className="text-xs" style={{ color: '#6B7280' }}>{lang.name}</span>
-                        <span className="text-xs font-semibold ml-auto" style={{ color: COLORS.primaryDark }}>{lang.value}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Regional Stats Table */}
-            <Card className="border-0 shadow-sm bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                  <MapPin className="w-4 h-4" style={{ color: COLORS.red }} />
-                  Statistiques régionales
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b" style={{ borderColor: '#E5E7EB' }}>
-                        <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Région</th>
-                        <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Centres</th>
-                        <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Candidats</th>
-                        <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Examens réussis</th>
-                        <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Taux de réussite</th>
-                        <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Revenus</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {regionalStats.map((row, i) => (
-                        <tr key={row.region} className={`border-b last:border-0 hover:bg-gray-50/50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{ borderColor: '#F3F4F6' }}>
-                          <td className="py-3 px-4 font-medium" style={{ color: COLORS.primaryDark }}>{row.region}</td>
-                          <td className="py-3 px-4 text-center">
-                            <Badge variant="outline" className="text-xs font-medium" style={{ borderColor: '#E5E7EB', color: COLORS.primaryDark }}>
-                              {row.centres}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{row.candidates.toLocaleString('fr-FR')}</td>
-                          <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{row.examsPassed.toLocaleString('fr-FR')}</td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="text-sm font-bold" style={{ color: getSuccessRateColor(row.successRate) }}>
-                              {row.successRate}%
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{formatCurrency(row.revenue)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ═══════ TAB 2: Anti-fraude ═══════ */}
-          <TabsContent value="fraud" className="space-y-4">
-            {/* Fraud Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { label: 'Alertes actives', value: '12', icon: AlertTriangle, color: COLORS.red, bg: '#CE112612' },
-                { label: 'En investigation', value: '8', icon: Search, color: COLORS.yellow, bg: '#FCD11612' },
-                { label: 'Résolues ce mois', value: '45', icon: CheckCircle, color: COLORS.green, bg: '#00946012' },
-              ].map((s, i) => (
-                <Card key={i} className="border-0 shadow-sm bg-white">
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: s.bg }}>
-                      <s.icon className="w-5 h-5" style={{ color: s.color }} />
+                      {stat.trend && (
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <TrendingUp className={`w-3.5 h-3.5 ${!stat.trendUp ? 'rotate-180' : ''}`} style={{ color: stat.trendUp ? COLORS.green : COLORS.red }} />
+                          <span className="text-xs font-semibold" style={{ color: stat.trendUp ? COLORS.green : COLORS.red }}>
+                            {stat.trend}
+                          </span>
+                        </div>
+                      )}
+                      {stat.subtitle && (
+                        <p className="text-xs mt-1.5" style={{ color: '#9CA3AF' }}>{stat.subtitle}</p>
+                      )}
                     </div>
-                    <div>
-                      <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.label}</p>
-                      <p className="text-2xl font-bold" style={{ color: COLORS.primaryDark }}>{s.value}</p>
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: stat.bgColor }}>
+                      <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* ─── Tabbed Content ─── */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            {/* Mobile tabs (visible on small screens) */}
+            <TabsList className="bg-white shadow-sm border-0 h-11 p-1 rounded-lg lg:hidden flex flex-wrap">
+              {sidebarItems.map(item => (
+                <TabsTrigger
+                  key={item.id}
+                  value={item.id}
+                  className="text-xs font-medium px-3 data-[state=active]:shadow-sm rounded-md data-[state=active]:text-white"
+                  style={{ color: COLORS.primaryDark }}
+                >
+                  <item.icon className="w-3.5 h-3.5 mr-1" />
+                  {item.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {/* ═══════ TAB 1: Vue d'ensemble ═══════ */}
+            <TabsContent value="overview" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Monthly Exam Trends LineChart */}
+                <Card className="border-0 shadow-sm bg-white lg:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                      <TrendingUp className="w-4 h-4" style={{ color: COLORS.green }} />
+                      Tendances des examens mensuels
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={monthlyExamData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={{ stroke: '#E5E7EB' }} />
+                          <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={{ stroke: '#E5E7EB' }} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Line type="monotone" dataKey="totalExamens" name="Total examens" stroke={COLORS.green} strokeWidth={2.5} dot={{ r: 4, fill: COLORS.green }} activeDot={{ r: 6 }} />
+                          <Line type="monotone" dataKey="reussis" name="Réussis" stroke={COLORS.yellow} strokeWidth={2.5} dot={{ r: 4, fill: COLORS.yellow }} activeDot={{ r: 6 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-              {/* Fraud Alert Feed */}
-              <Card className="border-0 shadow-sm bg-white lg:col-span-3">
+                {/* Language Distribution PieChart */}
+                <Card className="border-0 shadow-sm bg-white">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                      <Globe className="w-4 h-4" style={{ color: COLORS.primaryDark }} />
+                      Répartition linguistique
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={languageDistribution}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={85}
+                            paddingAngle={3}
+                            dataKey="value"
+                            stroke="none"
+                          >
+                            {languageDistribution.map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={LANGUAGE_PIE_COLORS[index]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => [`${value}%`, '']} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {languageDistribution.map((lang, i) => (
+                        <div key={lang.name} className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: LANGUAGE_PIE_COLORS[i] }} />
+                          <span className="text-xs" style={{ color: '#6B7280' }}>{lang.name}</span>
+                          <span className="text-xs font-semibold ml-auto" style={{ color: COLORS.primaryDark }}>{lang.value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Regional Stats Table */}
+              <Card className="border-0 shadow-sm bg-white">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                      <CircleAlert className="w-4 h-4" style={{ color: COLORS.red }} />
-                      Flux d&apos;alertes en temps réel
+                      <MapPin className="w-4 h-4" style={{ color: COLORS.red }} />
+                      Statistiques régionales
                     </CardTitle>
-                    <div className="flex items-center gap-1.5">
-                      <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" style={{ color: '#6B7280' }}>
-                        <Filter className="w-3 h-3" />
-                        Filtrer
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+                      <Download className="w-3 h-3" />
+                      CSV
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b" style={{ borderColor: '#E5E7EB' }}>
+                          <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Région</th>
+                          <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Centres</th>
+                          <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Candidats</th>
+                          <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Réussis</th>
+                          <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Taux</th>
+                          <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Revenus</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {regionalStats.map((row, i) => (
+                          <tr key={row.region} className={`border-b last:border-0 hover:bg-gray-50/50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{ borderColor: '#F3F4F6' }}>
+                            <td className="py-3 px-4 font-medium" style={{ color: COLORS.primaryDark }}>{row.region}</td>
+                            <td className="py-3 px-4 text-center">
+                              <Badge variant="outline" className="text-xs font-medium" style={{ borderColor: '#E5E7EB', color: COLORS.primaryDark }}>{row.centres}</Badge>
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{row.candidates.toLocaleString('fr-FR')}</td>
+                            <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{row.examsPassed.toLocaleString('fr-FR')}</td>
+                            <td className="py-3 px-4 text-center">
+                              <span className="text-sm font-bold" style={{ color: getSuccessRateColor(row.successRate) }}>{row.successRate}%</span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{formatCurrency(row.revenue)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ═══════ TAB 2: Anti-fraude ═══════ */}
+            <TabsContent value="fraud" className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { label: 'Alertes actives', value: '12', icon: AlertTriangle, color: COLORS.red, bg: '#CE112612' },
+                  { label: 'En investigation', value: '8', icon: Search, color: COLORS.yellow, bg: '#FCD11612' },
+                  { label: 'Résolues ce mois', value: '45', icon: CheckCircle, color: COLORS.green, bg: '#00946012' },
+                ].map((s, i) => (
+                  <Card key={i} className="border-0 shadow-sm bg-white">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: s.bg }}>
+                        <s.icon className="w-5 h-5" style={{ color: s.color }} />
+                      </div>
+                      <div>
+                        <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.label}</p>
+                        <p className="text-2xl font-bold" style={{ color: COLORS.primaryDark }}>{s.value}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                {/* Fraud Alert Data Table */}
+                <Card className="border-0 shadow-sm bg-white lg:col-span-3">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                        <CircleAlert className="w-4 h-4" style={{ color: COLORS.red }} />
+                        Flux d&apos;alertes en temps réel
+                      </CardTitle>
+                      <div className="flex items-center gap-1.5">
+                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" style={{ color: '#6B7280' }}>
+                          <Filter className="w-3 h-3" />
+                          Filtrer
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+                          <Download className="w-3 h-3" />
+                          Export
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {/* Data table style */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b" style={{ borderColor: '#E5E7EB' }}>
+                            <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Type</th>
+                            <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Sévérité</th>
+                            <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Statut</th>
+                            <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Heure</th>
+                            <th className="text-center py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {fraudAlerts.map((alert) => {
+                            const sev = getSeverityConfig(alert.severity);
+                            const stat = getStatusConfig(alert.status);
+                            return (
+                              <tr key={alert.id} className="border-b last:border-0 hover:bg-gray-50/50" style={{ borderColor: '#F3F4F6' }}>
+                                <td className="py-2.5 px-3">
+                                  <div>
+                                    <p className="text-xs font-semibold" style={{ color: COLORS.primaryDark }}>{alert.type}</p>
+                                    <p className="text-[10px] text-gray-400 truncate max-w-[200px]">{alert.description}</p>
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <Badge className="text-[10px] px-1.5 py-0 h-4 font-semibold" style={{ backgroundColor: sev.bg, color: sev.color, borderColor: sev.color, borderWidth: 1 }}>
+                                    {sev.label}
+                                  </Badge>
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-medium" style={{ backgroundColor: stat.bg, color: stat.color, borderColor: stat.color }}>
+                                    {stat.label}
+                                  </Badge>
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <span className="text-[10px] text-gray-400">{formatTimestamp(alert.timestamp)}</span>
+                                </td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" style={{ color: COLORS.primaryDark }}>
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="lg:col-span-2 space-y-4">
+                  <Card className="border-0 shadow-sm bg-white">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                        <BarChart3 className="w-4 h-4" style={{ color: COLORS.red }} />
+                        Alertes par centre
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="h-52">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={fraudByCenter} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                            <XAxis dataKey="centre" tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+                            <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="alertes" name="Alertes" radius={[4, 4, 0, 0]}>
+                              {fraudByCenter.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-0 shadow-sm bg-white">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                        <Ban className="w-4 h-4" style={{ color: COLORS.red }} />
+                        Liste noire
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        {blacklistedCandidates.map((c, i) => (
+                          <div key={i} className="p-2.5 rounded-lg border" style={{ borderColor: '#FCA5A5', backgroundColor: '#FEF2F2' }}>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs font-semibold" style={{ color: COLORS.primaryDark }}>{c.nom}</p>
+                                <p className="text-[10px] font-mono" style={{ color: '#9CA3AF' }}>{c.id}</p>
+                              </div>
+                              <Badge className="text-[10px] px-1.5 h-4 bg-red-100 text-red-700 hover:bg-red-100">Banni</Badge>
+                            </div>
+                            <p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{c.raison}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* ═══════ TAB 3: Centres ═══════ */}
+            <TabsContent value="centers" className="space-y-4">
+              <Card className="border-0 shadow-sm bg-white">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                      <Building2 className="w-4 h-4" style={{ color: COLORS.yellow }} />
+                      Gestion des centres agréés
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+                        <Download className="w-3 h-3" />
+                        Export
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
-                    {fraudAlerts.map((alert) => {
-                      const sev = getSeverityConfig(alert.severity);
-                      const stat = getStatusConfig(alert.status);
-                      return (
-                        <div
-                          key={alert.id}
-                          className="p-3 rounded-lg border-l-4 hover:bg-gray-50/50 transition-colors"
-                          style={{ borderLeftColor: sev.border, backgroundColor: sev.bg }}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-semibold" style={{ color: COLORS.primaryDark }}>{alert.type}</span>
-                                <Badge className="text-[10px] px-1.5 py-0 h-4 font-semibold" style={{ backgroundColor: sev.bg, color: sev.color, borderColor: sev.color, borderWidth: 1 }}>
-                                  {sev.label}
-                                </Badge>
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-medium" style={{ backgroundColor: stat.bg, color: stat.color, borderColor: stat.color }}>
-                                  {stat.label}
-                                </Badge>
-                              </div>
-                              <p className="text-xs mt-1 leading-relaxed" style={{ color: '#6B7280' }}>{alert.description}</p>
-                              <p className="text-[10px] mt-1.5 flex items-center gap-1" style={{ color: '#9CA3AF' }}>
-                                <Clock className="w-3 h-3" />
-                                {formatTimestamp(alert.timestamp)}
-                                {alert.centreId && (
-                                  <span className="ml-2">— {alert.centreId}</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b" style={{ borderColor: '#E5E7EB' }}>
+                          <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Centre</th>
+                          <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Région</th>
+                          <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Capacité</th>
+                          <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Qualité</th>
+                          <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Accréditation</th>
+                          <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {centres.map((centre, i) => {
+                          const accred = centre.accreditation;
+                          const accredBadge = accred ? getAccreditationBadge(accred.statut) : null;
+                          const qualityColor = accred ? getQualityColor(accred.scoreQualite) : '#6B7280';
+                          return (
+                            <tr key={centre.id} className={`border-b last:border-0 hover:bg-gray-50/50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{ borderColor: '#F3F4F6' }}>
+                              <td className="py-3 px-3">
+                                <div>
+                                  <p className="font-medium text-sm" style={{ color: COLORS.primaryDark }}>{centre.nom}</p>
+                                  <p className="text-[10px] flex items-center gap-1 mt-0.5" style={{ color: '#9CA3AF' }}>
+                                    <MapPin className="w-3 h-3" />{centre.adresse}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="py-3 px-3 text-xs" style={{ color: '#6B7280' }}>{centre.region}</td>
+                              <td className="py-3 px-3 text-center text-xs font-medium" style={{ color: COLORS.primaryDark }}>{centre.capacite}</td>
+                              <td className="py-3 px-3">
+                                {accred ? (
+                                  <div className="flex items-center gap-2">
+                                    <Progress value={accred.scoreQualite} className="h-2 flex-1" />
+                                    <span className="text-xs font-bold w-8 text-right" style={{ color: qualityColor }}>{accred.scoreQualite}</span>
+                                  </div>
+                                ) : <span className="text-xs" style={{ color: '#9CA3AF' }}>N/A</span>}
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                {accredBadge ? (
+                                  <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold" style={{ backgroundColor: accredBadge.bg, color: accredBadge.color }}>
+                                    {accredBadge.label}
+                                  </Badge>
+                                ) : <span className="text-xs" style={{ color: '#9CA3AF' }}>N/A</span>}
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                {centre.actif ? (
+                                  <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold bg-green-50 text-green-700 hover:bg-green-50">
+                                    <CheckCircle className="w-3 h-3 mr-0.5" />Actif
+                                  </Badge>
+                                ) : (
+                                  <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold bg-red-50 text-red-700 hover:bg-red-50">
+                                    <XCircle className="w-3 h-3 mr-0.5" />Inactif
+                                  </Badge>
                                 )}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" style={{ color: COLORS.primaryDark }}>
-                              <Eye className="w-3 h-3 mr-1" />
-                              Examiner
-                            </Button>
-                            {alert.status === 'active' && (
-                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" style={{ color: COLORS.red }}>
-                                <Ban className="w-3 h-3 mr-1" />
-                                Suspendre
-                              </Button>
-                            )}
-                            {alert.status !== 'resolved' && (
-                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" style={{ color: '#6B7280' }}>
-                                Archiver
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
 
-              {/* Fraud by Center BarChart + Blacklist */}
-              <div className="lg:col-span-2 space-y-4">
+            {/* ═══════ TAB 4: Analyses ═══════ */}
+            <TabsContent value="analytics" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Card className="border-0 shadow-sm bg-white">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                      <BarChart3 className="w-4 h-4" style={{ color: COLORS.red }} />
-                      Alertes par centre
+                      <Activity className="w-4 h-4" style={{ color: COLORS.green }} />
+                      Volume d&apos;examens (30 jours)
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <div className="h-52">
+                    <div className="h-64">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={fraudByCenter} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                        <AreaChart data={dailyExamVolume} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                          <defs>
+                            <linearGradient id="colorExamens" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor={COLORS.green} stopOpacity={0.3} />
+                              <stop offset="95%" stopColor={COLORS.green} stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="colorReussis" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor={COLORS.yellow} stopOpacity={0.3} />
+                              <stop offset="95%" stopColor={COLORS.yellow} stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                          <XAxis dataKey="centre" tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9CA3AF' }} interval={4} />
                           <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} />
                           <Tooltip content={<CustomTooltip />} />
-                          <Bar dataKey="alertes" name="Alertes" radius={[4, 4, 0, 0]}>
-                            {fraudByCenter.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Area type="monotone" dataKey="examens" name="Examens" stroke={COLORS.green} strokeWidth={2} fillOpacity={1} fill="url(#colorExamens)" />
+                          <Area type="monotone" dataKey="reussis" name="Réussis" stroke={COLORS.yellow} strokeWidth={2} fillOpacity={1} fill="url(#colorReussis)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm bg-white">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                      <Globe className="w-4 h-4" style={{ color: COLORS.primaryDark }} />
+                      Taux de réussite par langue
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={successByLanguage} margin={{ top: 5, right: 10, left: -10, bottom: 5 }} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} domain={[0, 100]} unit="%" />
+                          <YAxis type="category" dataKey="langue" tick={{ fontSize: 11, fill: '#6B7280' }} width={80} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar dataKey="taux" name="Taux de réussite" radius={[0, 4, 4, 0]} barSize={24}>
+                            {successByLanguage.map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={LANGUAGE_PIE_COLORS[index]} />
                             ))}
                           </Bar>
                         </BarChart>
@@ -610,280 +881,112 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                     </div>
                   </CardContent>
                 </Card>
+              </div>
 
-                {/* Blacklist */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Card className="border-0 shadow-sm bg-white">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                      <Ban className="w-4 h-4" style={{ color: COLORS.red }} />
-                      Liste noire
+                      <FileCheck className="w-4 h-4" style={{ color: COLORS.green }} />
+                      Score moyen par catégorie
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      {categoryScores.map((cat) => {
+                        const scoreColor = cat.score >= 80 ? COLORS.green : cat.score >= 70 ? COLORS.yellow : COLORS.red;
+                        return (
+                          <div key={cat.categorie} className="flex items-center gap-3">
+                            <span className="text-xs w-28 flex-shrink-0 font-medium" style={{ color: COLORS.primaryDark }}>{cat.categorie}</span>
+                            <div className="flex-1"><Progress value={cat.score} className="h-2.5" /></div>
+                            <span className="text-xs font-bold w-10 text-right" style={{ color: scoreColor }}>{cat.score}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm bg-white">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                      <TrendingUp className="w-4 h-4" style={{ color: COLORS.yellow }} />
+                      Top centres
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-2">
-                      {blacklistedCandidates.map((c, i) => (
-                        <div key={i} className="p-2.5 rounded-lg border" style={{ borderColor: '#FCA5A5', backgroundColor: '#FEF2F2' }}>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs font-semibold" style={{ color: COLORS.primaryDark }}>{c.nom}</p>
-                              <p className="text-[10px] font-mono" style={{ color: '#9CA3AF' }}>{c.id}</p>
-                            </div>
-                            <Badge className="text-[10px] px-1.5 h-4 bg-red-100 text-red-700 hover:bg-red-100">
-                              Banni
-                            </Badge>
+                      {topCentres.map((c, i) => (
+                        <div key={c.nom} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50/50 transition-colors">
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i === 0 ? 'text-white' : ''}`} style={{
+                            backgroundColor: i === 0 ? COLORS.yellow : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#E5E7EB',
+                            color: i === 0 ? COLORS.primaryDark : i < 3 ? '#FFFFFF' : '#6B7280'
+                          }}>
+                            {i + 1}
                           </div>
-                          <p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{c.raison}</p>
-                          <p className="text-[10px]" style={{ color: '#9CA3AF' }}>Depuis le {c.date}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold truncate" style={{ color: COLORS.primaryDark }}>{c.nom}</p>
+                            <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{c.region} — Score: {c.score}/100</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-bold" style={{ color: getSuccessRateColor(c.taux) }}>{c.taux}%</p>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          {/* ═══════ TAB 3: Centres ═══════ */}
-          <TabsContent value="centers" className="space-y-4">
-            <Card className="border-0 shadow-sm bg-white">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                    <Building2 className="w-4 h-4" style={{ color: COLORS.yellow }} />
-                    Gestion des centres agréés
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: '#E5E7EB', color: '#6B7280' }}>
-                      <Search className="w-3 h-3" />
-                      Rechercher
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: '#E5E7EB', color: '#6B7280' }}>
-                      <Filter className="w-3 h-3" />
-                      Filtrer
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b" style={{ borderColor: '#E5E7EB' }}>
-                        <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Centre</th>
-                        <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Région</th>
-                        <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Capacité</th>
-                        <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Score qualité</th>
-                        <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Accréditation</th>
-                        <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Langues</th>
-                        <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Statut</th>
-                        <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {centres.map((centre, i) => {
-                        const accred = centre.accreditation;
-                        const accredBadge = accred ? getAccreditationBadge(accred.statut) : null;
-                        const qualityColor = accred ? getQualityColor(accred.scoreQualite) : '#6B7280';
-                        return (
-                          <tr key={centre.id} className={`border-b last:border-0 hover:bg-gray-50/50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{ borderColor: '#F3F4F6' }}>
-                            <td className="py-3 px-3">
-                              <div>
-                                <p className="font-medium text-sm" style={{ color: COLORS.primaryDark }}>{centre.nom}</p>
-                                <p className="text-[10px] flex items-center gap-1 mt-0.5" style={{ color: '#9CA3AF' }}>
-                                  <MapPin className="w-3 h-3" />
-                                  {centre.adresse}
-                                </p>
-                              </div>
-                            </td>
-                            <td className="py-3 px-3 text-xs" style={{ color: '#6B7280' }}>{centre.region}</td>
-                            <td className="py-3 px-3 text-center text-xs font-medium" style={{ color: COLORS.primaryDark }}>{centre.capacite}</td>
-                            <td className="py-3 px-3">
-                              {accred ? (
-                                <div className="flex items-center gap-2">
-                                  <Progress value={accred.scoreQualite} className="h-2 flex-1" style={{ '--progress-color': qualityColor } as React.CSSProperties} />
-                                  <span className="text-xs font-bold w-8 text-right" style={{ color: qualityColor }}>{accred.scoreQualite}</span>
-                                </div>
-                              ) : (
-                                <span className="text-xs" style={{ color: '#9CA3AF' }}>N/A</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3 text-center">
-                              {accredBadge ? (
-                                <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold" style={{ backgroundColor: accredBadge.bg, color: accredBadge.color }}>
-                                  {accredBadge.label}
-                                </Badge>
-                              ) : (
-                                <span className="text-xs" style={{ color: '#9CA3AF' }}>N/A</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-3">
-                              <div className="flex flex-wrap gap-1">
-                                {centre.languesDisponibles.map((lang) => (
-                                  <Badge key={lang} variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-medium" style={{ borderColor: '#E5E7EB', color: '#6B7280' }}>
-                                    {getLangName(lang)}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="py-3 px-3 text-center">
-                              {centre.actif ? (
-                                <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold bg-green-50 text-green-700 hover:bg-green-50">
-                                  <CheckCircle className="w-3 h-3 mr-0.5" />
-                                  Actif
-                                </Badge>
-                              ) : (
-                                <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold bg-red-50 text-red-700 hover:bg-red-50">
-                                  <XCircle className="w-3 h-3 mr-0.5" />
-                                  Inactif
-                                </Badge>
-                              )}
-                            </td>
-                            <td className="py-3 px-3 text-center">
-                              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" style={{ color: COLORS.green }}>
-                                Voir détails
-                                <ChevronRight className="w-3 h-3" />
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ═══════ TAB 4: Analyses ═══════ */}
-          <TabsContent value="analytics" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Daily Exam Volume AreaChart */}
+            {/* ═══════ TAB 5: Settings ═══════ */}
+            <TabsContent value="settings" className="space-y-4">
               <Card className="border-0 shadow-sm bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                    <Activity className="w-4 h-4" style={{ color: COLORS.green }} />
-                    Volume d&apos;examens quotidien (30 jours)
-                  </CardTitle>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold" style={{ color: COLORS.primaryDark }}>Paramètres du système</CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={dailyExamVolume} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                        <defs>
-                          <linearGradient id="colorExamens" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={COLORS.green} stopOpacity={0.3} />
-                            <stop offset="95%" stopColor={COLORS.green} stopOpacity={0} />
-                          </linearGradient>
-                          <linearGradient id="colorReussis" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={COLORS.yellow} stopOpacity={0.3} />
-                            <stop offset="95%" stopColor={COLORS.yellow} stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9CA3AF' }} interval={4} />
-                        <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Area type="monotone" dataKey="examens" name="Examens" stroke={COLORS.green} strokeWidth={2} fillOpacity={1} fill="url(#colorExamens)" />
-                        <Area type="monotone" dataKey="reussis" name="Réussis" stroke={COLORS.yellow} strokeWidth={2} fillOpacity={1} fill="url(#colorReussis)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Success Rate by Language BarChart */}
-              <Card className="border-0 shadow-sm bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                    <Globe className="w-4 h-4" style={{ color: COLORS.primaryDark }} />
-                    Taux de réussite par langue
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={successByLanguage} margin={{ top: 5, right: 10, left: -10, bottom: 5 }} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                        <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} domain={[0, 100]} unit="%" />
-                        <YAxis type="category" dataKey="langue" tick={{ fontSize: 11, fill: '#6B7280' }} width={80} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="taux" name="Taux de réussite" radius={[0, 4, 4, 0]} barSize={24}>
-                          {successByLanguage.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={LANGUAGE_PIE_COLORS[index]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Category Scores */}
-              <Card className="border-0 shadow-sm bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                    <FileCheck className="w-4 h-4" style={{ color: COLORS.green }} />
-                    Score moyen par catégorie
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {categoryScores.map((cat) => {
-                      const scoreColor = cat.score >= 80 ? COLORS.green : cat.score >= 70 ? COLORS.yellow : COLORS.red;
-                      return (
-                        <div key={cat.categorie} className="flex items-center gap-3">
-                          <span className="text-xs w-28 flex-shrink-0 font-medium" style={{ color: COLORS.primaryDark }}>{cat.categorie}</span>
-                          <div className="flex-1">
-                            <Progress value={cat.score} className="h-2.5" style={{ '--progress-color': scoreColor } as React.CSSProperties} />
-                          </div>
-                          <span className="text-xs font-bold w-10 text-right" style={{ color: scoreColor }}>{cat.score}%</span>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2" style={{ color: COLORS.primaryDark }}>Paramètres généraux</h3>
+                      <Separator className="mb-4" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Nom de l&apos;organisation</p>
+                          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>CodeRoute Guinée</p>
                         </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Top Centres Leaderboard */}
-              <Card className="border-0 shadow-sm bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                    <TrendingUp className="w-4 h-4" style={{ color: COLORS.yellow }} />
-                    Top centres — Classement
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    {topCentres.map((c, i) => (
-                      <div key={c.nom} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50/50 transition-colors">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                          i === 0 ? 'text-white' : ''
-                        }`} style={{
-                          backgroundColor: i === 0 ? COLORS.yellow : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#E5E7EB',
-                          color: i === 0 ? COLORS.primaryDark : i < 3 ? '#FFFFFF' : '#6B7280'
-                        }}>
-                          {i + 1}
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Ministère de tutelle</p>
+                          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>Ministère des Transports</p>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate" style={{ color: COLORS.primaryDark }}>{c.nom}</p>
-                          <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{c.region} — Score: {c.score}/100</p>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Durée de l&apos;examen</p>
+                          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>30 minutes</p>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-bold" style={{ color: getSuccessRateColor(c.taux) }}>{c.taux}%</p>
-                          <p className="text-[10px]" style={{ color: '#9CA3AF' }}>réussite</p>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Score de réussite</p>
+                          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>35/40 (87.5%)</p>
                         </div>
                       </div>
-                    ))}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2" style={{ color: COLORS.primaryDark }}>Langues supportées</h3>
+                      <Separator className="mb-4" />
+                      <div className="flex flex-wrap gap-2">
+                        {languages.map(lang => (
+                          <Badge key={lang.code} variant="outline" className="text-xs px-3 py-1" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+                            {lang.name} ({lang.nativeName})
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
     </div>
   );
 }

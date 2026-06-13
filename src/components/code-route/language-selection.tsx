@@ -6,7 +6,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { NationalLanguage, ViewType } from '@/lib/types';
 import { languages } from '@/lib/mock-data';
 import { useLanguage } from '@/lib/language-context';
-import { Check, Globe, ArrowLeft, ChevronRight, Users, MapPin } from 'lucide-react';
+import {
+  Check,
+  Globe,
+  ArrowLeft,
+  ChevronRight,
+  Users,
+  MapPin,
+  Flag,
+  Waves,
+  Mountain,
+  TreePine,
+  Languages,
+} from 'lucide-react';
 
 interface LanguageSelectionProps {
   onViewChange: (view: ViewType) => void;
@@ -26,28 +38,25 @@ const contextHeadings: Record<string, string> = {
   registration: 'Indiquez votre langue maternelle pour votre dossier d\'inscription',
 };
 
-const languageEmojis: Record<NationalLanguage, { emoji: string; label: string; bgGradient: string; accentColor: string }> = {
+// Map language code to icon and visual config
+const languageConfig: Record<NationalLanguage, { icon: React.ElementType; bgGradient: string; accentColor: string }> = {
   fr: {
-    emoji: '🇫🇷',
-    label: 'Français',
+    icon: Flag,
     bgGradient: 'from-blue-900/40 to-slate-800/40',
     accentColor: '#3b5998',
   },
   ss: {
-    emoji: '🌊',
-    label: 'Soussou',
+    icon: Waves,
     bgGradient: 'from-cyan-900/40 to-teal-800/40',
     accentColor: '#0891b2',
   },
   fu: {
-    emoji: '⛰️',
-    label: 'Poular',
+    icon: Mountain,
     bgGradient: 'from-amber-900/40 to-orange-800/40',
     accentColor: '#b45309',
   },
   ml: {
-    emoji: '🌳',
-    label: 'Malinké',
+    icon: TreePine,
     bgGradient: 'from-emerald-900/40 to-green-800/40',
     accentColor: '#047857',
   },
@@ -70,7 +79,20 @@ export default function LanguageSelection({ onViewChange, onSelect, context }: L
   };
 
   const handleBack = () => {
-    onViewChange('landing');
+    // Route back based on context
+    switch (context) {
+      case 'exam':
+        onViewChange('candidate-dashboard');
+        break;
+      case 'course':
+        onViewChange('candidate-dashboard');
+        break;
+      case 'registration':
+        onViewChange('landing');
+        break;
+      default:
+        onViewChange('candidate-dashboard');
+    }
   };
 
   return (
@@ -119,7 +141,7 @@ export default function LanguageSelection({ onViewChange, onSelect, context }: L
                 <Globe className="w-8 h-8 text-white" />
               </div>
               <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#FCD116] flex items-center justify-center shadow-lg">
-                <span className="text-[10px]">🇬🇳</span>
+                <Languages className="w-3 h-3 text-[#1A2332]" />
               </div>
             </div>
           </div>
@@ -148,7 +170,8 @@ export default function LanguageSelection({ onViewChange, onSelect, context }: L
           {languages.map((lang) => {
             const isSelected = selectedLang === lang.code;
             const isHovered = hoveredLang === lang.code;
-            const emojiConfig = languageEmojis[lang.code];
+            const config = languageConfig[lang.code];
+            const IconComponent = config.icon;
 
             return (
               <Card
@@ -187,26 +210,29 @@ export default function LanguageSelection({ onViewChange, onSelect, context }: L
                 <div
                   className="absolute top-0 left-0 right-0 h-0.5 opacity-60"
                   style={{
-                    background: `linear-gradient(90deg, transparent, ${emojiConfig.accentColor}, transparent)`,
+                    background: `linear-gradient(90deg, transparent, ${config.accentColor}, transparent)`,
                   }}
                 />
 
                 <CardContent className="p-5 sm:p-6">
                   <div className="flex items-start gap-4">
-                    {/* Emoji / Icon */}
+                    {/* Icon */}
                     <div
                       className={`
                         flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center
-                        transition-all duration-300 text-2xl sm:text-3xl
+                        transition-all duration-300
                         ${isSelected ? 'ring-2 ring-[#009460]/50' : ''}
                       `}
                       style={{
                         background: isSelected
                           ? 'linear-gradient(135deg, rgba(0,148,96,0.25) 0%, rgba(0,148,96,0.1) 100%)'
-                          : `linear-gradient(135deg, ${emojiConfig.accentColor}20 0%, ${emojiConfig.accentColor}10 100%)`,
+                          : `linear-gradient(135deg, ${config.accentColor}20 0%, ${config.accentColor}10 100%)`,
                       }}
                     >
-                      {lang.flag}
+                      <IconComponent
+                        className="w-7 h-7 sm:w-8 sm:h-8"
+                        style={{ color: isSelected ? '#009460' : config.accentColor }}
+                      />
                     </div>
 
                     {/* Language Info */}
@@ -228,7 +254,7 @@ export default function LanguageSelection({ onViewChange, onSelect, context }: L
 
                       {/* Native name */}
                       {lang.nativeName !== lang.name && (
-                        <p className="text-sm font-medium mt-0.5" style={{ color: emojiConfig.accentColor }}>
+                        <p className="text-sm font-medium mt-0.5" style={{ color: config.accentColor }}>
                           {lang.nativeName}
                         </p>
                       )}

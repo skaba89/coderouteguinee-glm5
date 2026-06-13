@@ -15,6 +15,8 @@ import AdminDashboard from '@/components/code-route/admin-dashboard';
 import LanguageSelection from '@/components/code-route/language-selection';
 import CoursesPage from '@/components/code-route/courses-page';
 
+type LanguageSelectContext = 'exam' | 'practice' | 'course' | 'registration';
+
 function AppContent() {
   const { user, isLoggedIn } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('landing');
@@ -22,6 +24,7 @@ function AppContent() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [latestResult, setLatestResult] = useState<ExamResult | null>(null);
   const [examLanguage, setExamLanguage] = useState<NationalLanguage>('fr');
+  const [languageSelectContext, setLanguageSelectContext] = useState<LanguageSelectContext>('exam');
 
   const handleViewChange = useCallback((view: ViewType) => {
     setCurrentView(view);
@@ -39,11 +42,42 @@ function AppContent() {
     setLatestResult(result);
   }, []);
 
+  // Trigger language selection for different contexts
+  const handleStartExam = useCallback(() => {
+    setLanguageSelectContext('exam');
+    setCurrentView('language-select');
+  }, []);
+
+  const handleStartPractice = useCallback(() => {
+    setLanguageSelectContext('practice');
+    setCurrentView('language-select');
+  }, []);
+
+  const handleStartCourse = useCallback(() => {
+    setLanguageSelectContext('course');
+    setCurrentView('language-select');
+  }, []);
+
   const handleLanguageSelect = useCallback((lang: NationalLanguage) => {
     setExamLanguage(lang);
-    // After language selection, go to exam or course depending on context
-    setCurrentView('exam-taking');
-  }, []);
+    // Route based on context
+    switch (languageSelectContext) {
+      case 'exam':
+        setCurrentView('exam-taking');
+        break;
+      case 'practice':
+        setCurrentView('practice-test');
+        break;
+      case 'course':
+        setCurrentView('courses');
+        break;
+      case 'registration':
+        setCurrentView('candidate-dashboard');
+        break;
+      default:
+        setCurrentView('exam-taking');
+    }
+  }, [languageSelectContext]);
 
   const isExamTaking = currentView === 'exam-taking' || currentView === 'practice-test';
 
@@ -100,11 +134,14 @@ function AppContent() {
         {currentView === 'center-management' && (
           <AdminDashboard />
         )}
+        {currentView === 'settings' && (
+          <AdminDashboard />
+        )}
         {currentView === 'language-select' && (
           <LanguageSelection
             onViewChange={handleViewChange}
             onSelect={handleLanguageSelect}
-            context="exam"
+            context={languageSelectContext === 'course' ? 'course' : languageSelectContext === 'registration' ? 'registration' : 'exam'}
           />
         )}
       </main>
