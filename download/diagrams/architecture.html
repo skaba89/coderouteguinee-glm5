@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1400, initial-scale=1.0">
+<title>CodeRoute Guinée - System Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    background: #F8FAFC;
+    width: 1400px;
+    padding: 40px 48px 48px;
+    color: #1A2332;
+  }
+
+  /* ── Title Block ── */
+  .title-block {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .title-block h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #1A2332;
+    margin-bottom: 4px;
+  }
+  .title-block h1 span.red { color: #CE1126; }
+  .title-block h1 span.green { color: #009460; }
+  .title-block .subtitle {
+    font-size: 14px;
+    color: #64748B;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+  .title-bar {
+    width: 120px; height: 3px; margin: 12px auto 0;
+    background: linear-gradient(90deg, #CE1126, #FCD116, #009460);
+    border-radius: 2px;
+  }
+
+  /* ── Layer Sections ── */
+  .layer {
+    border-radius: 12px;
+    padding: 20px 24px 18px;
+    margin-bottom: 16px;
+    position: relative;
+    border: 1.5px solid;
+  }
+  .layer-label {
+    position: absolute;
+    top: -11px;
+    left: 24px;
+    background: inherit;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    border-radius: 4px;
+  }
+
+  /* ── Frontend Layer ── */
+  .layer-frontend {
+    background: #EFF6FF;
+    border-color: #BFDBFE;
+  }
+  .layer-frontend .layer-label {
+    color: #1E40AF;
+    background: #EFF6FF;
+  }
+
+  /* ── API Gateway Layer ── */
+  .layer-gateway {
+    background: #FFFBEB;
+    border-color: #FDE68A;
+  }
+  .layer-gateway .layer-label {
+    color: #92400E;
+    background: #FFFBEB;
+  }
+
+  /* ── Backend Layer ── */
+  .layer-backend {
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+  }
+  .layer-backend .layer-label {
+    color: #166534;
+    background: #F0FDF4;
+  }
+
+  /* ── Data Layer ── */
+  .layer-data {
+    background: #F5F3FF;
+    border-color: #DDD6FE;
+  }
+  .layer-data .layer-label {
+    color: #5B21B6;
+    background: #F5F3FF;
+  }
+
+  /* ── External / Infra Row ── */
+  .bottom-row {
+    display: flex;
+    gap: 16px;
+  }
+  .bottom-row .layer {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .layer-external {
+    background: #FFF1F2;
+    border-color: #FECDD3;
+  }
+  .layer-external .layer-label {
+    color: #9F1239;
+    background: #FFF1F2;
+  }
+
+  .layer-infra {
+    background: #F1F5F9;
+    border-color: #CBD5E1;
+  }
+  .layer-infra .layer-label {
+    color: #334155;
+    background: #F1F5F9;
+  }
+
+  /* ── Boxes inside layers ── */
+  .boxes {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .box {
+    border-radius: 8px;
+    padding: 14px 16px 12px;
+    min-width: 160px;
+    text-align: center;
+    border: 1.5px solid;
+    position: relative;
+    transition: box-shadow 0.2s;
+  }
+  .box-icon {
+    font-size: 22px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .box-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+  .box-desc {
+    font-size: 10.5px;
+    color: #64748B;
+    line-height: 1.35;
+    font-weight: 400;
+  }
+
+  /* ── Frontend boxes ── */
+  .box-fe {
+    background: #FFFFFF;
+    border-color: #93C5FD;
+  }
+  .box-fe .box-title { color: #1E40AF; }
+
+  /* ── Gateway chips ── */
+  .gateway-items {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    align-items: center;
+  }
+  .gw-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #FFFFFF;
+    border: 1.5px solid #FBBF24;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #78350F;
+  }
+  .gw-chip .chip-icon { font-size: 15px; }
+  .gw-arrow {
+    color: #D97706;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  /* ── Backend boxes ── */
+  .box-be {
+    background: #FFFFFF;
+    border-color: #86EFAC;
+  }
+  .box-be .box-title { color: #166534; }
+
+  /* ── Data boxes ── */
+  .box-data {
+    background: #FFFFFF;
+    border-color: #C4B5FD;
+  }
+  .box-data .box-title { color: #5B21B6; }
+  .box-data .schema-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    justify-content: center;
+    margin-top: 5px;
+  }
+  .schema-tag {
+    font-size: 9px;
+    background: #EDE9FE;
+    color: #6D28D9;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+
+  /* ── External boxes ── */
+  .box-ext {
+    background: #FFFFFF;
+    border-color: #FDA4AF;
+  }
+  .box-ext .box-title { color: #9F1239; }
+
+  /* ── Infra boxes ── */
+  .box-infra {
+    background: #FFFFFF;
+    border-color: #94A3B8;
+  }
+  .box-infra .box-title { color: #334155; }
+
+  /* ── Mode pills (inside Web App box) ── */
+  .mode-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    justify-content: center;
+    margin-top: 5px;
+  }
+  .mode-pill {
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .pill-candidat { background: #DBEAFE; color: #1E40AF; }
+  .pill-auto { background: #D1FAE5; color: #065F46; }
+  .pill-centre { background: #FEF3C7; color: #92400E; }
+  .pill-admin { background: #FEE2E2; color: #991B1B; }
+  .pill-public { background: #E0E7FF; color: #3730A3; }
+
+  /* ── Connection arrows between layers ── */
+  .connector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 22px;
+    margin: -4px 0;
+    position: relative;
+    z-index: 2;
+  }
+  .connector-line {
+    width: 2px;
+    height: 100%;
+    background: repeating-linear-gradient(
+      to bottom,
+      #94A3B8 0px,
+      #94A3B8 4px,
+      transparent 4px,
+      transparent 8px
+    );
+  }
+  .connector-arrows {
+    display: flex;
+    gap: 80px;
+  }
+  .conn-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .conn-arrow .shaft {
+    width: 2px;
+    height: 14px;
+    background: #94A3B8;
+  }
+  .conn-arrow .head {
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #94A3B8;
+  }
+
+  /* ── Wide frontend box ── */
+  .box-wide {
+    min-width: 320px;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    margin-top: 20px;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    font-size: 10.5px;
+    color: #64748B;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 10px;
+    color: #94A3B8;
+    letter-spacing: 0.3px;
+  }
+
+  /* Guinea flag stripe */
+  .guinea-stripe {
+    height: 4px;
+    border-radius: 0 0 12px 12px;
+    background: linear-gradient(90deg, #CE1126 33.33%, #FCD116 33.33%, #FCD116 66.66%, #009460 66.66%);
+    margin: 0 -24px -18px;
+  }
+
+  .sub-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    justify-content: center;
+    margin-top: 5px;
+  }
+  .sub-feat {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+  .sf-green { background: #DCFCE7; color: #166534; }
+  .sf-amber { background: #FEF3C7; color: #92400E; }
+  .sf-rose { background: #FFE4E6; color: #9F1239; }
+  .sf-purple { background: #EDE9FE; color: #6D28D9; }
+  .sf-slate { background: #E2E8F0; color: #334155; }
+  .sf-blue { background: #DBEAFE; color: #1E40AF; }
+</style>
+</head>
+<body>
+
+<!-- ════════ TITLE ════════ -->
+<div class="title-block">
+  <h1><span class="red">Code</span>Route <span class="green">Guinée</span></h1>
+  <div class="subtitle">SYSTEM ARCHITECTURE &mdash; Digital Platform for Driving Theory Exams</div>
+  <div class="title-bar"></div>
+</div>
+
+<!-- ════════ FRONTEND LAYER ════════ -->
+<div class="layer layer-frontend">
+  <div class="layer-label">Frontend Layer</div>
+  <div class="boxes">
+    <div class="box box-fe box-wide">
+      <span class="box-icon">&#9651;</span>
+      <div class="box-title">Web App</div>
+      <div class="box-desc">React / Next.js &bull; Responsive PWA</div>
+      <div class="mode-pills">
+        <span class="mode-pill pill-candidat">Candidat</span>
+        <span class="mode-pill pill-auto">Auto-&eacute;cole</span>
+        <span class="mode-pill pill-centre">Centre agr&eacute;&eacute;</span>
+        <span class="mode-pill pill-admin">Administration</span>
+        <span class="mode-pill pill-public">Public</span>
+      </div>
+    </div>
+    <div class="box box-fe">
+      <span class="box-icon">&#9651;</span>
+      <div class="box-title">Mobile App</div>
+      <div class="box-desc">React Native<br>iOS &amp; Android</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Connector ── -->
+<div class="connector">
+  <div class="connector-arrows">
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+  </div>
+</div>
+
+<!-- ════════ API GATEWAY ════════ -->
+<div class="layer layer-gateway">
+  <div class="layer-label">API Gateway / Security</div>
+  <div class="gateway-items">
+    <div class="gw-chip"><span class="chip-icon">&#128274;</span> HTTPS / TLS</div>
+    <div class="gw-arrow">&rarr;</div>
+    <div class="gw-chip"><span class="chip-icon">&#128273;</span> JWT Authentication</div>
+    <div class="gw-arrow">&rarr;</div>
+    <div class="gw-chip"><span class="chip-icon">&#9201;</span> Rate Limiting</div>
+    <div class="gw-arrow">&rarr;</div>
+    <div class="gw-chip"><span class="chip-icon">&#128737;</span> CORS Policy</div>
+  </div>
+</div>
+
+<!-- ── Connector ── -->
+<div class="connector">
+  <div class="connector-arrows">
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+  </div>
+</div>
+
+<!-- ════════ BACKEND SERVICES ════════ -->
+<div class="layer layer-backend">
+  <div class="layer-label">Backend Services</div>
+  <div class="boxes">
+    <div class="box box-be">
+      <span class="box-icon">&#128100;</span>
+      <div class="box-title">Auth Service</div>
+      <div class="box-desc">NestJS / FastAPI</div>
+      <div class="sub-features">
+        <span class="sub-feat sf-green">Login</span>
+        <span class="sub-feat sf-green">RBAC</span>
+        <span class="sub-feat sf-green">Tokens</span>
+      </div>
+    </div>
+    <div class="box box-be">
+      <span class="box-icon">&#128221;</span>
+      <div class="box-title">Exam Service</div>
+      <div class="box-desc">Question Bank &bull; Scoring</div>
+      <div class="sub-features">
+        <span class="sub-feat sf-green">Randomization</span>
+        <span class="sub-feat sf-green">Timer</span>
+        <span class="sub-feat sf-green">Results</span>
+      </div>
+    </div>
+    <div class="box box-be">
+      <span class="box-icon">&#128179;</span>
+      <div class="box-title">Payment Service</div>
+      <div class="box-desc">Multi-channel Payments</div>
+      <div class="sub-features">
+        <span class="sub-feat sf-amber">Mobile Money</span>
+        <span class="sub-feat sf-amber">Bank</span>
+        <span class="sub-feat sf-amber">Card</span>
+      </div>
+    </div>
+    <div class="box box-be">
+      <span class="box-icon">&#128276;</span>
+      <div class="box-title">Notification Service</div>
+      <div class="box-desc">Multi-channel Alerts</div>
+      <div class="sub-features">
+        <span class="sub-feat sf-blue">SMS</span>
+        <span class="sub-feat sf-blue">WhatsApp</span>
+        <span class="sub-feat sf-blue">Email</span>
+      </div>
+    </div>
+    <div class="box box-be">
+      <span class="box-icon">&#128737;</span>
+      <div class="box-title">Anti-Fraud Service</div>
+      <div class="box-desc">Integrity &amp; Compliance</div>
+      <div class="sub-features">
+        <span class="sub-feat sf-rose">Monitoring</span>
+        <span class="sub-feat sf-rose">Detection</span>
+        <span class="sub-feat sf-rose">Logging</span>
+      </div>
+    </div>
+    <div class="box box-be">
+      <span class="box-icon">&#128200;</span>
+      <div class="box-title">Reporting Service</div>
+      <div class="box-desc">Analytics &amp; Insights</div>
+      <div class="sub-features">
+        <span class="sub-feat sf-purple">Statistics</span>
+        <span class="sub-feat sf-purple">Dashboards</span>
+        <span class="sub-feat sf-purple">Exports</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Connector ── -->
+<div class="connector">
+  <div class="connector-arrows">
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+  </div>
+</div>
+
+<!-- ════════ DATA LAYER ════════ -->
+<div class="layer layer-data">
+  <div class="layer-label">Data Layer</div>
+  <div class="boxes">
+    <div class="box box-data" style="min-width: 320px;">
+      <span class="box-icon">&#128451;</span>
+      <div class="box-title">PostgreSQL</div>
+      <div class="box-desc">Primary Relational Database</div>
+      <div class="schema-tags">
+        <span class="schema-tag">identity</span>
+        <span class="schema-tag">exam</span>
+        <span class="schema-tag">payment</span>
+        <span class="schema-tag">center</span>
+        <span class="schema-tag">audit</span>
+        <span class="schema-tag">reporting</span>
+      </div>
+    </div>
+    <div class="box box-data">
+      <span class="box-icon">&#9889;</span>
+      <div class="box-title">Redis</div>
+      <div class="box-desc">In-Memory Store</div>
+      <div class="sub-features">
+        <span class="sub-feat sf-purple">Caching</span>
+        <span class="sub-feat sf-purple">Sessions</span>
+      </div>
+    </div>
+    <div class="box box-data">
+      <span class="box-icon">&#128230;</span>
+      <div class="box-title">MinIO / S3</div>
+      <div class="box-desc">Object Storage</div>
+      <div class="sub-features">
+        <span class="sub-feat sf-purple">Photos</span>
+        <span class="sub-feat sf-purple">Documents</span>
+        <span class="sub-feat sf-purple">Certificates</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Connector ── -->
+<div class="connector">
+  <div class="connector-arrows">
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+    <div class="conn-arrow"><div class="shaft"></div><div class="head"></div></div>
+  </div>
+</div>
+
+<!-- ════════ BOTTOM ROW: External + Infra ════════ -->
+<div class="bottom-row">
+  <!-- External Integrations -->
+  <div class="layer layer-external">
+    <div class="layer-label">External Integrations</div>
+    <div class="boxes">
+      <div class="box box-ext">
+        <span class="box-icon">&#128241;</span>
+        <div class="box-title">Mobile Money</div>
+        <div class="box-desc">Orange Money &bull; MTN</div>
+      </div>
+      <div class="box box-ext">
+        <span class="box-icon">&#128196;</span>
+        <div class="box-title">Biometric Permit</div>
+        <div class="box-desc">Permit System API</div>
+      </div>
+      <div class="box box-ext">
+        <span class="box-icon">&#128172;</span>
+        <div class="box-title">SMS Gateway</div>
+        <div class="box-desc">Bulk Messaging</div>
+      </div>
+      <div class="box box-ext">
+        <span class="box-icon">&#128101;</span>
+        <div class="box-title">National ID</div>
+        <div class="box-desc">Identity Verification</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infrastructure -->
+  <div class="layer layer-infra">
+    <div class="layer-label">Infrastructure</div>
+    <div class="boxes">
+      <div class="box box-infra">
+        <span class="box-icon">&#128051;</span>
+        <div class="box-title">Docker Compose</div>
+        <div class="box-desc">Container Orchestration</div>
+      </div>
+      <div class="box box-infra">
+        <span class="box-icon">&#127760;</span>
+        <div class="box-title">Nginx / Traefik</div>
+        <div class="box-desc">Reverse Proxy &bull; LB</div>
+      </div>
+      <div class="box box-infra">
+        <span class="box-icon">&#128202;</span>
+        <div class="box-title">Monitoring</div>
+        <div class="box-desc">Prometheus + Grafana</div>
+      </div>
+      <div class="box box-infra">
+        <span class="box-icon">&#128260;</span>
+        <div class="box-title">CI/CD</div>
+        <div class="box-desc">GitHub Actions</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ LEGEND ════════ -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#93C5FD;"></div> Frontend</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#FBBF24;"></div> API Gateway</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#86EFAC;"></div> Backend Services</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#C4B5FD;"></div> Data Layer</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#FDA4AF;"></div> External</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#94A3B8;"></div> Infrastructure</div>
+</div>
+
+<!-- ════════ FOOTER ════════ -->
+<div class="footer">CodeRoute Guinée &mdash; Architecture Diagram v1.0 &bull; Republic of Guinea &bull; Ministry of Transport</div>
+
+</body>
+</html>

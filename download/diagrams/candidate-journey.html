@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeRoute Guinée — Parcours Candidat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --text: #1A2332;
+    --arrow: #64748B;
+    --step-bg-1: #EFF6FF;
+    --step-bg-2: #F0FDF4;
+    --phase-1: #1E3A5F;
+    --phase-2: #2C5282;
+    --phase-3: #3B6FB6;
+    --phase-4: #4A82C4;
+    --phase-5: #5A95D2;
+    --phase-6: #6AA8E0;
+    --phase-7: #7ABBE8;
+    --phase-8: #8ACEF0;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: #F8FAFC;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 48px 32px 64px;
+    min-width: 960px;
+  }
+
+  .flowchart {
+    width: 920px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Title ── */
+  .main-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--phase-1);
+    text-align: center;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .main-subtitle {
+    font-size: 15px;
+    font-weight: 400;
+    color: #64748B;
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  /* ── Phase Card ── */
+  .phase-card {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(30,58,95,.10), 0 1px 3px rgba(30,58,95,.06);
+    background: #fff;
+    transition: box-shadow .2s;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 24px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 17px;
+  }
+  .phase-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.22);
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .phase-label {
+    flex: 1;
+  }
+  .phase-title-fr {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: .85;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  .phase-body {
+    padding: 18px 24px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ── Step Row ── */
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .step-bullet {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .step-box {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.55;
+    color: var(--text);
+  }
+  .step-box code {
+    font-family: 'Noto Sans SC', monospace;
+    font-size: 12px;
+    background: rgba(30,58,95,.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--phase-1);
+  }
+
+  /* ── Arrow Connector ── */
+  .arrow-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 48px;
+    position: relative;
+  }
+  .arrow-connector .shaft {
+    width: 2px;
+    flex: 1;
+    background: var(--arrow);
+  }
+  .arrow-connector .head {
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid var(--arrow);
+  }
+
+  /* ── Phase-specific accent colors for step bullets ── */
+  [data-phase="1"] .step-bullet { background: var(--phase-1); }
+  [data-phase="2"] .step-bullet { background: var(--phase-2); }
+  [data-phase="3"] .step-bullet { background: var(--phase-3); }
+  [data-phase="4"] .step-bullet { background: var(--phase-4); }
+  [data-phase="5"] .step-bullet { background: var(--phase-5); }
+  [data-phase="6"] .step-bullet { background: var(--phase-6); }
+  [data-phase="7"] .step-bullet { background: var(--phase-7); }
+  [data-phase="8"] .step-bullet { background: var(--phase-8); }
+
+  /* alternating step bg */
+  .step-box.bg-a { background: var(--step-bg-1); }
+  .step-box.bg-b { background: var(--step-bg-2); }
+
+  /* ── Phase header backgrounds ── */
+  [data-phase="1"] .phase-header { background: var(--phase-1); }
+  [data-phase="2"] .phase-header { background: var(--phase-2); }
+  [data-phase="3"] .phase-header { background: var(--phase-3); }
+  [data-phase="4"] .phase-header { background: var(--phase-4); }
+  [data-phase="5"] .phase-header { background: var(--phase-5); }
+  [data-phase="6"] .phase-header { background: var(--phase-6); }
+  [data-phase="7"] .phase-header { background: var(--phase-7); }
+  [data-phase="8"] .phase-header { background: var(--phase-8); }
+
+  /* left accent bar on each card */
+  .phase-card { border-left: 5px solid transparent; }
+  [data-phase="1"] .phase-card, [data-phase="1"] { border-left-color: var(--phase-1); }
+  [data-phase="2"] .phase-card, [data-phase="2"] { border-left-color: var(--phase-2); }
+  [data-phase="3"] .phase-card, [data-phase="3"] { border-left-color: var(--phase-3); }
+  [data-phase="4"] .phase-card, [data-phase="4"] { border-left-color: var(--phase-4); }
+  [data-phase="5"] .phase-card, [data-phase="5"] { border-left-color: var(--phase-5); }
+  [data-phase="6"] .phase-card, [data-phase="6"] { border-left-color: var(--phase-6); }
+  [data-phase="7"] .phase-card, [data-phase="7"] { border-left-color: var(--phase-7); }
+  [data-phase="8"] .phase-card, [data-phase="8"] { border-left-color: var(--phase-8); }
+
+  /* ── Icon helpers ── */
+  .icon {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    font-style: normal;
+    margin-right: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="flowchart">
+
+  <!-- Title -->
+  <div class="main-title">CodeRoute Guinée</div>
+  <div class="main-subtitle">Parcours du Candidat — De l'inscription au permis de conduire</div>
+
+  <!-- ════════ PHASE 1 ════════ -->
+  <div class="phase-card" data-phase="1">
+    <div class="phase-header">
+      <span class="phase-number">1</span>
+      <span class="phase-label">Inscription<span class="phase-title-fr">Registration</span></span>
+    </div>
+    <div class="phase-body">
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Créer un compte avec les informations personnelles (nom, prénom, date de naissance, contact)</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Télécharger la photo d'identité et la pièce d'identité (CNI / passeport)</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Le système génère un numéro unique de candidat : <code>GN-CODE-2026-000001</code></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-connector"><div class="shaft"></div><div class="head"></div></div>
+
+  <!-- ════════ PHASE 2 ════════ -->
+  <div class="phase-card" data-phase="2">
+    <div class="phase-header">
+      <span class="phase-number">2</span>
+      <span class="phase-label">Vérification<span class="phase-title-fr">Verification</span></span>
+    </div>
+    <div class="phase-body">
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">L'auto-école ou le centre vérifie les documents soumis</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">L'administrateur peut également effectuer la vérification</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Contrôle automatisé de la conformité des documents</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-connector"><div class="shaft"></div><div class="head"></div></div>
+
+  <!-- ════════ PHASE 3 ════════ -->
+  <div class="phase-card" data-phase="3">
+    <div class="phase-header">
+      <span class="phase-number">3</span>
+      <span class="phase-label">Choix du centre<span class="phase-title-fr">Center Selection</span></span>
+    </div>
+    <div class="phase-body">
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Sélectionner la région et la ville</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Choisir un centre accrédité</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Choisir la date et l'heure de l'examen</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Sélectionner la catégorie de permis (A, B, C, D, E)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-connector"><div class="shaft"></div><div class="head"></div></div>
+
+  <!-- ════════ PHASE 4 ════════ -->
+  <div class="phase-card" data-phase="4">
+    <div class="phase-header">
+      <span class="phase-number">4</span>
+      <span class="phase-label">Paiement<span class="phase-title-fr">Payment</span></span>
+    </div>
+    <div class="phase-body">
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Orange Money / MTN Mobile Money</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Carte bancaire / Virement bancaire</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Paiement au guichet / Bon de l'auto-école</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-connector"><div class="shaft"></div><div class="head"></div></div>
+
+  <!-- ════════ PHASE 5 ════════ -->
+  <div class="phase-card" data-phase="5">
+    <div class="phase-header">
+      <span class="phase-number">5</span>
+      <span class="phase-label">Convocation<span class="phase-title-fr">Summons</span></span>
+    </div>
+    <div class="phase-body">
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Génération du code QR de convocation</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Détails du centre et heure de convocation</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Instructions et documents requis le jour de l'examen</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-connector"><div class="shaft"></div><div class="head"></div></div>
+
+  <!-- ════════ PHASE 6 ════════ -->
+  <div class="phase-card" data-phase="6">
+    <div class="phase-header">
+      <span class="phase-number">6</span>
+      <span class="phase-label">Passage de l'examen<span class="phase-title-fr">Exam</span></span>
+    </div>
+    <div class="phase-body">
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Vérification d'identité au centre d'examen</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Scan du code QR de convocation</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Prise de photo instantanée</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Poste de travail attribué automatiquement</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Questions aléatoires, examen chronométré</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Correction automatique à la fin de l'examen</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-connector"><div class="shaft"></div><div class="head"></div></div>
+
+  <!-- ════════ PHASE 7 ════════ -->
+  <div class="phase-card" data-phase="7">
+    <div class="phase-header">
+      <span class="phase-number">7</span>
+      <span class="phase-label">Résultat<span class="phase-title-fr">Result</span></span>
+    </div>
+    <div class="phase-body">
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Résultat immédiat ou validé par l'administrateur</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Réussite / Échec avec score détaillé</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Certificat numérique délivré en cas de réussite</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-connector"><div class="shaft"></div><div class="head"></div></div>
+
+  <!-- ════════ PHASE 8 ════════ -->
+  <div class="phase-card" data-phase="8">
+    <div class="phase-header">
+      <span class="phase-number">8</span>
+      <span class="phase-label">Transmission au permis<span class="phase-title-fr">Permit Transmission</span></span>
+    </div>
+    <div class="phase-body">
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-a">Transmission du résultat au système biométrique de permis</div>
+      </div>
+      <div class="step-row">
+        <span class="step-bullet"></span>
+        <div class="step-box bg-b">Traitement administratif et émission du permis de conduire</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .flowchart -->
+
+</body>
+</html>

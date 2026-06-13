@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1800">
+<title>CodeRoute Guinée — Data Model</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+  #diagram {
+    position: relative;
+    width: 1800px;
+    height: 1620px;
+    background: #F8FAFC;
+    overflow: hidden;
+  }
+  .title-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50px;
+    background: #1A2332;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 10;
+  }
+  .title-bar h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.5px;
+  }
+  .title-bar .flag {
+    display: inline-flex;
+    margin-right: 12px;
+  }
+  .title-bar .flag span {
+    display: inline-block;
+    width: 8px;
+    height: 20px;
+  }
+  .title-bar .flag .r { background: #CE1126; }
+  .title-bar .flag .y { background: #FCD116; }
+  .title-bar .flag .g { background: #009460; }
+  .title-bar .subtitle {
+    margin-left: 16px;
+    font-size: 13px;
+    color: #94A3B8;
+    font-weight: 400;
+  }
+
+  /* Schema backgrounds */
+  .schema-bg {
+    position: absolute;
+    border-radius: 12px;
+    border: 1.5px dashed;
+    z-index: 1;
+  }
+  .schema-label {
+    position: absolute;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    z-index: 2;
+    padding: 2px 10px;
+    border-radius: 4px;
+  }
+
+  /* Entity boxes */
+  .entity {
+    position: absolute;
+    background: #FFFFFF;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    border: 1.5px solid #CBD5E1;
+    overflow: hidden;
+    z-index: 5;
+  }
+  .entity:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+    border-color: #94A3B8;
+  }
+  .entity-header {
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.3px;
+  }
+  .entity-header .schema-tag {
+    font-size: 9px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.25);
+    padding: 1px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .entity-body {
+    padding: 4px 0;
+  }
+  .column-row {
+    display: flex;
+    align-items: center;
+    padding: 2px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+    min-height: 20px;
+  }
+  .column-row:hover {
+    background: #F0F9FF;
+  }
+  .column-row.pk-row {
+    background: #FEF2F2;
+  }
+  .column-row.fk-row {
+    background: #ECFDF5;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 6px;
+  }
+  .dot.pk { background: #CE1126; }
+  .dot.fk { background: #009460; }
+  .dot.none { background: transparent; }
+  .col-name {
+    flex: 1;
+    color: #1E293B;
+    font-weight: 500;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .col-type {
+    color: #64748B;
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-size: 10px;
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+
+  /* SVG overlay */
+  #lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .rel-line {
+    fill: none;
+    stroke-width: 1.8;
+    opacity: 0.55;
+  }
+  .rel-line:hover {
+    opacity: 0.9;
+    stroke-width: 2.5;
+  }
+  .card-label {
+    font-size: 10px;
+    font-weight: 700;
+    fill: #475569;
+  }
+  .fk-label {
+    font-size: 8.5px;
+    font-weight: 500;
+    fill: #64748B;
+    font-style: italic;
+  }
+
+  /* Legend */
+  .legend {
+    position: absolute;
+    z-index: 10;
+    background: #FFFFFF;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .legend-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1A2332;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: #475569;
+    margin-bottom: 3px;
+  }
+  .legend-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  }
+  .legend-line {
+    width: 20px; height: 2px; flex-shrink: 0; border-radius: 1px;
+  }
+</style>
+</head>
+<body>
+<div id="diagram">
+  <div class="title-bar">
+    <div class="flag"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+    <h1>CodeRoute Guinée</h1>
+    <span class="subtitle">Entity-Relationship Data Model</span>
+  </div>
+</div>
+<svg id="lines"></svg>
+
+<script>
+// ==================== DATA DEFINITIONS ====================
+
+const schemaColors = {
+  identity:  '#3B82F6',
+  center:    '#0D9488',
+  exam:      '#7C3AED',
+  payment:   '#D97706',
+  audit:     '#DC2626',
+  reporting: '#059669',
+};
+
+const schemaRegions = [
+  { id: 'identity',  label: 'identity',  x: 30,  y: 60,  w: 700, h: 575, color: '#3B82F6' },
+  { id: 'center',    label: 'center',    x: 780, y: 60,  w: 690, h: 575, color: '#0D9488' },
+  { id: 'exam',      label: 'exam',      x: 30,  y: 665, w: 1740,h: 355, color: '#7C3AED' },
+  { id: 'payment',   label: 'payment',   x: 30,  y: 1050,w: 700, h: 345, color: '#D97706' },
+  { id: 'audit',     label: 'audit',     x: 710, y: 1050,w: 700, h: 555, color: '#DC2626' },
+  { id: 'reporting', label: 'reporting', x: 1420,y: 1050,w: 370, h: 325, color: '#059669' },
+];
+
+const entities = [
+  {
+    id: 'candidate', name: 'Candidate', schema: 'identity',
+    x: 50, y: 100, w: 300,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'candidate_number', type: 'VARCHAR' },
+      { name: 'last_name', type: 'VARCHAR' },
+      { name: 'first_name', type: 'VARCHAR' },
+      { name: 'date_of_birth', type: 'DATE' },
+      { name: 'national_id', type: 'VARCHAR' },
+      { name: 'phone', type: 'VARCHAR' },
+      { name: 'email', type: 'VARCHAR' },
+      { name: 'city', type: 'VARCHAR' },
+      { name: 'permit_category', type: 'VARCHAR' },
+      { name: 'photo_path', type: 'VARCHAR' },
+      { name: 'id_document_path', type: 'VARCHAR' },
+      { name: 'status', type: 'VARCHAR' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'user', name: 'User', schema: 'identity',
+    x: 400, y: 100, w: 270,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'email', type: 'VARCHAR' },
+      { name: 'password_hash', type: 'VARCHAR' },
+      { name: 'role', type: 'VARCHAR' },
+      { name: 'is_active', type: 'BOOLEAN' },
+      { name: 'last_login', type: 'TIMESTAMP' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'driving-school', name: 'DrivingSchool', schema: 'identity',
+    x: 400, y: 315, w: 300,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'name', type: 'VARCHAR' },
+      { name: 'registration_number', type: 'VARCHAR' },
+      { name: 'address', type: 'VARCHAR' },
+      { name: 'city', type: 'VARCHAR' },
+      { name: 'phone', type: 'VARCHAR' },
+      { name: 'email', type: 'VARCHAR' },
+      { name: 'director_name', type: 'VARCHAR' },
+      { name: 'is_approved', type: 'BOOLEAN' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'center', name: 'Center', schema: 'center',
+    x: 800, y: 100, w: 300,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'name', type: 'VARCHAR' },
+      { name: 'region', type: 'VARCHAR' },
+      { name: 'city', type: 'VARCHAR' },
+      { name: 'address', type: 'VARCHAR' },
+      { name: 'capacity', type: 'INTEGER' },
+      { name: 'is_approved', type: 'BOOLEAN' },
+      { name: 'approval_date', type: 'DATE' },
+      { name: 'expiry_date', type: 'DATE' },
+      { name: 'contact_phone', type: 'VARCHAR' },
+      { name: 'contact_email', type: 'VARCHAR' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'center-room', name: 'CenterRoom', schema: 'center',
+    x: 800, y: 440, w: 280,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'center_id', type: 'INTEGER', fk: true },
+      { name: 'name', type: 'VARCHAR' },
+      { name: 'capacity', type: 'INTEGER' },
+      { name: 'has_camera', type: 'BOOLEAN' },
+      { name: 'has_generator', type: 'BOOLEAN' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'center-workstation', name: 'CenterWorkstation', schema: 'center',
+    x: 1140, y: 440, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'room_id', type: 'INTEGER', fk: true },
+      { name: 'identifier', type: 'VARCHAR' },
+      { name: 'is_functional', type: 'BOOLEAN' },
+      { name: 'last_checked', type: 'TIMESTAMP' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'question', name: 'Question', schema: 'exam',
+    x: 50, y: 705, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'category', type: 'VARCHAR' },
+      { name: 'text', type: 'TEXT' },
+      { name: 'image_path', type: 'VARCHAR' },
+      { name: 'video_path', type: 'VARCHAR' },
+      { name: 'audio_path', type: 'VARCHAR' },
+      { name: 'question_type', type: 'VARCHAR' },
+      { name: 'is_active', type: 'BOOLEAN' },
+      { name: 'created_by', type: 'INTEGER', fk: true },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'answer', name: 'Answer', schema: 'exam',
+    x: 390, y: 705, w: 270,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'question_id', type: 'INTEGER', fk: true },
+      { name: 'text', type: 'TEXT' },
+      { name: 'is_correct', type: 'BOOLEAN' },
+      { name: 'order_index', type: 'INTEGER' },
+    ]
+  },
+  {
+    id: 'exam-session', name: 'ExamSession', schema: 'exam',
+    x: 710, y: 705, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'center_id', type: 'INTEGER', fk: true },
+      { name: 'date', type: 'DATE' },
+      { name: 'start_time', type: 'TIME' },
+      { name: 'end_time', type: 'TIME' },
+      { name: 'category', type: 'VARCHAR' },
+      { name: 'max_candidates', type: 'INTEGER' },
+      { name: 'status', type: 'VARCHAR' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'exam-attempt', name: 'ExamAttempt', schema: 'exam',
+    x: 1060, y: 705, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'candidate_id', type: 'INTEGER', fk: true },
+      { name: 'session_id', type: 'INTEGER', fk: true },
+      { name: 'start_time', type: 'TIMESTAMP' },
+      { name: 'end_time', type: 'TIMESTAMP' },
+      { name: 'score', type: 'DECIMAL' },
+      { name: 'max_score', type: 'DECIMAL' },
+      { name: 'is_passed', type: 'BOOLEAN' },
+      { name: 'status', type: 'VARCHAR' },
+      { name: 'qr_code', type: 'VARCHAR' },
+      { name: 'ip_address', type: 'VARCHAR' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'exam-response', name: 'ExamResponse', schema: 'exam',
+    x: 1410, y: 705, w: 280,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'attempt_id', type: 'INTEGER', fk: true },
+      { name: 'question_id', type: 'INTEGER', fk: true },
+      { name: 'answer_id', type: 'INTEGER', fk: true },
+      { name: 'is_correct', type: 'BOOLEAN' },
+      { name: 'response_time', type: 'INTEGER' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'payment', name: 'Payment', schema: 'payment',
+    x: 50, y: 1090, w: 300,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'candidate_id', type: 'INTEGER', fk: true },
+      { name: 'session_id', type: 'INTEGER', fk: true },
+      { name: 'amount', type: 'DECIMAL' },
+      { name: 'currency', type: 'VARCHAR' },
+      { name: 'method', type: 'VARCHAR' },
+      { name: 'status', type: 'VARCHAR' },
+      { name: 'transaction_ref', type: 'VARCHAR' },
+      { name: 'paid_at', type: 'TIMESTAMP' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'commission', name: 'Commission', schema: 'payment',
+    x: 400, y: 1090, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'payment_id', type: 'INTEGER', fk: true },
+      { name: 'center_share', type: 'DECIMAL' },
+      { name: 'platform_share', type: 'DECIMAL' },
+      { name: 'admin_share', type: 'DECIMAL' },
+      { name: 'status', type: 'VARCHAR' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'audit-log', name: 'AuditLog', schema: 'audit',
+    x: 730, y: 1090, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'user_id', type: 'INTEGER', fk: true },
+      { name: 'action', type: 'VARCHAR' },
+      { name: 'entity_type', type: 'VARCHAR' },
+      { name: 'entity_id', type: 'INTEGER' },
+      { name: 'details', type: 'JSONB' },
+      { name: 'ip_address', type: 'VARCHAR' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'fraud-alert', name: 'FraudAlert', schema: 'audit',
+    x: 730, y: 1340, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'attempt_id', type: 'INTEGER', fk: true },
+      { name: 'center_id', type: 'INTEGER', fk: true },
+      { name: 'alert_type', type: 'VARCHAR' },
+      { name: 'severity', type: 'VARCHAR' },
+      { name: 'description', type: 'TEXT' },
+      { name: 'is_resolved', type: 'BOOLEAN' },
+      { name: 'resolved_by', type: 'INTEGER' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'session-incident', name: 'SessionIncident', schema: 'audit',
+    x: 1080, y: 1090, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'session_id', type: 'INTEGER', fk: true },
+      { name: 'center_id', type: 'INTEGER', fk: true },
+      { name: 'incident_type', type: 'VARCHAR' },
+      { name: 'description', type: 'TEXT' },
+      { name: 'reported_by', type: 'INTEGER' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'daily-statistic', name: 'DailyStatistic', schema: 'reporting',
+    x: 1440, y: 1090, w: 290,
+    columns: [
+      { name: 'id', type: 'SERIAL', pk: true },
+      { name: 'date', type: 'DATE' },
+      { name: 'region', type: 'VARCHAR' },
+      { name: 'center_id', type: 'INTEGER', fk: true },
+      { name: 'total_candidates', type: 'INTEGER' },
+      { name: 'total_passed', type: 'INTEGER' },
+      { name: 'total_failed', type: 'INTEGER' },
+      { name: 'fraud_count', type: 'INTEGER' },
+      { name: 'revenue', type: 'DECIMAL' },
+      { name: 'created_at', type: 'TIMESTAMP' },
+    ]
+  },
+];
+
+const relationships = [
+  // Identity → Exam
+  { from: 'candidate',    to: 'exam-attempt',    fromCard: '1', toCard: 'N', fk: 'candidate_id' },
+  { from: 'candidate',    to: 'payment',         fromCard: '1', toCard: 'N', fk: 'candidate_id' },
+  { from: 'user',         to: 'audit-log',       fromCard: '1', toCard: 'N', fk: 'user_id' },
+  { from: 'user',         to: 'question',        fromCard: '1', toCard: 'N', fk: 'created_by' },
+  // Center connections
+  { from: 'center',       to: 'exam-session',    fromCard: '1', toCard: 'N', fk: 'center_id' },
+  { from: 'center',       to: 'center-room',     fromCard: '1', toCard: 'N', fk: 'center_id' },
+  { from: 'center',       to: 'fraud-alert',     fromCard: '1', toCard: 'N', fk: 'center_id' },
+  { from: 'center',       to: 'session-incident',fromCard: '1', toCard: 'N', fk: 'center_id' },
+  { from: 'center',       to: 'daily-statistic', fromCard: '1', toCard: 'N', fk: 'center_id' },
+  // Center internal
+  { from: 'center-room',  to: 'center-workstation', fromCard: '1', toCard: 'N', fk: 'room_id' },
+  // Exam internal
+  { from: 'question',     to: 'answer',          fromCard: '1', toCard: 'N', fk: 'question_id' },
+  { from: 'question',     to: 'exam-response',   fromCard: '1', toCard: 'N', fk: 'question_id' },
+  { from: 'answer',       to: 'exam-response',   fromCard: '1', toCard: 'N', fk: 'answer_id' },
+  { from: 'exam-session', to: 'exam-attempt',    fromCard: '1', toCard: 'N', fk: 'session_id' },
+  { from: 'exam-attempt', to: 'exam-response',   fromCard: '1', toCard: 'N', fk: 'attempt_id' },
+  // Exam → Payment / Audit
+  { from: 'exam-session', to: 'payment',         fromCard: '1', toCard: 'N', fk: 'session_id' },
+  { from: 'exam-session', to: 'session-incident',fromCard: '1', toCard: 'N', fk: 'session_id' },
+  { from: 'exam-attempt', to: 'fraud-alert',     fromCard: '1', toCard: 'N', fk: 'attempt_id' },
+  // Payment internal
+  { from: 'payment',      to: 'commission',      fromCard: '1', toCard: '1', fk: 'payment_id' },
+];
+
+
+// ==================== GENERATE DIAGRAM ====================
+
+const diagram = document.getElementById('diagram');
+
+// Schema backgrounds
+schemaRegions.forEach(s => {
+  const bg = document.createElement('div');
+  bg.className = 'schema-bg';
+  bg.style.cssText = `left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;border-color:${s.color}50;background:${s.color}06;`;
+  diagram.appendChild(bg);
+
+  const lbl = document.createElement('div');
+  lbl.className = 'schema-label';
+  lbl.textContent = s.label;
+  lbl.style.cssText = `left:${s.x + 12}px;top:${s.y + 8}px;color:${s.color};background:${s.color}12;`;
+  diagram.appendChild(lbl);
+});
+
+// Entity boxes
+entities.forEach(e => {
+  const box = document.createElement('div');
+  box.className = 'entity';
+  box.id = e.id;
+  box.style.cssText = `left:${e.x}px;top:${e.y}px;width:${e.w}px;`;
+
+  const color = schemaColors[e.schema];
+  const header = document.createElement('div');
+  header.className = 'entity-header';
+  header.style.background = color;
+  header.innerHTML = `<span>${e.name}</span><span class="schema-tag">${e.schema}</span>`;
+  box.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'entity-body';
+
+  e.columns.forEach(col => {
+    const row = document.createElement('div');
+    row.className = 'column-row' + (col.pk ? ' pk-row' : '') + (col.fk ? ' fk-row' : '');
+
+    const dotClass = col.pk ? 'pk' : (col.fk ? 'fk' : 'none');
+    row.innerHTML = `<span class="dot ${dotClass}"></span><span class="col-name">${col.name}</span><span class="col-type">${col.type}</span>`;
+    body.appendChild(row);
+  });
+
+  box.appendChild(body);
+  diagram.appendChild(box);
+});
+
+// Legend
+const legend = document.createElement('div');
+legend.className = 'legend';
+legend.style.cssText = 'right:24px;top:62px;';
+legend.innerHTML = `
+  <div class="legend-title">Legend</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#CE1126"></span> Primary Key (PK)</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#009460"></span> Foreign Key (FK)</div>
+  <div class="legend-item"><span class="legend-line" style="background:#3B82F6"></span> identity</div>
+  <div class="legend-item"><span class="legend-line" style="background:#0D9488"></span> center</div>
+  <div class="legend-item"><span class="legend-line" style="background:#7C3AED"></span> exam</div>
+  <div class="legend-item"><span class="legend-line" style="background:#D97706"></span> payment</div>
+  <div class="legend-item"><span class="legend-line" style="background:#DC2626"></span> audit</div>
+  <div class="legend-item"><span class="legend-line" style="background:#059669"></span> reporting</div>
+`;
+diagram.appendChild(legend);
+
+
+// ==================== DRAW RELATIONSHIP LINES ====================
+
+function getEntityRect(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  return {
+    left:    el.offsetLeft,
+    top:     el.offsetTop,
+    right:   el.offsetLeft + el.offsetWidth,
+    bottom:  el.offsetTop + el.offsetHeight,
+    width:   el.offsetWidth,
+    height:  el.offsetHeight,
+    cx:      el.offsetLeft + el.offsetWidth / 2,
+    cy:      el.offsetTop + el.offsetHeight / 2,
+  };
+}
+
+function determineSides(fRect, tRect) {
+  const dx = tRect.cx - fRect.cx;
+  const dy = tRect.cy - fRect.cy;
+
+  // If mostly horizontal
+  if (Math.abs(dx) > Math.abs(dy) * 0.6) {
+    if (dx > 0) return { fromSide: 'right', toSide: 'left' };
+    else return { fromSide: 'left', toSide: 'right' };
+  }
+  // Mostly vertical
+  if (dy > 0) return { fromSide: 'bottom', toSide: 'top' };
+  else return { fromSide: 'top', toSide: 'bottom' };
+}
+
+function getConnPoint(rect, side, offset, total) {
+  const margin = 20;
+  const idx = offset; // 0-based index among connections on this side
+  const span = total;
+
+  switch(side) {
+    case 'right':
+      return { x: rect.right, y: rect.top + margin + (idx + 1) * ((rect.height - 2 * margin) / (span + 1)) };
+    case 'left':
+      return { x: rect.left, y: rect.top + margin + (idx + 1) * ((rect.height - 2 * margin) / (span + 1)) };
+    case 'bottom':
+      return { x: rect.left + margin + (idx + 1) * ((rect.width - 2 * margin) / (span + 1)), y: rect.bottom };
+    case 'top':
+      return { x: rect.left + margin + (idx + 1) * ((rect.width - 2 * margin) / (span + 1)), y: rect.top };
+  }
+}
+
+function drawRelationships() {
+  const svg = document.getElementById('lines');
+  svg.setAttribute('viewBox', `0 0 ${diagram.offsetWidth} ${diagram.offsetHeight}`);
+
+  // First pass: determine sides and count connections per side per entity
+  const sideCounts = {}; // { entityId: { right: 0, left: 0, top: 0, bottom: 0 } }
+  const relSides = [];
+
+  relationships.forEach(rel => {
+    const fRect = getEntityRect(rel.from);
+    const tRect = getEntityRect(rel.to);
+    if (!fRect || !tRect) return;
+
+    const { fromSide, toSide } = determineSides(fRect, tRect);
+    relSides.push({ ...rel, fromSide, toSide });
+
+    if (!sideCounts[rel.from]) sideCounts[rel.from] = { right: 0, left: 0, top: 0, bottom: 0 };
+    if (!sideCounts[rel.to])   sideCounts[rel.to]   = { right: 0, left: 0, top: 0, bottom: 0 };
+    sideCounts[rel.from][fromSide]++;
+    sideCounts[rel.to][toSide]++;
+  });
+
+  // Track current index per side per entity
+  const sideIdx = {};
+  Object.keys(sideCounts).forEach(id => {
+    sideIdx[id] = { right: 0, left: 0, top: 0, bottom: 0 };
+  });
+
+  // Second pass: draw lines
+  relSides.forEach(rel => {
+    const fRect = getEntityRect(rel.from);
+    const tRect = getEntityRect(rel.to);
+    if (!fRect || !tRect) return;
+
+    const { fromSide, toSide } = rel;
+    const fTotal = sideCounts[rel.from][fromSide];
+    const tTotal = sideCounts[rel.to][toSide];
+    const fIdx = sideIdx[rel.from][fromSide]++;
+    const tIdx = sideIdx[rel.to][toSide]++;
+
+    const fp = getConnPoint(fRect, fromSide, fIdx, fTotal);
+    const tp = getConnPoint(tRect, toSide, tIdx, tTotal);
+
+    // Create bezier path
+    let d;
+    const dx = tp.x - fp.x;
+    const dy = tp.y - fp.y;
+
+    if (fromSide === 'right' || fromSide === 'left') {
+      const cpx = Math.abs(dx) * 0.45;
+      const cp1x = fromSide === 'right' ? fp.x + cpx : fp.x - cpx;
+      const cp2x = toSide === 'left' ? tp.x - cpx : tp.x + cpx;
+      d = `M ${fp.x} ${fp.y} C ${cp1x} ${fp.y}, ${cp2x} ${tp.y}, ${tp.x} ${tp.y}`;
+    } else {
+      const cpy = Math.abs(dy) * 0.45;
+      const cp1y = fromSide === 'bottom' ? fp.y + cpy : fp.y - cpy;
+      const cp2y = toSide === 'top' ? tp.y - cpy : tp.y + cpy;
+      d = `M ${fp.x} ${fp.y} C ${fp.x} ${cp1y}, ${tp.x} ${cp2y}, ${tp.x} ${tp.y}`;
+    }
+
+    // Get source schema color
+    const fromEntity = entities.find(e => e.id === rel.from);
+    const lineColor = fromEntity ? schemaColors[fromEntity.schema] : '#64748B';
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('class', 'rel-line');
+    path.setAttribute('stroke', lineColor);
+    svg.appendChild(path);
+
+    // Cardinality labels
+    const fromLabelOff = 12;
+    const toLabelOff = 12;
+
+    // "1" label near from point
+    const fl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    fl.setAttribute('class', 'card-label');
+    let flx, fly;
+    switch(fromSide) {
+      case 'right': flx = fp.x + 4; fly = fp.y - 4; break;
+      case 'left':  flx = fp.x - 12; fly = fp.y - 4; break;
+      case 'bottom': flx = fp.x + 4; fly = fp.y + 12; break;
+      case 'top':   flx = fp.x + 4; fly = fp.y - 6; break;
+    }
+    fl.setAttribute('x', flx);
+    fl.setAttribute('y', fly);
+    fl.textContent = rel.fromCard;
+    svg.appendChild(fl);
+
+    // "N" or "1" label near to point
+    const tl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    tl.setAttribute('class', 'card-label');
+    let tlx, tly;
+    switch(toSide) {
+      case 'left':  tlx = tp.x - 12; tly = tp.y - 4; break;
+      case 'right': tlx = tp.x + 4; tly = tp.y - 4; break;
+      case 'top':   tlx = tp.x + 4; tly = tp.y - 6; break;
+      case 'bottom':tlx = tp.x + 4; tly = tp.y + 12; break;
+    }
+    tl.setAttribute('x', tlx);
+    tl.setAttribute('y', tly);
+    tl.textContent = rel.toCard;
+    svg.appendChild(tl);
+
+    // FK name label at midpoint
+    if (rel.fk) {
+      const mx = (fp.x + tp.x) / 2;
+      const my = (fp.y + tp.y) / 2;
+      const fkl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      fkl.setAttribute('class', 'fk-label');
+      fkl.setAttribute('x', mx);
+      fkl.setAttribute('y', my - 5);
+
+      // Background rect for readability
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      const textWidth = rel.fk.length * 5.5 + 6;
+      bg.setAttribute('x', mx - textWidth / 2);
+      bg.setAttribute('y', my - 14);
+      bg.setAttribute('width', textWidth);
+      bg.setAttribute('height', 14);
+      bg.setAttribute('rx', 2);
+      bg.setAttribute('fill', '#FFFFFF');
+      bg.setAttribute('fill-opacity', '0.85');
+      svg.appendChild(bg);
+
+      fkl.textContent = rel.fk;
+      svg.appendChild(fkl);
+    }
+  });
+}
+
+// Wait for layout to complete, then draw
+window.addEventListener('DOMContentLoaded', () => {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      drawRelationships();
+    });
+  });
+});
+</script>
+</body>
+</html>
