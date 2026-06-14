@@ -38,7 +38,7 @@ interface ExamBookingProps {
 function QRCodeSVG({ data }: { data: string }) {
   const size = 120;
   const cellSize = size / 21;
-  const pattern = [];
+  const pattern: React.ReactNode[] = [];
   for (let row = 0; row < 21; row++) {
     for (let col = 0; col < 21; col++) {
       const isCorner =
@@ -102,7 +102,8 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   const bookingData: BookingData = {
     step1: { region: currentRegion?.nom || '', ville: currentVille?.nom || '' },
     step2: { centreId: selectedCentre, centreNom: selectedCentreData?.nom || '' },
-    step3: { date: selectedDate, heure: selectedTime }
+    step3: { date: selectedDate, heure: selectedTime },
+    langue: 'fr'
   };
 
   if (confirmed) {

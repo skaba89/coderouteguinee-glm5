@@ -17,25 +17,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [currentLanguage, setCurrentLanguage] = useState<NationalLanguage>('fr');
 
-  // Hydrate from localStorage after mount to avoid SSR mismatch
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('coderoute_language');
-      if (stored && ['fr', 'ss', 'fu', 'ml'].includes(stored)) {
-        // Use a microtask to avoid synchronous setState in effect
-        queueMicrotask(() => setCurrentLanguage(stored as NationalLanguage));
-      }
-    } catch {}
+  // Local languages disabled — always French for now
+  const setLanguage = useCallback((_lang: NationalLanguage) => {
+    setCurrentLanguage('fr');
   }, []);
 
-  const setLanguage = useCallback((lang: NationalLanguage) => {
-    setCurrentLanguage(lang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('coderoute_language', lang);
-    }
-  }, []);
-
-  const languageConfig = languages.find(l => l.code === currentLanguage) || languages[0];
+  const languageConfig = languages[0]; // Always French
   const allLanguages = languages;
   const getDirection = useCallback(() => 'ltr' as const, []);
 

@@ -16,9 +16,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Question, ViewType, ExamResult, CategoryResult, NationalLanguage } from '@/lib/types';
-import { getRandomQuestions, getQuestionInLanguage, languages } from '@/lib/mock-data';
+import { getRandomQuestions } from '@/lib/mock-data';
 import { useAuth } from '@/lib/auth-context';
-import { useLanguage } from '@/lib/language-context';
 import { RoadSignDisplay } from '@/components/code-route/road-signs';
 import TTSPlayer from '@/components/code-route/tts-player';
 import {
@@ -169,12 +168,12 @@ function MockVideoPlayer({
 
 export default function ExamTaking({ isPractice = false, onViewChange, onExamComplete, preselectedLanguage }: ExamTakingProps) {
   const { user } = useAuth();
-  const { currentLanguage, setLanguage } = useLanguage();
   const totalQuestions = isPractice ? 20 : 40;
   const timeMinutes = isPractice ? 15 : 30;
   const passingScore = isPractice ? 14 : 35;
 
-  const [examLanguage, setExamLanguage] = useState<NationalLanguage>(preselectedLanguage || currentLanguage);
+  // Language always French for now — local languages temporarily disabled
+  const examLanguage: NationalLanguage = 'fr';
   const [examQuestions, setExamQuestions] = useState<Question[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
@@ -253,7 +252,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = examLanguage === 'fr' ? 'fr-FR' : 'fr-GN';
+    utterance.lang = 'fr-FR';
     utterance.rate = 0.9;
     utterance.pitch = 1;
 
@@ -267,15 +266,14 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
     speechRef.current = utterance;
     window.speechSynthesis.speak(utterance);
     setIsSpeaking(true);
-  }, [examLanguage, isSpeaking]);
+  }, [isSpeaking]);
 
   const speakCurrentQuestion = useCallback(() => {
     const q = examQuestions[currentQuestion];
     if (!q) return;
-    const { texte, options } = getQuestionInLanguage(q, examLanguage);
-    const fullText = `${texte}. ${options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`;
+    const fullText = `${q.texte}. ${q.options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`;
     speakText(fullText);
-  }, [examQuestions, currentQuestion, examLanguage, speakText]);
+  }, [examQuestions, currentQuestion, speakText]);
 
   // Cleanup speech on unmount
   useEffect(() => {
@@ -375,42 +373,13 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                     : 'Examen officiel du permis de conduire — République de Guinée'}
                 </p>
 
-                {/* Language Selection */}
+                {/* Language — French only for now */}
                 <div className="mb-8">
-                  <h3 className="font-semibold mb-4 flex items-center justify-center gap-2" style={{ color: '#1A2332' }}>
+                  <div className="flex items-center justify-center gap-2 mb-3">
                     <Globe className="w-5 h-5" style={{ color: '#009460' }} />
-                    Langue de l&apos;examen
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">Choisissez la langue dans laquelle vous souhaitez passer l&apos;examen</p>
-                  <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-                    {languages.map((lang) => (
-                      <button
-                        key={lang.code}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          examLanguage === lang.code
-                            ? 'border-green-500 bg-green-50 shadow-md'
-                            : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                        }`}
-                        onClick={() => setExamLanguage(lang.code)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: lang.code === 'fr' ? '#1A2332' : lang.code === 'ss' ? '#0891b2' : lang.code === 'fu' ? '#b45309' : '#047857' }}>
-                            {lang.code.toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm" style={{ color: '#1A2332' }}>{lang.name}</p>
-                            <p className="text-xs text-gray-400">{lang.nativeName}</p>
-                          </div>
-                        </div>
-                        {examLanguage === lang.code && (
-                          <div className="mt-2 flex items-center gap-1">
-                            <CheckCircle className="w-3.5 h-3.5" style={{ color: '#009460' }} />
-                            <span className="text-xs font-medium" style={{ color: '#009460' }}>Sélectionné</span>
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                    <span className="font-semibold" style={{ color: '#1A2332' }}>Langue : Français</span>
                   </div>
+                  <p className="text-xs text-gray-400 text-center">Les langues nationales (Soussou, Poular, Malinké) seront bientôt disponibles</p>
                 </div>
 
                 {/* Exam Info Grid */}
@@ -430,7 +399,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                   <div className="p-4 bg-gray-50 rounded-xl text-center">
                     <p className="text-2xl font-bold flex items-center justify-center gap-1" style={{ color: '#1A2332' }}>
                       <Volume2 className="w-5 h-5" />
-                      <span className="text-sm">{languages.find(l => l.code === examLanguage)?.nativeName}</span>
+                      <span className="text-sm">Français</span>
                     </p>
                     <p className="text-sm text-gray-500">Lecture audio</p>
                   </div>
@@ -471,7 +440,6 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                     className="text-white font-semibold px-8 py-6 text-lg"
                     style={{ backgroundColor: '#009460' }}
                     onClick={() => {
-                      setLanguage(examLanguage);
                       setExamStarted(true);
                     }}
                   >
@@ -528,7 +496,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                 <div className="mt-3 flex items-center justify-center gap-2">
                   <Globe className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-500">
-                    Langue : {languages.find(l => l.code === examLanguage)?.name} ({languages.find(l => l.code === examLanguage)?.nativeName})
+                    Langue : Français
                   </span>
                 </div>
               </div>
@@ -572,7 +540,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
   const q = examQuestions[currentQuestion];
   if (!q) return null;
 
-  const qLang = getQuestionInLanguage(q, examLanguage);
+  // Language always French — use q directly
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#1A2332' }}>
@@ -588,7 +556,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
             </Badge>
             <Badge variant="outline" className="text-xs flex items-center gap-1" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
               <Globe className="w-3 h-3" />
-              {languages.find(l => l.code === examLanguage)?.nativeName}
+              Français
             </Badge>
           </div>
           <div className="flex items-center gap-4">
@@ -627,10 +595,10 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
               <div className="flex items-center gap-2">
                 {/* TTS compact player for question */}
                 <TTSPlayer
-                  text={`${qLang.texte}. ${qLang.options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`}
-                  language={examLanguage}
+                  text={`${q.texte}. ${q.options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`}
+                  language={'fr'}
                   compact
-                  showLanguageBadge={examLanguage !== 'fr'}
+                  showLanguageBadge={false}
                 />
                 <Button
                   variant="ghost"
@@ -721,17 +689,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
               </div>
             )}
 
-            {/* TTS Player (full mode, shown when language is not French) */}
-            {examLanguage !== 'fr' && (
-              <div className="mb-4">
-                <TTSPlayer
-                  text={qLang.texte}
-                  language={examLanguage}
-                  showLanguageBadge
-                  label="Lecture de la question"
-                />
-              </div>
-            )}
+            {/* TTS Player — French only for now */}
 
             {/* Question Text */}
             <Card className="border-0 shadow-lg mb-6">
@@ -739,13 +697,8 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                 <div className="flex items-start gap-3">
                   <div className="flex-1">
                     <h2 className="text-lg font-semibold" style={{ color: '#1A2332' }}>
-                      {qLang.texte}
+                      {q.texte}
                     </h2>
-                    {examLanguage !== 'fr' && q.translations[examLanguage] && (
-                      <p className="text-sm text-gray-400 mt-2 italic border-t pt-2">
-                        FR : {q.texte}
-                      </p>
-                    )}
                   </div>
                 </div>
               </CardContent>
@@ -753,7 +706,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
 
             {/* Options */}
             <div className="grid gap-3">
-              {qLang.options.map((option, optIndex) => (
+              {q.options.map((option, optIndex) => (
                 <button
                   key={optIndex}
                   className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
@@ -880,7 +833,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
             <div className="flex items-center justify-center p-8 bg-gray-50 rounded-xl">
               <RoadSignDisplay signImage={q.signImage} size="xl" />
             </div>
-            <p className="text-center mt-4 text-gray-600">{qLang.explication}</p>
+            <p className="text-center mt-4 text-gray-600">{q.explication}</p>
           </div>
         </div>
       )}
@@ -894,7 +847,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
             </button>
             <h3 className="font-semibold mb-4" style={{ color: '#1A2332' }}>Scénario routier</h3>
             <img src={q.scenarioImage} alt="Scénario" className="w-full rounded-lg object-cover" />
-            <p className="text-center mt-4 text-gray-600">{qLang.explication}</p>
+            <p className="text-center mt-4 text-gray-600">{q.explication}</p>
           </div>
         </div>
       )}

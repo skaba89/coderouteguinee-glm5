@@ -1,0 +1,1153 @@
+     1→     1→import { Question, Centre, Region, ExamResult, LanguageConfig, NationalLanguage, Course } from './types';
+     2→     2→
+     3→     3→// ============================================================
+     4→     4→// Language Configuration
+     5→     5→// ============================================================
+     6→     6→export const languages: LanguageConfig[] = [
+     7→     7→  {
+     8→     8→    code: 'fr',
+     9→     9→    name: 'Français',
+    10→    10→    nativeName: 'Français',
+    11→    11→    flag: 'france',
+    12→    12→    regions: ['Toutes les régions'],
+    13→    13→    population: 'Langue officielle'
+    14→    14→  },
+    15→    15→  {
+    16→    16→    code: 'ss',
+    17→    17→    name: 'Soussou',
+    18→    18→    nativeName: 'Sossoxui',
+    19→    19→    flag: 'wave',
+    20→    20→    regions: ['Conakry', 'Kindia', 'Boké'],
+    21→    21→    population: '~3 millions'
+    22→    22→  },
+    23→    23→  {
+    24→    24→    code: 'fu',
+    25→    25→    name: 'Poular',
+    26→    26→    nativeName: 'Pulaar',
+    27→    27→    flag: 'mountain',
+    28→    28→    regions: ['Labé', 'Mamou', 'Faranah'],
+    29→    29→    population: '~5 millions'
+    30→    30→  },
+    31→    31→  {
+    32→    32→    code: 'ml',
+    33→    33→    name: 'Malinké',
+    34→    34→    nativeName: 'Maninka',
+    35→    35→    flag: 'tree',
+    36→    36→    regions: ['Kankan', 'Kouroussa', 'Siguiri'],
+    37→    37→    population: '~4 millions'
+    38→    38→  }
+    39→    39→];
+    40→    40→
+    41→    41→// ============================================================
+    42→    42→// Question Bank — 40 questions with multimedia & translations
+    43→    43→// ============================================================
+    44→    44→export const questions: Question[] = [
+    45→    45→  // ---- SIGNALISATION — With road sign images ----
+    46→    46→  {
+    47→    47→    id: 1,
+    48→    48→    texte: "Que signifie ce panneau ?",
+    49→    49→    options: ["Arrêt obligatoire", "Cédez le passage", "Sens interdit", "Priorité à droite"],
+    50→    50→    bonneReponse: 0,
+    51→    51→    categorie: "Signalisation",
+    52→    52→    difficulte: "facile",
+    53→    53→    mediaType: "sign",
+    54→    54→    signImage: "/signs/stop.png",
+    55→    55→    explication: "Le panneau STOP (octogonal rouge) impose un arrêt absolu avant de continuer.",
+    56→    56→    points: 1,
+    57→    57→    tempsEstime: 20,
+    58→    58→    tags: ["panneau", "stop", "arrêt"],
+    59→    59→    actif: true,
+    60→    60→    translations: {
+    61→    61→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Kabɛ ma bɔ", "I ma sɔrɔ sira di", "Sira banna", "Kanu wo ma"], explication: "Tɔgɔrɔ STOP ma kabɛ bɔ kɔrɔ i na taga." },
+    62→    62→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Darto saawata", "Hokku laawol", "Laawol haɗaaŋol", "Laawol aranal"], explication: "Maandeeji STOP waɗɗude dartol so'a yahde." },
+    63→    63→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Ka bɔ ma", "Ka sɔrɔ sira di", "Sira banna", "Kanu wo ma"], explication: "Tɔgɔrɔ STOP ma ka bɔ kɔrɔ i na taga." }
+    64→    64→    }
+    65→    65→  },
+    66→    66→  {
+    67→    67→    id: 2,
+    68→    68→    texte: "Que signifie ce panneau ?",
+    69→    69→    options: ["Interdiction", "Obligation", "Indication", "Danger"],
+    70→    70→    bonneReponse: 0,
+    71→    71→    categorie: "Signalisation",
+    72→    72→    difficulte: "facile",
+    73→    73→    mediaType: "sign",
+    74→    74→    signImage: "/signs/sens-interdit.png",
+    75→    75→    explication: "Un panneau circulaire avec bord rouge indique une interdiction. Ici, sens interdit.",
+    76→    76→    points: 1,
+    77→    77→    tempsEstime: 20,
+    78→    78→    tags: ["panneau", "interdiction", "sens interdit"],
+    79→    79→    actif: true,
+    80→    80→    translations: {
+    81→    81→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Banna", "Ma kɛ", "Caya", "Xili"], explication: "Tɔgɔrɔ nguuru bord xili fɔ banna. Sira banna." },
+    82→    82→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Haɗere", "Waɗɗude", "Habrude", "Kulol"], explication: "Maandeeji nguuru boɗejo holno haɗere. Laawol haɗaaŋol." },
+    83→    83→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Banna", "Wuli", "Caya", "Tariku"], explication: "Tɔgɔrɔ nguuru bord tariku fɔ banna. Sira banna." }
+    84→    84→    }
+    85→    85→  },
+    86→    86→  {
+    87→    87→    id: 3,
+    88→    88→    texte: "Que signifie ce panneau ?",
+    89→    89→    options: ["Arrêt", "Cédez le passage", "Priorité à droite", "Danger"],
+    90→    90→    bonneReponse: 1,
+    91→    91→    categorie: "Signalisation",
+    92→    92→    difficulte: "moyen",
+    93→    93→    mediaType: "sign",
+    94→    94→    signImage: "/signs/cedezer-passage.png",
+    95→    95→    explication: "Le panneau triangulaire inversé (cédez le passage) impose de laisser passer les autres véhicules.",
+    96→    96→    points: 1,
+    97→    97→    tempsEstime: 25,
+    98→    98→    tags: ["panneau", "cédez le passage", "priorité"],
+    99→    99→    actif: true,
+   100→   100→    translations: {
+   101→   101→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Kabɛ", "I ma sɔrɔ sira di", "Kanu wo ma", "Xili"], explication: "Tɔgɔrɔ na i ma sɔrɔ sira di gari bɛɛ ma." },
+   102→   102→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Darto", "Hokku laawol", "Laawol aranal", "Kulol"], explication: "Maandeeji ngal hokkata laawol kaaɗe goɗɗe." },
+   103→   103→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Ka bɔ", "Ka sɔrɔ sira di", "Kanu wo ma", "Tariku"], explication: "Tɔgɔrɔ na ka sɔrɔ sira di kɛrɛ bɛɛ ma." }
+   104→   104→    }
+   105→   105→  },
+   106→   106→  {
+   107→   107→    id: 4,
+   108→   108→    texte: "Que signifie ce panneau ?",
+   109→   109→    options: ["Interdiction", "Obligation", "Indication", "Priorité"],
+   110→   110→    bonneReponse: 3,
+   111→   111→    categorie: "Signalisation",
+   112→   112→    difficulte: "moyen",
+   113→   113→    mediaType: "sign",
+   114→   114→    signImage: "/signs/priorite-droite.png",
+   115→   115→    explication: "Le panneau en losange indique une priorité, ici la priorité à l'intersection.",
+   116→   116→    points: 1,
+   117→   117→    tempsEstime: 25,
+   118→   118→    tags: ["panneau", "priorité", "losange"],
+   119→   119→    actif: true,
+   120→   120→    translations: {
+   121→   121→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Banna", "Ma kɛ", "Caya", "Kanu"], explication: "Tɔgɔrɔ diamaŋ fɔ kanu carrefour kɔnɔ." },
+   122→   122→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Haɗere", "Waɗɗude", "Habrude", "Laawol aranal"], explication: "Maandeeji diamaŋ holno laawol aranal e carol." },
+   123→   123→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Banna", "Wuli", "Caya", "Kanu"], explication: "Tɔgɔrɔ diamaŋ fɔ kanu carrefour kɔnɔ." }
+   124→   124→    }
+   125→   125→  },
+   126→   126→  {
+   127→   127→    id: 5,
+   128→   128→    texte: "Que signifie ce panneau ?",
+   129→   129→    options: ["Vitesse limitée à 50 km/h", "Vitesse minimale 50 km/h", "Vitesse recommandée 50 km/h", "Fin de limitation"],
+   130→   130→    bonneReponse: 0,
+   131→   131→    categorie: "Signalisation",
+   132→   132→    difficulte: "facile",
+   133→   133→    mediaType: "sign",
+   134→   134→    signImage: "/signs/limitation-50.png",
+   135→   135→    explication: "Un panneau circulaire avec bord rouge et chiffre indique une limitation de vitesse maximale.",
+   136→   136→    points: 1,
+   137→   137→    tempsEstime: 20,
+   138→   138→    tags: ["panneau", "vitesse", "limitation"],
+   139→   139→    actif: true,
+   140→   140→    translations: {
+   141→   141→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Yɛrɛyɛrɛ ma 50 km/h", "Yɛrɛyɛrɛ piti 50 km/h", "Yɛrɛyɛrɛ di 50 km/h", "Yɛrɛyɛrɛ banna ta"], explication: "Tɔgɔrɔ nguuru bord xili yɛrɛyɛrɛ ma 50 km/h." },
+   142→   142→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Yaawol haa 50 km/h", "Yaawol lesdi 50 km/h", "Yaawol wasiya 50 km/h", "Fin yaawol"], explication: "Maandeeji nguuru boɗejo holno yaawol haa 50 km/h." },
+   143→   143→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Yɛlɛ ma 50 km/h", "Yɛlɛ piti 50 km/h", "Yɛlɛ di 50 km/h", "Yɛlɛ banna ta"], explication: "Tɔgɔrɔ nguuru bord tariku yɛlɛ ma 50 km/h." }
+   144→   144→    }
+   145→   145→  },
+   146→   146→  {
+   147→   147→    id: 6,
+   148→   148→    texte: "Que signifie ce panneau ?",
+   149→   149→    options: ["Interdiction de dépasser", "Sens interdit aux camions", "Danger poids lourd", "Fin d'interdiction"],
+   150→   150→    bonneReponse: 0,
+   151→   151→    categorie: "Signalisation",
+   152→   152→    difficulte: "moyen",
+   153→   153→    mediaType: "sign",
+   154→   154→    signImage: "/signs/interdiction-depasser.png",
+   155→   155→    explication: "Ce panneau interdit le dépassement de véhicules pour tous les conducteurs.",
+   156→   156→    points: 1,
+   157→   157→    tempsEstime: 25,
+   158→   158→    tags: ["panneau", "dépassement", "interdiction"],
+   159→   159→    actif: true,
+   160→   160→    translations: {
+   161→   161→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Siri banna", "Kamyon sira banna", "Kamyon xili", "Banna ta"], explication: "Tɔgɔrɔ na siri banna gari bɛɛ ma." },
+   162→   162→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Haɗere yahde lesdi", "Laawol haɗaaŋol loɗɓe", "Kulol loɗɓe", "Fin haɗere"], explication: "Maandeeji ngal haɗata yahde lesdi kaaɗe goɗɗe." },
+   163→   163→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Siri banna", "Kamyon sira banna", "Kamyon tariku", "Banna ta"], explication: "Tɔgɔrɔ na siri banna kɛrɛ bɛɛ ma." }
+   164→   164→    }
+   165→   165→  },
+   166→   166→  {
+   167→   167→    id: 7,
+   168→   168→    texte: "Que signifie ce panneau ?",
+   169→   169→    options: ["Passage piétons", "Zone scolaire", "Parking", "Arrêt de bus"],
+   170→   170→    bonneReponse: 0,
+   171→   171→    categorie: "Signalisation",
+   172→   172→    difficulte: "facile",
+   173→   173→    mediaType: "sign",
+   174→   174→    signImage: "/signs/passage-pietons.png",
+   175→   175→    explication: "Le panneau bleu carré avec piéton indique un passage pour piétons.",
+   176→   176→    points: 1,
+   177→   177→    tempsEstime: 20,
+   178→   178→    tags: ["panneau", "piéton", "passage"],
+   179→   179→    actif: true,
+   180→   180→    translations: {
+   181→   181→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Mɔgɔ ta sira", "Sikolo kɔnɔ", "Parki", "Bisi kabɛ"], explication: "Tɔgɔrɔ bulu kɔnɔ mɔgɔ ta sira." },
+   182→   182→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Laawol yahɓe", "Nokku janngirde", "Parki", "Bisi dartol"], explication: "Maandeeji bulo holno laawol yahɓe." },
+   183→   183→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Mɔgɔ ta sira", "Kalan kɔnɔ", "Parki", "Bisi kabɛ"], explication: "Tɔgɔrɔ bulu kɔnɔ mɔgɔ ta sira." }
+   184→   184→    }
+   185→   185→  },
+   186→   186→  {
+   187→   187→    id: 8,
+   188→   188→    texte: "Que signifie ce panneau ?",
+   189→   189→    options: ["Obligation de tourner à droite", "Sens obligatoire à droite", "Danger virage à droite", "Interdiction de tourner"],
+   190→   190→    bonneReponse: 1,
+   191→   191→    categorie: "Signalisation",
+   192→   192→    difficulte: "moyen",
+   193→   193→    mediaType: "sign",
+   194→   194→    signImage: "/signs/sens-obligatoire.png",
+   195→   195→    explication: "Le panneau rond bleu avec flèche indique une direction obligatoire.",
+   196→   196→    points: 1,
+   197→   197→    tempsEstime: 25,
+   198→   198→    tags: ["panneau", "obligation", "direction"],
+   199→   199→    actif: true,
+   200→   200→    translations: {
+   201→   201→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["I ma wuli wo ma", "Sira ma wo ma", "Wo ma xili", "Wuli banna"], explication: "Tɔgɔrɔ nguuru bulu sira ma wo ma." },
+   202→   202→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Waɗɗude fayta ñaamo", "Laawol waɗɗude ñaamo", "Kulol fayta ñaamo", "Haɗere fayta"], explication: "Maandeeji nguuru bulo holno laawol waɗɗude ñaamo." },
+   203→   203→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["I ma wuli wo ma", "Sira ma wo ma", "Wo ma tariku", "Wuli banna"], explication: "Tɔgɔrɔ nguuru bulu sira ma wo ma." }
+   204→   204→    }
+   205→   205→  },
+   206→   206→  {
+   207→   207→    id: 9,
+   208→   208→    texte: "Que signifie ce panneau ?",
+   209→   209→    options: ["Virage dangereux", "Rond-point", "Carrefour", "Route glissante"],
+   210→   210→    bonneReponse: 0,
+   211→   211→    categorie: "Signalisation",
+   212→   212→    difficulte: "facile",
+   213→   213→    mediaType: "sign",
+   214→   214→    signImage: "/signs/virage-dangereux.png",
+   215→   215→    explication: "Le triangle rouge avec flèche courbe signale un virage dangereux, il faut ralentir.",
+   216→   216→    points: 1,
+   217→   217→    tempsEstime: 20,
+   218→   218→    tags: ["panneau", "danger", "virage"],
+   219→   219→    actif: true,
+   220→   220→    translations: {
+   221→   221→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Wuli xili", "Rond-point", "Carrefour", "Sira sili"], explication: "Tɔgɔrɔ na wuli xili, i ma yɛrɛyɛrɛ diya." },
+   222→   222→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Fayta kulol", "Rond-point", "Carol", "Laawol ɓuuɓol"], explication: "Maandeeji ngal holno fayta kulol, ma leeltina." },
+   223→   223→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Wuli tariku", "Rond-point", "Carrefour", "Sira sili"], explication: "Tɔgɔrɔ na wuli tariku, i ma yɛlɛ diya." }
+   224→   224→    }
+   225→   225→  },
+   226→   226→  {
+   227→   227→    id: 10,
+   228→   228→    texte: "Que signifie ce panneau ?",
+   229→   229→    options: ["Sens interdit", "Rond-point", "Carrefour à 4 voies", "Cédez le passage"],
+   230→   230→    bonneReponse: 1,
+   231→   231→    categorie: "Signalisation",
+   232→   232→    difficulte: "moyen",
+   233→   233→    mediaType: "sign",
+   234→   234→    signImage: "/signs/rond-point.png",
+   235→   235→    explication: "Le panneau bleu avec flèches circulaires indique un rond-point. Les véhicules dans le rond-point ont la priorité.",
+   236→   236→    points: 1,
+   237→   237→    tempsEstime: 25,
+   238→   238→    tags: ["panneau", "rond-point", "priorité"],
+   239→   239→    actif: true,
+   240→   240→    translations: {
+   241→   241→      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Sira banna", "Rond-point", "Carrefour 4 sira", "I ma sɔrɔ sira di"], explication: "Tɔgɔrɔ bulu kɔnɔ rond-point. Gari rond-point kɔnɔ bɛ kanu." },
+   242→   242→      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Laawol haɗaaŋol", "Rond-point", "Carol 4 laawol", "Hokku laawol"], explication: "Maandeeji bulo holno rond-point. Kaaɗe e nder mayre laawol aranal." },
+   243→   243→      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Sira banna", "Rond-point", "Carrefour 4 sira", "Ka sɔrɔ sira di"], explication: "Tɔgɔrɔ bulu kɔnɔ rond-point. Kɛrɛ rond-point kɔnɔ bɛ kanu." }
+   244→   244→    }
+   245→   245→  },
+   246→   246→
+   247→   247→  // ---- SCENARIOS — With scenario images ----
+   248→   248→  {
+   249→   249→    id: 11,
+   250→   250→    texte: "Vous approchez de cette intersection. Qui a la priorité ?",
+   251→   251→    options: ["Vous, car vous venez de la droite", "Le véhicule bleu, il est dans le rond-point", "Les piétons uniquement", "Celui qui arrive le premier"],
+   252→   252→    bonneReponse: 1,
+   253→   253→    categorie: "Priorité",
+   254→   254→    difficulte: "moyen",
+   255→   255→    mediaType: "scenario",
+   256→   256→    scenarioImage: "/scenarios/intersection-conakry.png",
+   257→   257→    explication: "Dans un rond-point, les véhicules qui y circulent ont toujours la priorité sur ceux qui veulent y entrer.",
+   258→   258→    points: 1,
+   259→   259→    tempsEstime: 30,
+   260→   260→    tags: ["priorité", "rond-point", "intersection"],
+   261→   261→    actif: true,
+   262→   262→    translations: {
+   263→   263→      ss: { texte: "I bɛ carrefour na. Mɔgɔ sɛnɛ bɛ kanu?", options: ["I, i na wo ma bɛ", "Gari bulu, a bɛ rond-point kɔnɔ", "Mɔgɔ tɛgɛn dɛrɛ", "Mɔgɔ na bɛ xɔlɔ"], explication: "Rond-point kɔnɔ gari bɛ kanu gari na bɛ tɛ ma." },
+   264→   264→      fu: { texte: "Aɗa sosa carol ngal. Hommbo laawol aranal?", options: ["Aɗa, aɗa arda e ñaamo", "Kaaɗe bulu, e nder rond-point", "Yahɓe tan", "Moƴƴino arata"], explication: "E nder rond-point, kaaɗe nder mayre laawol aranal." },
+   265→   265→      ml: { texte: "I bɛ carrefour na. Mɔgɔ sɛnɛ bɛ kanu?", options: ["I, i na wo ma bɛ", "Kɛrɛ bulu, a bɛ rond-point kɔnɔ", "Mɔgɔ tɛgɛn dɛrɛ", "Mɔgɔ na bɛ xɔlɔ"], explication: "Rond-point kɔnɔ kɛrɛ bɛ kanu kɛrɛ na bɛ tɛ ma." }
+   266→   266→    }
+   267→   267→  },
+   268→   268→  {
+   269→   269→    id: 12,
+   270→   270→    texte: "Dans cette situation, que devez-vous faire ?",
+   271→   271→    options: ["Accélérer pour passer rapidement", "Ralentir et céder le passage aux piétons", "Klaxonner pour les prévenir", "Continuer à la même vitesse"],
+   272→   272→    bonneReponse: 1,
+   273→   273→    categorie: "Priorité",
+   274→   274→    difficulte: "facile",
+   275→   275→    mediaType: "scenario",
+   276→   276→    scenarioImage: "/scenarios/passage-pietons-approche.png",
+   277→   277→    explication: "Lorsqu'on approche d'un passage piétons avec des piétons, on doit ralentir et céder le passage.",
+   278→   278→    points: 1,
+   279→   279→    tempsEstime: 25,
+   280→   280→    tags: ["priorité", "piéton", "passage"],
+   281→   281→    actif: true,
+   282→   282→    translations: {
+   283→   283→      ss: { texte: "Xili na, i ma kɛ mun?", options: ["Yɛrɛyɛrɛ kɛ i na tɛli", "Yɛrɛyɛrɛ diya i ma sɔrɔ sira di mɔgɔ ma", "Klaksoni i na fɔ mɔgɔ", "Taga yɛrɛyɛrɛ kelen na"], explication: "Mɔgɔ ta sira na i ma yɛrɛyɛrɛ diya i ma sɔrɔ sira di mɔgɔ ma." },
+   284→   284→      fu: { texte: "E nder ngonka ngal, ko haɗa waɗde?", options: ["Yaawna ngam yahde", "Leeltina hokku yahɓe laawol", "Fiyu hoore", "Jokku e yaawre ndee"], explication: "So aɗa sosa laawol yahɓe, aɗa haɗa leeltina hokku yahɓe laawol." },
+   285→   285→      ml: { texte: "Xili na, i ma kɛ mun?", options: ["Yɛlɛ kɛ i na tɛli", "Yɛlɛ diya ka sɔrɔ sira di mɔgɔ ma", "Klaksoni i na fɔ mɔgɔ", "Taga yɛlɛ kelen na"], explication: "Mɔgɔ ta sira na i ma yɛlɛ diya ka sɔrɔ sira di mɔgɔ ma." }
+   286→   286→    }
+   287→   287→  },
+   288→   288→  {
+   289→   289→    id: 13,
+   290→   290→    texte: "Dans cette situation, le dépassement est-il autorisé ?",
+   291→   291→    options: ["Oui, la route est libre", "Non, la visibilité est insuffisante", "Oui, mais seulement à 80 km/h", "Oui, si le camion roule lentement"],
+   292→   292→    bonneReponse: 1,
+   293→   293→    categorie: "Réglementation",
+   294→   294→    difficulte: "difficile",
+   295→   295→    mediaType: "scenario",
+   296→   296→    scenarioImage: "/scenarios/depassement.png",
+   297→   297→    explication: "Le dépassement est interdit lorsque la visibilité est insuffisante, même si la route semble libre.",
+   298→   298→    points: 1,
+   299→   299→    tempsEstime: 35,
+   300→   300→    tags: ["dépassement", "sécurité", "visibilité"],
+   301→   301→    actif: true,
+   302→   302→    translations: {
+   303→   303→      ss: { texte: "Xili na, siri ma kɛ?", options: ["Awo, sira bɛ xɔlɔmɛ", "Ti, i ma ye diya", "Awo, fɔ 80 km/h", "Awo, kamyon ma yɛrɛyɛrɛ diya"], explication: "Siri banna i ma ye diya na." },
+   304→   304→      fu: { texte: "E nder ngonka ngal, yahde lesdi ina yaawi?", options: ["Eey, laawol ngol ina heewi", "Alaa, yi'ete ina ŋakki", "Eey, kono tan e 80 km/h", "Eey, so loɗɗe ndee ina leelti"], explication: "Yahde lesdi haɗaa so yi'ete ŋakki." },
+   305→   305→      ml: { texte: "Xili na, siri ma kɛ?", options: ["Awo, sira bɛ xɔlɔmɛ", "Ti, i ma ye diya", "Awo, fɔ 80 km/h", "Awo, kamyon ma yɛlɛ diya"], explication: "Siri banna i ma ye diya na." }
+   306→   306→    }
+   307→   307→  },
+   308→   308→
+   309→   309→  // ---- QUESTIONS TEXTE — Classic without images ----
+   310→   310→  {
+   311→   311→    id: 14,
+   312→   312→    texte: "Quelle est la vitesse maximale autorisée en agglomération en Guinée ?",
+   313→   313→    options: ["40 km/h", "50 km/h", "60 km/h", "80 km/h"],
+   314→   314→    bonneReponse: 1,
+   315→   315→    categorie: "Vitesse",
+   316→   316→    difficulte: "facile",
+   317→   317→    mediaType: "text",
+   318→   318→    explication: "La vitesse maximale en agglomération est de 50 km/h en Guinée.",
+   319→   319→    points: 1,
+   320→   320→    tempsEstime: 15,
+   321→   321→    tags: ["vitesse", "agglomération"],
+   322→   322→    actif: true,
+   323→   323→    translations: {
+   324→   324→      ss: { texte: "Yɛrɛyɛrɛ ma mun dugu kɔnɔ Guinée?", options: ["40 km/h", "50 km/h", "60 km/h", "80 km/h"], explication: "Yɛrɛyɛrɛ ma 50 km/h dugu kɔnɔ Guinée." },
+   325→   325→      fu: { texte: "Yaawol ɓurɗo saɗde e nder gure e Gine?", options: ["40 km/h", "50 km/h", "60 km/h", "80 km/h"], explication: "Yaawol ɓurɗo saɗde e nder gure ko 50 km/h." },
+   326→   326→      ml: { texte: "Yɛlɛ ma mun dugu kɔnɔ Guinée?", options: ["40 km/h", "50 km/h", "60 km/h", "80 km/h"], explication: "Yɛlɛ ma 50 km/h dugu kɔnɔ Guinée." }
+   327→   327→    }
+   328→   328→  },
+   329→   329→  {
+   330→   330→    id: 15,
+   331→   331→    texte: "Quel est le taux d'alcoolémie maximal autorisé pour conduire en Guinée ?",
+   332→   332→    options: ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"],
+   333→   333→    bonneReponse: 1,
+   334→   334→    categorie: "Réglementation",
+   335→   335→    difficulte: "facile",
+   336→   336→    mediaType: "text",
+   337→   337→    explication: "Le taux d'alcoolémie maximal autorisé est de 0,5 g/l en Guinée.",
+   338→   338→    points: 1,
+   339→   339→    tempsEstime: 15,
+   340→   340→    tags: ["alcool", "réglementation"],
+   341→   341→    actif: true,
+   342→   342→    translations: {
+   343→   343→      ss: { texte: "Alcoolémie ma mun kɛrɛ na Guinée kɔnɔ?", options: ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"], explication: "Alcoolémie ma 0,5 g/l Guinée kɔnɔ." },
+   344→   344→      fu: { texte: "Alkool ɓurɗo saɗde ngam yahde e Gine?", options: ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"], explication: "Alkool ɓurɗo saɗde ko 0,5 g/l e Gine." },
+   345→   345→      ml: { texte: "Alcoolémie ma mun kɛrɛ na Guinée kɔnɔ?", options: ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"], explication: "Alcoolémie ma 0,5 g/l Guinée kɔnɔ." }
+   346→   346→    }
+   347→   347→  },
+   348→   348→  {
+   349→   349→    id: 16,
+   350→   350→    texte: "Quel document est obligatoire pour conduire un véhicule en Guinée ?",
+   351→   351→    options: ["Carte d'identité uniquement", "Permis de conduire et carte grise", "Passeport", "Attestation de domicile"],
+   352→   352→    bonneReponse: 1,
+   353→   353→    categorie: "Réglementation",
+   354→   354→    difficulte: "facile",
+   355→   355→    mediaType: "text",
+   356→   356→    explication: "Le permis de conduire et la carte grise sont obligatoires.",
+   357→   357→    points: 1,
+   358→   358→    tempsEstime: 15,
+   359→   359→    tags: ["documents", "réglementation", "permis"],
+   360→   360→    actif: true,
+   361→   361→    translations: {
+   362→   362→      ss: { texte: "Fɛn mun ma sɔrɔ gari na Guinée kɔnɔ?", options: ["Karti identité dɛrɛ", "Permis yé karti grise", "Passeport", "Karti xɔlɔ"], explication: "Permis yé karti grise ma sɔrɔ." },
+   363→   363→      fu: { texte: "Ko ɓataake waɗɗude ngam yahde e Gine?", options: ["Kartal anndinde tan", "Yamiroore e kartal boɗeelo", "Paaspoota", "Seedantaagal hoɗde"], explication: "Yamiroore e kartal boɗeelo ko waɗɗude." },
+   364→   364→      ml: { texte: "Fɛn mun ma sɔrɔ kɛrɛ na Guinée kɔnɔ?", options: ["Karti identité dɛrɛ", "Permis yé karti grise", "Passeport", "Karti xɔlɔ"], explication: "Permis yé karti grise ma sɔrɔ." }
+   365→   365→    }
+   366→   366→  },
+   367→   367→  {
+   368→   368→    id: 17,
+   369→   369→    texte: "Que signifie un feu orange clignotant ?",
+   370→   370→    options: ["Arrêt obligatoire", "Feu en panne", "Prudence, passage à caractère dangereux", "Priorité à droite"],
+   371→   371→    bonneReponse: 2,
+   372→   372→    categorie: "Signalisation",
+   373→   373→    difficulte: "moyen",
+   374→   374→    mediaType: "text",
+   375→   375→    explication: "Un feu orange clignotant indique la prudence à un passage dangereux.",
+   376→   376→    points: 1,
+   377→   377→    tempsEstime: 20,
+   378→   378→    tags: ["feu", "signalisation", "prudence"],
+   379→   379→    actif: true,
+   380→   380→    translations: {
+   381→   381→      ss: { texte: "Lamɛ orange clignotant mu ye?", options: ["Kabɛ ma bɔ", "Lamɛ ti yɛ", "Xɛrɛfɔ, xili bɛrɛ", "Kanu wo ma"], explication: "Lamɛ orange clignotant xɛrɛfɔ xili bɛrɛ kɔnɔ." },
+   382→   382→      fu: { texte: "Lamɗe oraaɗe wiyteeje holno wadde?", options: ["Darto saawata", "Lamɗe bonɗe", "Reeno, laawol kulol", "Laawol aranal"], explication: "Lamɗe oraaɗe holno reeno e laawol kulol." },
+   383→   383→      ml: { texte: "Lamɛ orange clignotant mu ye?", options: ["Ka bɔ ma", "Lamɛ ti yɛ", "Xɛrɛfɔ, tariku bɛrɛ", "Kanu wo ma"], explication: "Lamɛ orange clignotant xɛrɛfɔ tariku bɛrɛ kɔnɔ." }
+   384→   384→    }
+   385→   385→  },
+   386→   386→  {
+   387→   387→    id: 18,
+   388→   388→    texte: "À quelle distance minimum devez-vous stationner d'un passage piéton ?",
+   389→   389→    options: ["3 mètres", "5 mètres", "10 mètres", "15 mètres"],
+   390→   390→    bonneReponse: 1,
+   391→   391→    categorie: "Stationnement",
+   392→   392→    difficulte: "moyen",
+   393→   393→    mediaType: "text",
+   394→   394→    explication: "Il est interdit de stationner à moins de 5 mètres d'un passage piéton.",
+   395→   395→    points: 1,
+   396→   396→    tempsEstime: 20,
+   397→   397→    tags: ["stationnement", "piéton", "distance"],
+   398→   398→    actif: true,
+   399→   399→    translations: {
+   400→   400→      ss: { texte: "I ma parki mɛtri mun mɔgɔ ta sira na?", options: ["3 mɛtri", "5 mɛtri", "10 mɛtri", "15 mɛtri"], explication: "I ti parki 5 mɛtri mɔgɔ ta sira na." },
+   401→   401→      fu: { texte: "Ko keeweendi ɓurndi famɗude ngam parkaade ɓadi laawol yahɓe?", options: ["3 meete", "5 meete", "10 meete", "15 meete"], explication: "Haɗaa parkaade ɓadi laawol yahɓe ko 5 meete." },
+   402→   402→      ml: { texte: "I ma parki mɛtri mun mɔgɔ ta sira na?", options: ["3 mɛtri", "5 mɛtri", "10 mɛtri", "15 mɛtri"], explication: "I ti parki 5 mɛtri mɔgɔ ta sira na." }
+   403→   403→    }
+   404→   404→  },
+   405→   405→  {
+   406→   406→    id: 19,
+   407→   407→    texte: "Qui a la priorité à un carrefour sans signalisation en Guinée ?",
+   408→   408→    options: ["Le véhicule le plus rapide", "Le véhicule venant de droite", "Le véhicule venant de gauche", "Le plus gros véhicule"],
+   409→   409→    bonneReponse: 1,
+   410→   410→    categorie: "Priorité",
+   411→   411→    difficulte: "facile",
+   412→   412→    mediaType: "text",
+   413→   413→    explication: "La priorité à droite s'applique en l'absence de signalisation.",
+   414→   414→    points: 1,
+   415→   415→    tempsEstime: 20,
+   416→   416→    tags: ["priorité", "carrefour", "droite"],
+   417→   417→    actif: true,
+   418→   418→    translations: {
+   419→   419→      ss: { texte: "Mɔgɔ sɛnɛ bɛ kanu carrefour kɔnɔ tɔgɔrɔ tɛ na Guinée?", options: ["Gari yɛrɛyɛrɛ tɛli", "Gari wo ma bɛ", "Gari numan ma bɛ", "Gari baba"], explication: "Kanu wo ma bɛ carrefour kɔnɔ tɔgɔrɔ tɛ na." },
+   420→   420→      fu: { texte: "Hommbo laawol aranal e carol tawa alaa maandeeji e Gine?", options: ["Kaaɗe ɓurɗe yaawde", "Kaaɗe ummiiɗe e ñaamo", "Kaaɗe ummiiɗe e nano", "Kaaɗe ɓurɗe mawnude"], explication: "Laawol aranal e ñaamo e carol tawa alaa maandeeji." },
+   421→   421→      ml: { texte: "Mɔgɔ sɛnɛ bɛ kanu carrefour kɔnɔ tɔgɔrɔ tɛ na Guinée?", options: ["Kɛrɛ yɛlɛ tɛli", "Kɛrɛ wo ma bɛ", "Kɛrɛ numan ma bɛ", "Kɛrɛ baba"], explication: "Kanu wo ma bɛ carrefour kɔnɔ tɔgɔrɔ tɛ na." }
+   422→   422→    }
+   423→   423→  },
+   424→   424→  {
+   425→   425→    id: 20,
+   426→   426→    texte: "Quel est l'âge minimal pour obtenir le permis de conduire catégorie B en Guinée ?",
+   427→   427→    options: ["16 ans", "18 ans", "20 ans", "21 ans"],
+   428→   428→    bonneReponse: 1,
+   429→   429→    categorie: "Réglementation",
+   430→   430→    difficulte: "facile",
+   431→   431→    mediaType: "text",
+   432→   432→    explication: "L'âge minimal pour le permis B est de 18 ans.",
+   433→   433→    points: 1,
+   434→   434→    tempsEstime: 15,
+   435→   435→    tags: ["âge", "permis", "réglementation"],
+   436→   436→    actif: true,
+   437→   437→    translations: {
+   438→   438→      ss: { texte: "Awa mun ma sɔrɔ permis B Guinée kɔnɔ?", options: ["16 awa", "18 awa", "20 awa", "21 awa"], explication: "Awa 18 ma sɔrɔ permis B." },
+   439→   439→      fu: { texte: "Duuɓi ɓurɗi famɗude ngam heɓde yamiroore B e Gine?", options: ["16 duuɓi", "18 duuɓi", "20 duuɓi", "21 duuɓi"], explication: "Duuɓi 18 ko ɓuri famɗude ngam yamiroore B." },
+   440→   440→      ml: { texte: "Awa mun ma sɔrɔ permis B Guinée kɔnɔ?", options: ["16 awa", "18 awa", "20 awa", "21 awa"], explication: "Awa 18 ma sɔrɔ permis B." }
+   441→   441→    }
+   442→   442→  },
+   443→   443→  {
+   444→   444→    id: 21,
+   445→   445→    texte: "Un panneau rectangulaire avec fond bleu indique :",
+   446→   446→    options: ["Interdiction", "Indication ou obligation", "Danger", "Travaux"],
+   447→   447→    bonneReponse: 1,
+   448→   448→    categorie: "Signalisation",
+   449→   449→    difficulte: "moyen",
+   450→   450→    mediaType: "text",
+   451→   451→    explication: "Un panneau rectangulaire bleu indique une obligation ou une indication.",
+   452→   452→    points: 1,
+   453→   453→    tempsEstime: 20,
+   454→   454→    tags: ["panneau", "obligation", "bleu"],
+   455→   455→    actif: true,
+   456→   456→    translations: {
+   457→   457→      ss: { texte: "Tɔgɔrɔ rectangle bulu fɔ ye:", options: ["Banna", "Caya walima ma kɛ", "Xili", "Goli"], explication: "Tɔgɔrɔ rectangle bulu caya walima ma kɛ." },
+   458→   458→      fu: { texte: "Panel tobeeki bulo holno:", options: ["Haɗere", "Habrude walla waɗɗude", "Kulol", "Golle"], explication: "Panel tobeeki bulo holno habrude walla waɗɗude." },
+   459→   459→      ml: { texte: "Tɔgɔrɔ rectangle bulu fɔ ye:", options: ["Banna", "Caya walima wuli", "Tariku", "Goli"], explication: "Tɔgɔrɔ rectangle bulu caya walima wuli." }
+   460→   460→    }
+   461→   461→  },
+   462→   462→  {
+   463→   463→    id: 22,
+   464→   464→    texte: "La ceinture de sécurité est obligatoire :",
+   465→   465→    options: ["Uniquement à l'avant", "Uniquement sur autoroute", "Pour tous les occupants", "Seulement pour le conducteur"],
+   466→   466→    bonneReponse: 2,
+   467→   467→    categorie: "Sécurité",
+   468→   468→    difficulte: "facile",
+   469→   469→    mediaType: "text",
+   470→   470→    explication: "La ceinture de sécurité est obligatoire pour tous les occupants du véhicule.",
+   471→   471→    points: 1,
+   472→   472→    tempsEstime: 15,
+   473→   473→    tags: ["ceinture", "sécurité", "obligation"],
+   474→   474→    actif: true,
+   475→   475→    translations: {
+   476→   476→      ss: { texte: "Ceinture ma bɛ:", options: ["Xɔlɔma dɛrɛ", "Autoroute dɛrɛ", "Mɔgɔ bɛɛ", "Kɛrɛ kɛlɛ dɛrɛ"], explication: "Ceinture ma bɛ mɔgɔ bɛɛ." },
+   477→   477→      fu: { texte: "Sarworgal ko waɗɗude:", options: ["Yeeso tan", "Laawol mawngol tan", "Yimɓe fof e nder kaaɗe", "Koolaaɗo tan"], explication: "Sarworgal ko waɗɗude yimɓe fof e nder kaaɗe." },
+   478→   478→      ml: { texte: "Ceinture ma bɛ:", options: ["Xɔlɔma dɛrɛ", "Autoroute dɛrɛ", "Mɔgɔ bɛɛ", "Kɛrɛ kɛlɛ dɛrɛ"], explication: "Ceinture ma bɛ mɔgɔ bɛɛ." }
+   479→   479→    }
+   480→   480→  },
+   481→   481→  {
+   482→   482→    id: 23,
+   483→   483→    texte: "Que faire en cas d'accident avec des blessés ?",
+   484→   484→    options: ["Continuer votre route", "S'arrêter, sécuriser, alerter les secours", "Déplacer les blessés immédiatement", "Appeler uniquement la police"],
+   485→   485→    bonneReponse: 1,
+   486→   486→    categorie: "Sécurité",
+   487→   487→    difficulte: "facile",
+   488→   488→    mediaType: "text",
+   489→   489→    explication: "Il faut s'arrêter, sécuriser le lieu et alerter les secours (SAMU : 115).",
+   490→   490→    points: 1,
+   491→   491→    tempsEstime: 20,
+   492→   492→    tags: ["accident", "secours", "sécurité"],
+   493→   493→    actif: true,
+   494→   494→    translations: {
+   495→   495→      ss: { texte: "Aksida kɔnɔ mɔgɔ bɛ sɔrɔ, i ma kɛ mun?", options: ["Taga tɛ sira", "Kabɛ, xili, fɔ samu", "Siri mɔgɔ tɛli", "Fɔ polis dɛrɛ"], explication: "I ma kabɛ, xili, fɔ samu (115)." },
+   496→   496→      fu: { texte: "Ko waɗde so aksida waɗi yimɓe njiɓɓi?", options: ["Jokku yahde", "Darto, reeno, neldu ballal", "Ritin yimɓe ɓe", "Nodda polis tan"], explication: "Darto, reeno, neldu ballal (115)." },
+   497→   497→      ml: { texte: "Aksida kɔnɔ mɔgɔ bɛ sɔrɔ, i ma kɛ mun?", options: ["Taga tɛ sira", "Ka bɔ, ka xili, ka fɔ samu", "Ka siri mɔgɔ tɛli", "Ka fɔ polis dɛrɛ"], explication: "I ma ka bɔ, ka xili, ka fɔ samu (115)." }
+   498→   498→    }
+   499→   499→  },
+   500→   500→  {
+   501→   501→    id: 24,
+   502→   502→    texte: "Quel est le sens de circulation en Guinée ?",
+   503→   503→    options: ["Gauche", "Droite", "Les deux selon les routes", "Pas de règle définie"],
+   504→   504→    bonneReponse: 1,
+   505→   505→    categorie: "Réglementation",
+   506→   506→    difficulte: "facile",
+   507→   507→    mediaType: "text",
+   508→   508→    explication: "La Guinée circule à droite, comme la majorité des pays d'Afrique de l'Ouest.",
+   509→   509→    points: 1,
+   510→   510→    tempsEstime: 15,
+   511→   511→    tags: ["circulation", "sens", "réglementation"],
+   512→   512→    actif: true,
+   513→   513→    translations: {
+   514→   514→      ss: { texte: "Sira mun bɛ Guinée kɔnɔ?", options: ["Numan", "Wo ma", "Bɛɛ la sira", "Sariya tɛ"], explication: "Guinée bɛ wo ma." },
+   515→   515→      fu: { texte: "Ko laawol yahde e Gine?", options: ["Nano", "Ñaamo", "Goɗɗum e laawol", "Alaa sariya"], explication: "Gine yahata e ñaamo." },
+   516→   516→      ml: { texte: "Sira mun bɛ Guinée kɔnɔ?", options: ["Numan", "Wo ma", "Bɛɛ la sira", "Sariya tɛ"], explication: "Guinée bɛ wo ma." }
+   517→   517→    }
+   518→   518→  },
+   519→   519→  {
+   520→   520→    id: 25,
+   521→   521→    texte: "La distance de sécurité recommandée entre deux véhicules est de :",
+   522→   522→    options: ["1 seconde", "2 secondes", "5 secondes", "10 secondes"],
+   523→   523→    bonneReponse: 1,
+   524→   524→    categorie: "Sécurité",
+   525→   525→    difficulte: "moyen",
+   526→   526→    mediaType: "text",
+   527→   527→    explication: "La règle des 2 secondes est recommandée pour maintenir une distance de sécurité.",
+   528→   528→    points: 1,
+   529→   529→    tempsEstime: 20,
+   530→   530→    tags: ["distance", "sécurité", "vitesse"],
+   531→   531→    actif: true,
+   532→   532→    translations: {
+   533→   533→      ss: { texte: "Kɛrɛ mɛrɛ diya gari bɛɛ kɔnɔ bɛ:", options: ["1 sɛkɔnd", "2 sɛkɔnd", "5 sɛkɔnd", "10 sɛkɔnd"], explication: "2 sɛkɔnd bɛ kɛrɛ diya gari bɛɛ kɔnɔ." },
+   534→   534→      fu: { texte: "Ko keeweendi reenoɓe hakkunde kaaɗe ɗiɗi?", options: ["1 sekonde", "2 sekonde", "5 sekonde", "10 sekonde"], explication: "Sekonde 2 ko reenoɓe hakkunde kaaɗe." },
+   535→   535→      ml: { texte: "Kɛrɛ mɛrɛ diya kɛrɛ bɛɛ kɔnɔ bɛ:", options: ["1 sɛkɔnd", "2 sɛkɔnd", "5 sɛkɔnd", "10 sɛkɔnd"], explication: "2 sɛkɔnd bɛ kɛrɛ diya kɛrɛ bɛɛ kɔnɔ." }
+   536→   536→    }
+   537→   537→  },
+   538→   538→  {
+   539→   539→    id: 26,
+   540→   540→    texte: "Un panneau rond avec fond bleu et une flèche blanche pointant vers le haut signifie :",
+   541→   541→    options: ["Interdiction de tourner", "Obligation d'aller tout droit", "Sens unique", "Fin d'interdiction"],
+   542→   542→    bonneReponse: 1,
+   543→   543→    categorie: "Signalisation",
+   544→   544→    difficulte: "moyen",
+   545→   545→    mediaType: "text",
+   546→   546→    explication: "Un panneau rond bleu avec flèche blanche vers le haut = obligation d'aller tout droit.",
+   547→   547→    points: 1,
+   548→   548→    tempsEstime: 25,
+   549→   549→    tags: ["panneau", "obligation", "direction"],
+   550→   550→    actif: true,
+   551→   551→    translations: {
+   552→   552→      ss: { texte: "Tɔgɔrɔ nguuru bulu flèche blanche wo ma fɔ ye:", options: ["Wuli banna", "Ma tɛli taga", "Sira kɛlɛ", "Banna ta"], explication: "Tɔgɔrɔ nguuru bulu ma tɛli taga." },
+   553→   553→      fu: { texte: "Panel nguuru bulo feewuɗo holno:", options: ["Haɗere fayta", "Waɗɗude yahde yeeso", "Laawol gootol", "Fin haɗere"], explication: "Panel nguuru bulo waɗɗude yahde yeeso." },
+   554→   554→      ml: { texte: "Tɔgɔrɔ nguuru bulu flèche blanche wo ma fɔ ye:", options: ["Wuli banna", "Ma tɛli taga", "Sira kɛlɛ", "Banna ta"], explication: "Tɔgɔrɔ nguuru bulu ma tɛli taga." }
+   555→   555→    }
+   556→   556→  },
+   557→   557→  {
+   558→   558→    id: 27,
+   559→   559→    texte: "Quand faut-il utiliser les feux de détresse ?",
+   560→   560→    options: ["Pour se garer", "En cas de danger sur la route ou véhicule en panne", "Pour dire merci", "La nuit uniquement"],
+   561→   561→    bonneReponse: 1,
+   562→   562→    categorie: "Sécurité",
+   563→   563→    difficulte: "facile",
+   564→   564→    mediaType: "text",
+   565→   565→    explication: "Les feux de détresse sont utilisés pour signaler un danger ou un véhicule en panne.",
+   566→   566→    points: 1,
+   567→   567→    tempsEstime: 15,
+   568→   568→    tags: ["feux", "détresse", "sécurité"],
+   569→   569→    actif: true,
+   570→   570→    translations: {
+   571→   571→      ss: { texte: "I ma lamɛ xili sɛrɛ kɛ?", options: ["Parki na", "Xili walima gari ti yɛ", "Barika fɔ na", "Su dɛrɛ"], explication: "Lamɛ xili ma kɛ xili walima gari ti yɛ na." },
+   572→   572→      fu: { texte: "Ko waɗde huutoraade lamɗe caɗeele?", options: ["Ngam parkaade", "So kulol walla kaaɗe njaɓii", "Ngam yettaade", "Hitaande tan"], explication: "Lamɗe caɗeele huutortee so kulol walla kaaɗe njaɓii." },
+   573→   573→      ml: { texte: "I ma lamɛ xili sɛrɛ kɛ?", options: ["Parki na", "Tariku walima kɛrɛ ti yɛ", "Barika fɔ na", "Su dɛrɛ"], explication: "Lamɛ xili ma kɛ tariku walima kɛrɛ ti yɛ na." }
+   574→   574→    }
+   575→   575→  },
+   576→   576→  {
+   577→   577→    id: 28,
+   578→   578→    texte: "Un véhicule d'urgence avec gyrophaire approche. Que devez-vous faire ?",
+   579→   579→    options: ["Accélérer pour passer", "Vous arrêter ou vous ranger sur le côté", "Ignorer et continuer", "Klaxonner en retour"],
+   580→   580→    bonneReponse: 1,
+   581→   581→    categorie: "Priorité",
+   582→   582→    difficulte: "facile",
+   583→   583→    mediaType: "text",
+   584→   584→    explication: "Il faut céder le passage aux véhicules d'urgence en se rangeant sur le côté.",
+   585→   585→    points: 1,
+   586→   586→    tempsEstime: 15,
+   587→   587→    tags: ["urgence", "priorité", "gyrophaire"],
+   588→   588→    actif: true,
+   589→   589→    translations: {
+   590→   590→      ss: { texte: "Gari urgence gyrophaire bɛ. I ma kɛ mun?", options: ["Yɛrɛyɛrɛ kɛ i na tɛli", "Kabɛ walima siri kɔlɔma", "Taga tɛ", "Klaksoni"], explication: "I ma sɔrɔ sira di gari urgence ma." },
+   591→   591→      fu: { texte: "Kaaɗe caɗeele njaajotooɗe njiytii. Ko haɗa waɗde?", options: ["Yaawna ngam yahde", "Darto walla fayto e daande", "Yaajde e yahde", "Fiyu hoore"], explication: "Haɗa hokkude laawol kaaɗe caɗeele." },
+   592→   592→      ml: { texte: "Kɛrɛ urgence gyrophaire bɛ. I ma kɛ mun?", options: ["Yɛlɛ kɛ i na tɛli", "Ka bɔ walima ka siri kɔlɔma", "Taga tɛ", "Klaksoni"], explication: "I ma sɔrɔ sira di kɛrɛ urgence ma." }
+   593→   593→    }
+   594→   594→  },
+   595→   595→  {
+   596→   596→    id: 29,
+   597→   597→    texte: "Que signifie une ligne blanche continue au milieu de la chaussée ?",
+   598→   598→    options: ["On peut la franchir pour doubler", "Interdiction de la franchir", "Fin de route", "Zone de stationnement"],
+   599→   599→    bonneReponse: 1,
+   600→   600→    categorie: "Signalisation",
+   601→   601→    difficulte: "moyen",
+   602→   602→    mediaType: "text",
+   603→   603→    explication: "Une ligne blanche continue ne peut pas être franchie.",
+   604→   604→    points: 1,
+   605→   605→    tempsEstime: 20,
+   606→   606→    tags: ["ligne", "signalisation", "interdiction"],
+   607→   607→    actif: true,
+   608→   608→    translations: {
+   609→   609→      ss: { texte: "Ligne blanche sira kɔnɔ mu ye?", options: ["I ma siri ka fɛn", "Banna ka siri", "Sira banna ta", "Parki kɔnɔ"], explication: "Ligne blanche banna ka siri." },
+   610→   610→      fu: { texte: "Dariindi ɓaleeri jokkondiri e nder laawol holno?", options: ["Ena waawi taƴde", "Haɗaa taƴde", "Fin laawol", "Nokku parkaade"], explication: "Dariindi ɓaleeri haɗaa taƴde." },
+   611→   611→      ml: { texte: "Ligne blanche sira kɔnɔ mu ye?", options: ["I ma siri ka fɛn", "Banna ka siri", "Sira banna ta", "Parki kɔnɔ"], explication: "Ligne blanche banna ka siri." }
+   612→   612→    }
+   613→   613→  },
+   614→   614→  {
+   615→   615→    id: 30,
+   616→   616→    texte: "Quelle est la sanction pour conduite sans permis en Guinée ?",
+   617→   617→    options: ["Avertissement", "Amende et/ou peine de prison", "Retrait de points", "Stage obligatoire"],
+   618→   618→    bonneReponse: 1,
+   619→   619→    categorie: "Réglementation",
+   620→   620→    difficulte: "moyen",
+   621→   621→    mediaType: "text",
+   622→   622→    explication: "La conduite sans permis est punie d'une amende et/ou d'une peine de prison.",
+   623→   623→    points: 1,
+   624→   624→    tempsEstime: 20,
+   625→   625→    tags: ["sanction", "permis", "réglementation"],
+   626→   626→    actif: true,
+   627→   627→    translations: {
+   628→   628→      ss: { texte: "Sanction mun bɛ permis tɛ Guinée kɔnɔ?", options: ["Xɛrɛfɔ", "Amende walima kasu", "Pɔinti bɔ", "Fɔrmasiɔn"], explication: "Permis tɛ bɛ amende walima kasu." },
+   629→   629→      fu: { texte: "Ko lelta yahde tawa alaa yamiroore e Gine?", options: ["Jaŋde", "Lelda e/walla kasu", "Momde dottaaɗe", "Janngude"], explication: "Yahde tawa alaa yamiroore ko lelda e kasu." },
+   630→   630→      ml: { texte: "Sanction mun bɛ permis tɛ Guinée kɔnɔ?", options: ["Xɛrɛfɔ", "Amende walima kasu", "Pɔinti bɔ", "Fɔrmasiɔn"], explication: "Permis tɛ bɛ amende walima kasu." }
+   631→   631→    }
+   632→   632→  },
+   633→   633→  {
+   634→   634→    id: 31,
+   635→   635→    texte: "Quel est le numéro d'urgence médicale en Guinée ?",
+   636→   636→    options: ["15", "115", "17", "18"],
+   637→   637→    bonneReponse: 1,
+   638→   638→    categorie: "Sécurité",
+   639→   639→    difficulte: "facile",
+   640→   640→    mediaType: "text",
+   641→   641→    explication: "Le SAMU en Guinée est joignable au 115.",
+   642→   642→    points: 1,
+   643→   643→    tempsEstime: 10,
+   644→   644→    tags: ["urgence", "SAMU", "sécurité"],
+   645→   645→    actif: true,
+   646→   646→    translations: {
+   647→   647→      ss: { texte: "Numéro urgence médicale Guinée kɔnɔ mun ye?", options: ["15", "115", "17", "18"], explication: "SAMU Guinée bɛ 115." },
+   648→   648→      fu: { texte: "Ko limre caɗeele safaara e Gine?", options: ["15", "115", "17", "18"], explication: "SAMU e Gine ko 115." },
+   649→   649→      ml: { texte: "Numéro urgence médicale Guinée kɔnɔ mun ye?", options: ["15", "115", "17", "18"], explication: "SAMU Guinée bɛ 115." }
+   650→   650→    }
+   651→   651→  },
+   652→   652→  {
+   653→   653→    id: 32,
+   654→   654→    texte: "Dans un rond-point, qui a la priorité ?",
+   655→   655→    options: ["Les véhicules entrant", "Les véhicules circulant dans le rond-point", "Les piétons", "Les véhicules les plus rapides"],
+   656→   656→    bonneReponse: 1,
+   657→   657→    categorie: "Priorité",
+   658→   658→    difficulte: "facile",
+   659→   659→    mediaType: "text",
+   660→   660→    explication: "Les véhicules circulant dans le rond-point ont la priorité sur ceux qui y entrent.",
+   661→   661→    points: 1,
+   662→   662→    tempsEstime: 15,
+   663→   663→    tags: ["rond-point", "priorité"],
+   664→   664→    actif: true,
+   665→   665→    translations: {
+   666→   666→      ss: { texte: "Rond-point kɔnɔ, mɔgɔ sɛnɛ bɛ kanu?", options: ["Gari na bɛ tɛ", "Gari bɛ rond-point kɔnɔ", "Mɔgɔ tɛgɛn", "Gari yɛrɛyɛrɛ tɛli"], explication: "Gari bɛ rond-point kɔnɔ bɛ kanu gari na bɛ tɛ ma." },
+   667→   667→      fu: { texte: "E nder rond-point, hommbo laawol aranal?", options: ["Kaaɗe naatooɗe", "Kaaɗe e nder rond-point", "Yahɓe", "Kaaɗe ɓurɗe yaawde"], explication: "Kaaɗe e nder rond-point ina njogii laawol aranal." },
+   668→   668→      ml: { texte: "Rond-point kɔnɔ, mɔgɔ sɛnɛ bɛ kanu?", options: ["Kɛrɛ na bɛ tɛ", "Kɛrɛ bɛ rond-point kɔnɔ", "Mɔgɔ tɛgɛn", "Kɛrɛ yɛlɛ tɛli"], explication: "Kɛrɛ bɛ rond-point kɔnɔ bɛ kanu kɛrɛ na bɛ tɛ ma." }
+   669→   669→    }
+   670→   670→  },
+   671→   671→  {
+   672→   672→    id: 33,
+   673→   673→    texte: "La catégorie A du permis de conduire concerne :",
+   674→   674→    options: ["Les voitures", "Les motocyclettes", "Les camions", "Les autobus"],
+   675→   675→    bonneReponse: 1,
+   676→   676→    categorie: "Réglementation",
+   677→   677→    difficulte: "facile",
+   678→   678→    mediaType: "text",
+   679→   679→    explication: "La catégorie A est pour les motocyclettes.",
+   680→   680→    points: 1,
+   681→   681→    tempsEstime: 10,
+   682→   682→    tags: ["permis", "catégorie", "moto"],
+   683→   683→    actif: true,
+   684→   684→    translations: {
+   685→   685→      ss: { texte: "Permis A fɔ ye:", options: ["Kɛrɛ", "Moto", "Kamyon", "Bisi"], explication: "Permis A bɛ moto." },
+   686→   686→      fu: { texte: "Yamiroore A ko fii:", options: ["Kaaɗe", "Moota", "Loruuji", "Basi"], explication: "Yamiroore A ko fii moota." },
+   687→   687→      ml: { texte: "Permis A fɔ ye:", options: ["Kɛrɛ", "Moto", "Kamyon", "Bisi"], explication: "Permis A bɛ moto." }
+   688→   688→    }
+   689→   689→  },
+   690→   690→  {
+   691→   691→    id: 34,
+   692→   692→    texte: "Le dépassement d'un autre véhicule s'effectue par :",
+   693→   693→    options: ["La droite", "La gauche", "Le côté le plus proche", "Les deux côtés"],
+   694→   694→    bonneReponse: 1,
+   695→   695→    categorie: "Réglementation",
+   696→   696→    difficulte: "facile",
+   697→   697→    mediaType: "text",
+   698→   698→    explication: "Le dépassement s'effectue normalement par la gauche.",
+   699→   699→    points: 1,
+   700→   700→    tempsEstime: 15,
+   701→   701→    tags: ["dépassement", "gauche", "réglementation"],
+   702→   702→    actif: true,
+   703→   703→    translations: {
+   704→   704→      ss: { texte: "Siri gari sɛrɛ kɛ?", options: ["Wo ma", "Numan", "Kɔlɔma kɛlɛ", "Bɛɛ kɔlɔma"], explication: "Siri bɛ numan." },
+   705→   705→      fu: { texte: "Yahde lesdi waɗata e:", options: ["Ñaamo", "Nano", "Ɓadiɗum", "Goɗɗum kaaɗe"], explication: "Yahde lesdi waɗata e nano." },
+   706→   706→      ml: { texte: "Siri kɛrɛ sɛrɛ kɛ?", options: ["Wo ma", "Numan", "Kɔlɔma kɛlɛ", "Bɛɛ kɔlɔma"], explication: "Siri bɛ numan." }
+   707→   707→    }
+   708→   708→  },
+   709→   709→  {
+   710→   710→    id: 35,
+   711→   711→    texte: "Quel équipement est obligatoire dans un véhicule en Guinée ?",
+   712→   712→    options: ["GPS", "Trousse de premiers secours et extincteur", "Caméra de recul", "Climatisation"],
+   713→   713→    bonneReponse: 1,
+   714→   714→    categorie: "Sécurité",
+   715→   715→    difficulte: "moyen",
+   716→   716→    mediaType: "text",
+   717→   717→    explication: "La trousse de premiers secours et l'extincteur sont obligatoires.",
+   718→   718→    points: 1,
+   719→   719→    tempsEstime: 15,
+   720→   720→    tags: ["équipement", "sécurité", "obligation"],
+   721→   721→    actif: true,
+   722→   722→    translations: {
+   723→   723→      ss: { texte: "Fɛn mun ma sɔrɔ gari kɔnɔ Guinée?", options: ["GPS", "Trousse yé extincteur", "Kamera", "Climatisation"], explication: "Trousse yé extincteur ma sɔrɔ gari kɔnɔ." },
+   724→   724→      fu: { texte: "Ko huutoraade waɗɗude e nder kaaɗe e Gine?", options: ["GPS", "Trousse safrirde e jaagnoowo", "Kamera", "Wulnde"], explication: "Trousse safrirde e jaagnoowo ko waɗɗude e nder kaaɗe." },
+   725→   725→      ml: { texte: "Fɛn mun ma sɔrɔ kɛrɛ kɔnɔ Guinée?", options: ["GPS", "Trousse yé extincteur", "Kamera", "Climatisation"], explication: "Trousse yé extincteur ma sɔrɔ kɛrɛ kɔnɔ." }
+   726→   726→    }
+   727→   727→  },
+   728→   728→  {
+   729→   729→    id: 36,
+   730→   730→    texte: "Quelle est la vitesse maximale sur route nationale en Guinée ?",
+   731→   731→    options: ["80 km/h", "90 km/h", "110 km/h", "130 km/h"],
+   732→   732→    bonneReponse: 1,
+   733→   733→    categorie: "Vitesse",
+   734→   734→    difficulte: "facile",
+   735→   735→    mediaType: "text",
+   736→   736→    explication: "La vitesse maximale sur route nationale est de 90 km/h.",
+   737→   737→    points: 1,
+   738→   738→    tempsEstime: 15,
+   739→   739→    tags: ["vitesse", "route nationale"],
+   740→   740→    actif: true,
+   741→   741→    translations: {
+   742→   742→      ss: { texte: "Yɛrɛyɛrɛ ma mun route nationale kɔnɔ Guinée?", options: ["80 km/h", "90 km/h", "110 km/h", "130 km/h"], explication: "Yɛrɛyɛrɛ ma 90 km/h route nationale kɔnɔ." },
+   743→   743→      fu: { texte: "Yaawol ɓurɗo saɗde e laawol ngenndiwal e Gine?", options: ["80 km/h", "90 km/h", "110 km/h", "130 km/h"], explication: "Yaawol ɓurɗo saɗde e laawol ngenndiwal ko 90 km/h." },
+   744→   744→      ml: { texte: "Yɛlɛ ma mun tɛ nasyonali kɔnɔ Guinée?", options: ["80 km/h", "90 km/h", "110 km/h", "130 km/h"], explication: "Yɛlɛ ma 90 km/h tɛ nasyonali kɔnɔ." }
+   745→   745→    }
+   746→   746→  },
+   747→   747→  {
+   748→   748→    id: 37,
+   749→   749→    texte: "En cas de brouillard dense, quels feux devez-vous allumer ?",
+   750→   750→    options: ["Feux de croisement", "Feux de brouillard avant et arrière", "Feux de route", "Feux de détresse uniquement"],
+   751→   751→    bonneReponse: 1,
+   752→   752→    categorie: "Sécurité",
+   753→   753→    difficulte: "moyen",
+   754→   754→    mediaType: "text",
+   755→   755→    explication: "Par brouillard dense, les feux de brouillard avant et arrière doivent être allumés.",
+   756→   756→    points: 1,
+   757→   757→    tempsEstime: 20,
+   758→   758→    tags: ["brouillard", "feux", "sécurité"],
+   759→   759→    actif: true,
+   760→   760→    translations: {
+   761→   761→      ss: { texte: "Brouillard kɔnɔ, lamɛ sɛrɛ i ma allumer?", options: ["Lamɛ croisement", "Lamɛ brouillard xɔlɔma yé numan", "Lamɛ route", "Lamɛ xili dɛrɛ"], explication: "Brouillard kɔnɔ lamɛ brouillard ma allumer." },
+   762→   762→      fu: { texte: "So loope heewi, ko lamɗe haɗa fuɗɗaade?", options: ["Lamɗe naatgol", "Lamɗe loope yeeso e caggal", "Lamɗe laawol", "Lamɗe caɗeele tan"], explication: "So loope heewi lamɗe loope yeeso e caggal ma fuɗɗaade." },
+   763→   763→      ml: { texte: "Brouillard kɔnɔ, lamɛ sɛrɛ i ma allumer?", options: ["Lamɛ croisement", "Lamɛ brouillard xɔlɔma yé numan", "Lamɛ route", "Lamɛ xili dɛrɛ"], explication: "Brouillard kɔnɔ lamɛ brouillard ma allumer." }
+   764→   764→    }
+   765→   765→  },
+   766→   766→  {
+   767→   767→    id: 38,
+   768→   768→    texte: "Un panneau triangulaire avec un bord rouge indique :",
+   769→   769→    options: ["Une interdiction", "Une obligation", "Un danger", "Une indication"],
+   770→   770→    bonneReponse: 2,
+   771→   771→    categorie: "Signalisation",
+   772→   772→    difficulte: "facile",
+   773→   773→    mediaType: "text",
+   774→   774→    explication: "Un panneau triangulaire avec bord rouge signale un danger.",
+   775→   775→    points: 1,
+   776→   776→    tempsEstime: 15,
+   777→   777→    tags: ["panneau", "danger", "triangle"],
+   778→   778→    actif: true,
+   779→   779→    translations: {
+   780→   780→      ss: { texte: "Tɔgɔrɔ triangle bord xili fɔ ye:", options: ["Banna", "Ma kɛ", "Xili", "Caya"], explication: "Tɔgɔrɔ triangle bord xili fɔ xili." },
+   781→   781→      fu: { texte: "Panel nguuru boɗejo holno:", options: ["Haɗere", "Waɗɗude", "Kulol", "Habrude"], explication: "Panel nguuru boɗejo holno kulol." },
+   782→   782→      ml: { texte: "Tɔgɔrɔ triangle bord tariku fɔ ye:", options: ["Banna", "Wuli", "Tariku", "Caya"], explication: "Tɔgɔrɔ triangle bord tariku fɔ tariku." }
+   783→   783→    }
+   784→   784→  },
+   785→   785→  {
+   786→   786→    id: 39,
+   787→   787→    texte: "Quel est le taux d'alcoolémie maximal pour les conducteurs professionnels ?",
+   788→   788→    options: ["0,1 g/l", "0,2 g/l", "0,5 g/l", "0,8 g/l"],
+   789→   789→    bonneReponse: 1,
+   790→   790→    categorie: "Réglementation",
+   791→   791→    difficulte: "difficile",
+   792→   792→    mediaType: "text",
+   793→   793→    explication: "Pour les conducteurs professionnels, le taux maximal est de 0,2 g/l, plus strict que pour les conducteurs ordinaires.",
+   794→   794→    points: 1,
+   795→   795→    tempsEstime: 25,
+   796→   796→    tags: ["alcool", "professionnel", "réglementation"],
+   797→   797→    actif: true,
+   798→   798→    translations: {
+   799→   799→      ss: { texte: "Alcoolémie ma mun gari professionnel na?", options: ["0,1 g/l", "0,2 g/l", "0,5 g/l", "0,8 g/l"], explication: "Gari professionnel alcoolémie ma 0,2 g/l." },
+   800→   800→      fu: { texte: "Alkool ɓurɗo saɗde ngam kaaɗe gollorɗe?", options: ["0,1 g/l", "0,2 g/l", "0,5 g/l", "0,8 g/l"], explication: "Alkool ɓurɗo saɗde ngam kaaɗe gollorɗe ko 0,2 g/l." },
+   801→   801→      ml: { texte: "Alcoolémie ma mun kɛrɛ professionnel na?", options: ["0,1 g/l", "0,2 g/l", "0,5 g/l", "0,8 g/l"], explication: "Kɛrɛ professionnel alcoolémie ma 0,2 g/l." }
+   802→   802→    }
+   803→   803→  },
+   804→   804→  {
+   805→   805→    id: 40,
+   806→   806→    texte: "Un panneau avec un triangle blanc sur fond bleu indique :",
+   807→   807→    options: ["Fin de priorité", "Priorité à l'intersection", "Cédez le passage", "Sens interdit"],
+   808→   808→    bonneReponse: 1,
+   809→   809→    categorie: "Signalisation",
+   810→   810→    difficulte: "difficile",
+   811→   811→    mediaType: "text",
+   812→   812→    explication: "Le panneau priorité à l'intersection a un triangle blanc sur fond bleu.",
+   813→   813→    points: 1,
+   814→   814→    tempsEstime: 25,
+   815→   815→    tags: ["panneau", "priorité", "intersection"],
+   816→   816→    actif: true,
+   817→   817→    translations: {
+   818→   818→      ss: { texte: "Tɔgɔrɔ triangle blanche bulu kɔnɔ fɔ ye:", options: ["Kanu ta", "Kanu carrefour kɔnɔ", "I ma sɔrɔ sira di", "Sira banna"], explication: "Tɔgɔrɔ na kanu carrefour kɔnɔ." },
+   819→   819→      fu: { texte: "Panel nguuru daneejo e bulo holno:", options: ["Fin laawol aranal", "Laawol aranal e carol", "Hokku laawol", "Laawol haɗaaŋol"], explication: "Panel ngal holno laawol aranal e carol." },
+   820→   820→      ml: { texte: "Tɔgɔrɔ triangle blanche bulu kɔnɔ fɔ ye:", options: ["Kanu ta", "Kanu carrefour kɔnɔ", "Ka sɔrɔ sira di", "Sira banna"], explication: "Tɔgɔrɔ na kanu carrefour kɔnɔ." }
+   821→   821→    }
+   822→   822→  }
+   823→   823→];
+   824→   824→
+   825→   825→// ============================================================
+   826→   826→// Centers
+   827→   827→// ============================================================
+   828→   828→export const centres: Centre[] = [
+   829→   829→  {
+   830→   830→    id: "CTR-001",
+   831→   831→    nom: "Centre RouteSafe Kaloum",
+   832→   832→    ville: "Conakry",
+   833→   833→    region: "Conakry",
+   834→   834→    adresse: "Avenue de la République, Kaloum",
+   835→   835→    capacite: 50,
+   836→   836→    telephone: "+224 622 11 11 11",
+   837→   837→    email: "contact@routesafe-kaloum.gn",
+   838→   838→    actif: true,
+   839→   839→    accreditation: { dateDebut: "2025-01-01", dateFin: "2027-12-31", statut: "actif", scoreQualite: 92 },
+   840→   840→    equipements: ["Salle informatique", "Vidéoprojecteur", "Bureau examen", "Accessibilité PMR"],
+   841→   841→    languesDisponibles: ["fr", "ss", "fu", "ml"]
+   842→   842→  },
+   843→   843→  {
+   844→   844→    id: "CTR-002",
+   845→   845→    nom: "Centre Auto-Plus Dixinn",
+   846→   846→    ville: "Conakry",
+   847→   847→    region: "Conakry",
+   848→   848→    adresse: "Boulevard du Commerce, Dixinn",
+   849→   849→    capacite: 40,
+   850→   850→    telephone: "+224 622 22 22 22",
+   851→   851→    email: "info@autoplus-dixinn.gn",
+   852→   852→    actif: true,
+   853→   853→    accreditation: { dateDebut: "2025-03-01", dateFin: "2027-03-01", statut: "actif", scoreQualite: 88 },
+   854→   854→    equipements: ["Salle informatique", "Webcam surveillance", "Climatisation"],
+   855→   855→    languesDisponibles: ["fr", "ss"]
+   856→   856→  },
+   857→   857→  {
+   858→   858→    id: "CTR-003",
+   859→   859→    nom: "Centre Conduite Matam",
+   860→   860→    ville: "Conakry",
+   861→   861→    region: "Conakry",
+   862→   862→    adresse: "Route du Niger, Matam",
+   863→   863→    capacite: 35,
+   864→   864→    telephone: "+224 622 33 33 33",
+   865→   865→    email: "contact@conduite-matam.gn",
+   866→   866→    actif: true,
+   867→   867→    accreditation: { dateDebut: "2024-06-01", dateFin: "2026-06-01", statut: "en_renouvellement", scoreQualite: 75 },
+   868→   868→    equipements: ["Salle informatique"],
+   869→   869→    languesDisponibles: ["fr", "ss", "fu"]
+   870→   870→  },
+   871→   871→  {
+   872→   872→    id: "CTR-004",
+   873→   873→    nom: "Centre Permis Kankan",
+   874→   874→    ville: "Kankan",
+   875→   875→    region: "Kankan",
+   876→   876→    adresse: "Avenue Sékou Touré, Kankan",
+   877→   877→    capacite: 30,
+   878→   878→    telephone: "+224 622 44 44 44",
+   879→   879→    email: "info@permis-kankan.gn",
+   880→   880→    actif: true,
+   881→   881→    accreditation: { dateDebut: "2025-01-01", dateFin: "2027-12-31", statut: "actif", scoreQualite: 85 },
+   882→   882→    equipements: ["Salle informatique", "Vidéoprojecteur"],
+   883→   883→    languesDisponibles: ["fr", "ml"]
+   884→   884→  },
+   885→   885→  {
+   886→   886→    id: "CTR-005",
+   887→   887→    nom: "Centre Routier Nzérékoré",
+   888→   888→    ville: "Nzérékoré",
+   889→   889→    region: "Nzérékoré",
+   890→   890→    adresse: "Route de la Forêt, Nzérékoré",
+   891→   891→    capacite: 25,
+   892→   892→    telephone: "+224 622 55 55 55",
+   893→   893→    email: "contact@routier-nzerekore.gn",
+   894→   894→    actif: true,
+   895→   895→    accreditation: { dateDebut: "2025-06-01", dateFin: "2027-06-01", statut: "actif", scoreQualite: 80 },
+   896→   896→    equipements: ["Salle informatique"],
+   897→   897→    languesDisponibles: ["fr"]
+   898→   898→  },
+   899→   899→  {
+   900→   900→    id: "CTR-006",
+   901→   901→    nom: "Centre Auto-École Kindia",
+   902→   902→    ville: "Kindia",
+   903→   903→    region: "Kindia",
+   904→   904→    adresse: "Avenue de l'Indépendance, Kindia",
+   905→   905→    capacite: 20,
+   906→   906→    telephone: "+224 622 66 66 66",
+   907→   907→    email: "info@autoecole-kindia.gn",
+   908→   908→    actif: true,
+   909→   909→    accreditation: { dateDebut: "2025-01-01", dateFin: "2026-12-31", statut: "actif", scoreQualite: 78 },
+   910→   910→    equipements: ["Salle informatique"],
+   911→   911→    languesDisponibles: ["fr", "ss"]
+   912→   912→  },
+   913→   913→  {
+   914→   914→    id: "CTR-007",
+   915→   915→    nom: "Centre Routier Boké",
+   916→   916→    ville: "Boké",
+   917→   917→    region: "Boké",
+   918→   918→    adresse: "Avenue de la Mine, Boké",
+   919→   919→    capacite: 20,
+   920→   920→    telephone: "+224 622 77 77 77",
+   921→   921→    email: "contact@routier-boke.gn",
+   922→   922→    actif: false,
+   923→   923→    accreditation: { dateDebut: "2024-01-01", dateFin: "2025-12-31", statut: "expire", scoreQualite: 65 },
+   924→   924→    equipements: ["Salle informatique"],
+   925→   925→    languesDisponibles: ["fr", "ss"]
+   926→   926→  }
+   927→   927→];
+   928→   928→
+   929→   929→// ============================================================
+   930→   930→// Regions
+   931→   931→// ============================================================
+   932→   932→export const regions: Region[] = [
+   933→   933→  {
+   934→   934→    id: "REG-01",
+   935→   935→    nom: "Conakry",
+   936→   936→    villes: [{ id: "VIL-01", nom: "Conakry", centres: centres.filter(c => c.region === "Conakry") }]
+   937→   937→  },
+   938→   938→  {
+   939→   939→    id: "REG-02",
+   940→   940→    nom: "Kankan",
+   941→   941→    villes: [{ id: "VIL-04", nom: "Kankan", centres: centres.filter(c => c.region === "Kankan") }]
+   942→   942→  },
+   943→   943→  {
+   944→   944→    id: "REG-03",
+   945→   945→    nom: "Nzérékoré",
+   946→   946→    villes: [{ id: "VIL-05", nom: "Nzérékoré", centres: centres.filter(c => c.region === "Nzérékoré") }]
+   947→   947→  },
+   948→   948→  {
+   949→   949→    id: "REG-04",
+   950→   950→    nom: "Kindia",
+   951→   951→    villes: [{ id: "VIL-06", nom: "Kindia", centres: centres.filter(c => c.region === "Kindia") }]
+   952→   952→  },
+   953→   953→  {
+   954→   954→    id: "REG-05",
+   955→   955→    nom: "Boké",
+   956→   956→    villes: [{ id: "VIL-07", nom: "Boké", centres: centres.filter(c => c.region === "Boké") }]
+   957→   957→  }
+   958→   958→];
+   959→   959→
+   960→   960→// ============================================================
+   961→   961→// Time slots & permit categories
+   962→   962→// ============================================================
+   963→   963→export const creneauxHoraires = [
+   964→   964→  "08:00", "08:30", "09:00", "09:30",
+   965→   965→  "10:00", "10:30", "11:00", "11:30",
+   966→   966→  "14:00", "14:30", "15:00", "15:30",
+   967→   967→  "16:00", "16:30"
+   968→   968→];
+   969→   969→
+   970→   970→export const categoriesPermis = [
+   971→   971→  { value: "A", label: "A - Motocyclette" },
+   972→   972→  { value: "B", label: "B - Véhicule léger" },
+   973→   973→  { value: "C", label: "C - Camion" },
+   974→   974→  { value: "D", label: "D - Autobus" },
+   975→   975→  { value: "E", label: "E - Remorque" }
+   976→   976→];
+   977→   977→
+   978→   978→// ============================================================
+   979→   979→// Mock exam results
+   980→   980→// ============================================================
+   981→   981→export const mockExamResults: ExamResult[] = [
+   982→   982→  {
+   983→   983→    id: "RES-001",
+   984→   984→    session: {
+   985→   985→      id: "SES-001",
+   986→   986→      candidatId: "USR-001",
+   987→   987→      centreId: "CTR-001",
+   988→   988→      centreNom: "Centre RouteSafe Kaloum",
+   989→   989→      date: "2026-01-15",
+   990→   990→      heure: "09:00",
+   991→   991→      langue: "fr",
+   992→   992→      statut: "reussi",
+   993→   993→      score: 38,
+   994→   994→      totalQuestions: 40,
+   995→   995→      dateInscription: "2026-01-10"
+   996→   996→    },
+   997→   997→    score: 38,
+   998→   998→    totalQuestions: 40,
+   999→   999→    reussi: true,
+  1000→  1000→    details: [
+  1001→  1001→      { categorie: "Signalisation", total: 12, correct: 12 },
+  1002→  1002→      { categorie: "Sécurité", total: 8, correct: 8 },
+  1003→  1003→      { categorie: "Priorité", total: 6, correct: 5 },
+  1004→  1004→      { categorie: "Réglementation", total: 8, correct: 7 },
+  1005→  1005→      { categorie: "Vitesse", total: 4, correct: 4 },
+  1006→  1006→      { categorie: "Stationnement", total: 2, correct: 2 }
+  1007→  1007→    ],
+  1008→  1008→    datePassage: "2026-01-15"
+  1009→  1009→  },
+  1010→  1010→  {
+  1011→  1011→    id: "RES-002",
+  1012→  1012→    session: {
+  1013→  1013→      id: "SES-002",
+  1014→  1014→      candidatId: "USR-001",
+  1015→  1015→      centreId: "CTR-002",
+  1016→  1016→      centreNom: "Centre Auto-Plus Dixinn",
+  1017→  1017→      date: "2025-11-20",
+  1018→  1018→      heure: "14:00",
+  1019→  1019→      langue: "ss",
+  1020→  1020→      statut: "echoue",
+  1021→  1021→      score: 30,
+  1022→  1022→      totalQuestions: 40,
+  1023→  1023→      dateInscription: "2025-11-15"
+  1024→  1024→    },
+  1025→  1025→    score: 30,
+  1026→  1026→    totalQuestions: 40,
+  1027→  1027→    reussi: false,
+  1028→  1028→    details: [
+  1029→  1029→      { categorie: "Signalisation", total: 12, correct: 8 },
+  1030→  1030→      { categorie: "Sécurité", total: 8, correct: 6 },
+  1031→  1031→      { categorie: "Priorité", total: 6, correct: 4 },
+  1032→  1032→      { categorie: "Réglementation", total: 8, correct: 6 },
+  1033→  1033→      { categorie: "Vitesse", total: 4, correct: 4 },
+  1034→  1034→      { categorie: "Stationnement", total: 2, correct: 2 }
+  1035→  1035→    ],
+  1036→  1036→    datePassage: "2025-11-20"
+  1037→  1037→  }
+  1038→  1038→];
+  1039→  1039→
+  1040→  1040→// ============================================================
+  1041→  1041→// Courses
+  1042→  1042→// ============================================================
+  1043→  1043→export const courses: Course[] = [
+  1044→  1044→  {
+  1045→  1045→    id: "CRS-001",
+  1046→  1046→    titre: "Les panneaux de signalisation",
+  1047→  1047→    description: "Apprenez à reconnaître et comprendre tous les panneaux de signalisation routière en Guinée.",
+  1048→  1048→    categorie: "Signalisation",
+  1049→  1049→    status: "publie",
+  1050→  1050→    imageCover: "/signs/stop.png",
+  1051→  1051→    dureeTotale: 45,
+  1052→  1052→    nbInscrits: 2340,
+  1053→  1053→    rating: 4.8,
+  1054→  1054→    translations: {
+  1055→  1055→      ss: { titre: "Tɔgɔrɔ bɛɛ", description: "I kan tɔgɔrɔ bɛɛ Guinée sira kɔnɔ." },
+  1056→  1056→      fu: { titre: "Maandeeji laawol", description: "Janngo maandeeji laawol fof e Gine." },
+  1057→  1057→      ml: { titre: "Tɔgɔrɔ bɛɛ", description: "I kan tɔgɔrɔ bɛɛ Guinée sira kɔnɔ." }
+  1058→  1058→    },
+  1059→  1059→    lessons: [
+  1060→  1060→      { id: "LSN-001", titre: "Panneaux d'interdiction", description: "Forme circulaire, bord rouge", type: "sign", contenu: "Les panneaux d'interdiction sont circulaires avec un bord rouge.", signImage: "/signs/sens-interdit.png", duree: 10, ordre: 1, translations: { ss: { titre: "Banna tɔgɔrɔ", description: "Nguuru xumu, bord xili", contenu: "Banna tɔgɔrɔ bɛ nguuru xumu bord xili." } } },
+  1061→  1061→      { id: "LSN-002", titre: "Panneaux d'obligation", description: "Forme circulaire, fond bleu", type: "sign", contenu: "Les panneaux d'obligation sont circulaires avec fond bleu.", signImage: "/signs/sens-obligatoire.png", duree: 10, ordre: 2, translations: {} },
+  1062→  1062→      { id: "LSN-003", titre: "Panneaux de danger", description: "Forme triangulaire, bord rouge", type: "sign", contenu: "Les panneaux de danger sont triangulaires avec bord rouge.", signImage: "/signs/virage-dangereux.png", duree: 10, ordre: 3, translations: {} },
+  1063→  1063→      { id: "LSN-004", titre: "Panneaux d'indication", description: "Forme rectangulaire ou carrée", type: "sign", contenu: "Les panneaux d'indication sont rectangulaires ou carrés.", signImage: "/signs/passage-pietons.png", duree: 10, ordre: 4, translations: {} },
+  1064→  1064→      { id: "LSN-005", titre: "Quiz signalisation", description: "Testez vos connaissances", type: "quiz", contenu: "Quiz sur les panneaux de signalisation.", duree: 5, ordre: 5, translations: {} }
+  1065→  1065→    ]
+  1066→  1066→  },
+  1067→  1067→  {
+  1068→  1068→    id: "CRS-002",
+  1069→  1069→    titre: "Règles de priorité",
+  1070→  1070→    description: "Maîtrisez les règles de priorité : carrefours, ronds-points, passages piétons.",
+  1071→  1071→    categorie: "Priorité",
+  1072→  1072→    status: "publie",
+  1073→  1073→    imageCover: "/scenarios/intersection-conakry.png",
+  1074→  1074→    dureeTotale: 35,
+  1075→  1075→    nbInscrits: 1890,
+  1076→  1076→    rating: 4.6,
+  1077→  1077→    translations: {
+  1078→  1078→      ss: { titre: "Kanu sariya", description: "I kan kanu sariya bɛɛ: carrefour, rond-point, mɔgɔ ta sira." },
+  1079→  1079→      fu: { titre: "Sariya laawol aranal", description: "Heɓtu sariya laawol aranal: carol, rond-point, laawol yahɓe." },
+  1080→  1080→      ml: { titre: "Kanu sariya", description: "I kan kanu sariya bɛɛ: carrefour, rond-point, mɔgɔ ta sira." }
+  1081→  1081→    },
+  1082→  1082→    lessons: [
+  1083→  1083→      { id: "LSN-006", titre: "Priorité à droite", description: "La règle fondamentale", type: "text", contenu: "En l'absence de signalisation, la priorité est à droite.", duree: 10, ordre: 1, translations: {} },
+  1084→  1084→      { id: "LSN-007", titre: "Les ronds-points", description: "Comment aborder un rond-point", type: "sign", contenu: "Les véhicules dans le rond-point ont la priorité.", signImage: "/signs/rond-point.png", duree: 10, ordre: 2, translations: {} },
+  1085→  1085→      { id: "LSN-008", titre: "Passages piétons en situation", description: "Cas pratiques", type: "interactive", contenu: "Exercices interactifs sur les passages piétons.", scenarioImage: "/scenarios/passage-pietons-approche.png", duree: 15, ordre: 3, translations: {} }
+  1086→  1086→    ]
+  1087→  1087→  },
+  1088→  1088→  {
+  1089→  1089→    id: "CRS-003",
+  1090→  1090→    titre: "Conduite en sécurité",
+  1091→  1091→    description: "Vitesse, distance de sécurité, équipements obligatoires et conduite par intempéries.",
+  1092→  1092→    categorie: "Sécurité",
+  1093→  1093→    status: "publie",
+  1094→  1094→    imageCover: "/scenarios/depassement.png",
+  1095→  1095→    dureeTotale: 50,
+  1096→  1096→    nbInscrits: 3120,
+  1097→  1097→    rating: 4.9,
+  1098→  1098→    translations: {
+  1099→  1099→      ss: { titre: "Kɛrɛ xili na taga", description: "Yɛrɛyɛrɛ, kɛrɛ diya, fɛn ma sɔrɔ yé xili na taga." },
+  1100→  1100→      fu: { titre: "Yaawre e reeno", description: "Yaawol, keeweendi reeno, huutoraade waɗɗude e yahde e caɗe." },
+  1101→  1101→      ml: { titre: "Kɛrɛ tariku na taga", description: "Yɛlɛ, kɛrɛ diya, fɛn ma sɔrɔ yé tariku na taga." }
+  1102→  1102→    },
+  1103→  1103→    lessons: [
+  1104→  1104→      { id: "LSN-009", titre: "Limitations de vitesse", description: "Vitesse maximale par type de route", type: "sign", contenu: "Limitation de vitesse : 50 km/h en ville, 90 km/h sur route nationale.", signImage: "/signs/limitation-50.png", duree: 10, ordre: 1, translations: {} },
+  1105→  1105→      { id: "LSN-010", titre: "Distance de sécurité", description: "La règle des 2 secondes", type: "video", contenu: "Vidéo explicative sur la distance de sécurité.", duree: 10, ordre: 2, translations: {} },
+  1106→  1106→      { id: "LSN-011", titre: "Dépassement en sécurité", description: "Quand et comment dépasser", type: "interactive", contenu: "Cas pratiques de dépassement.", scenarioImage: "/scenarios/depassement.png", duree: 15, ordre: 3, translations: {} },
+  1107→  1107→      { id: "LSN-012", titre: "Conduite par intempéries", description: "Pluie, brouillard, nuit", type: "text", contenu: "Adaptation de la conduite selon les conditions météo.", duree: 15, ordre: 4, translations: {} }
+  1108→  1108→    ]
+  1109→  1109→  }
+  1110→  1110→];
+  1111→  1111→
+  1112→  1112→// ============================================================
+  1113→  1113→// Helper functions
+  1114→  1114→// ============================================================
+  1115→  1115→export function generateCandidateNumber(): string {
+  1116→  1116→  const num = Math.floor(100000 + Math.random() * 900000);
+  1117→  1117→  return `GN-CODE-2026-${num}`;
+  1118→  1118→}
+  1119→  1119→
+  1120→  1120→export function getRandomQuestions(count: number): Question[] {
+  1121→  1121→  const shuffled = [...questions].sort(() => Math.random() - 0.5);
+  1122→  1122→  return shuffled.slice(0, count);
+  1123→  1123→}
+  1124→  1124→
+  1125→  1125→export function getUpcomingDates(): string[] {
+  1126→  1126→  const dates: string[] = [];
+  1127→  1127→  const today = new Date();
+  1128→  1128→  for (let i = 1; i <= 14; i++) {
+  1129→  1129→    const date = new Date(today);
+  1130→  1130→    date.setDate(today.getDate() + i);
+  1131→  1131→    if (date.getDay() !== 0) {
+  1132→  1132→      dates.push(date.toISOString().split('T')[0]);
+  1133→  1133→    }
+  1134→  1134→  }
+  1135→  1135→  return dates;
+  1136→  1136→}
+  1137→  1137→
+  1138→  1138→export function getQuestionInLanguage(q: Question, lang: NationalLanguage): { texte: string; options: string[]; explication: string } {
+  1139→  1139→  if (lang === 'fr' || !q.translations[lang]) {
+  1140→  1140→    return { texte: q.texte, options: q.options, explication: q.explication };
+  1141→  1141→  }
+  1142→  1142→  const t = q.translations[lang]!;
+  1143→  1143→  return { texte: t.texte, options: t.options, explication: t.explication };
+  1144→  1144→}
+  1145→  1145→
+  1146→  1146→export function getLanguageName(code: NationalLanguage): string {
+  1147→  1147→  return languages.find(l => l.code === code)?.name || code;
+  1148→  1148→}
+  1149→  1149→
+  1150→  1150→export function getLanguageNativeName(code: NationalLanguage): string {
+  1151→  1151→  return languages.find(l => l.code === code)?.nativeName || code;
+  1152→  1152→}
+  1153→  1153→

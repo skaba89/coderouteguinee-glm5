@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ViewType, Course, NationalLanguage, Lesson, LessonType } from '@/lib/types';
-import { courses, getLanguageName } from '@/lib/mock-data';
-import { useLanguage } from '@/lib/language-context';
+import { courses } from '@/lib/mock-data';
 import { RoadSignDisplay } from '@/components/code-route/road-signs';
 import TTSPlayer from '@/components/code-route/tts-player';
 import {
@@ -71,38 +70,23 @@ function LessonTypeIcon({ type, className }: { type: LessonType; className?: str
 }
 
 // ─── Helpers ────────────────────────────────────────────────
-function getLocalizedCourseTitle(course: Course, lang: NationalLanguage): string {
-  if (lang !== 'fr' && course.translations[lang]?.titre) {
-    return course.translations[lang]!.titre;
-  }
+function getLocalizedCourseTitle(course: Course): string {
   return course.titre;
 }
 
-function getLocalizedCourseDesc(course: Course, lang: NationalLanguage): string {
-  if (lang !== 'fr' && course.translations[lang]?.description) {
-    return course.translations[lang]!.description;
-  }
+function getLocalizedCourseDesc(course: Course): string {
   return course.description;
 }
 
-function getLocalizedLessonTitle(lesson: Lesson, lang: NationalLanguage): string {
-  if (lang !== 'fr' && lesson.translations[lang]?.titre) {
-    return lesson.translations[lang]!.titre;
-  }
+function getLocalizedLessonTitle(lesson: Lesson): string {
   return lesson.titre;
 }
 
-function getLocalizedLessonDesc(lesson: Lesson, lang: NationalLanguage): string {
-  if (lang !== 'fr' && lesson.translations[lang]?.description) {
-    return lesson.translations[lang]!.description;
-  }
+function getLocalizedLessonDesc(lesson: Lesson): string {
   return lesson.description;
 }
 
-function getLocalizedLessonContent(lesson: Lesson, lang: NationalLanguage): string {
-  if (lang !== 'fr' && lesson.translations[lang]?.contenu) {
-    return lesson.translations[lang]!.contenu;
-  }
+function getLocalizedLessonContent(lesson: Lesson): string {
   return lesson.contenu;
 }
 
@@ -114,7 +98,7 @@ function formatNumber(n: number): string {
 function renderStars(rating: number) {
   const full = Math.floor(rating);
   const hasHalf = rating - full >= 0.3;
-  const stars = [];
+  const stars: React.ReactNode[] = [];
   for (let i = 0; i < 5; i++) {
     if (i < full) {
       stars.push(<Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />);
@@ -146,7 +130,7 @@ function getMockProgress(courseId: string): number {
 
 // ─── Main Component ─────────────────────────────────────────
 export default function CoursesPage({ onViewChange }: { onViewChange: (view: ViewType) => void }) {
-  const { currentLanguage, languageConfig } = useLanguage();
+  // Language always French for now
 
   // State
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
@@ -205,9 +189,9 @@ export default function CoursesPage({ onViewChange }: { onViewChange: (view: Vie
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
               style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: '#fff' }}
             >
-              <span>{languageConfig.flag}</span>
+              <span>{'fr'}</span>
               <span>
-                {getLanguageName(currentLanguage)} · {languageConfig.nativeName}
+                {'Français'} · {'Français'}
               </span>
             </div>
           </div>
@@ -289,7 +273,6 @@ export default function CoursesPage({ onViewChange }: { onViewChange: (view: Vie
                       <CourseCard
                         key={course.id}
                         course={course}
-                        lang={currentLanguage}
                         isExpanded={expandedCourseId === course.id}
                         expandedLessonId={expandedLessonId}
                         speakingLessonId={speakingLessonId}
@@ -365,7 +348,6 @@ function EmptyState({ tab }: { tab: string }) {
 // ─── Course Card ────────────────────────────────────────────
 function CourseCard({
   course,
-  lang,
   isExpanded,
   expandedLessonId,
   speakingLessonId,
@@ -374,7 +356,6 @@ function CourseCard({
   onSpeak,
 }: {
   course: Course;
-  lang: NationalLanguage;
   isExpanded: boolean;
   expandedLessonId: string | null;
   speakingLessonId: string | null;
@@ -453,10 +434,10 @@ function CourseCard({
               className="text-lg font-bold leading-snug"
               style={{ color: COLORS.primaryDark }}
             >
-              {getLocalizedCourseTitle(course, lang)}
+              {getLocalizedCourseTitle(course)}
             </CardTitle>
             <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-              {getLocalizedCourseDesc(course, lang)}
+              {getLocalizedCourseDesc(course)}
             </p>
           </div>
           {isExpanded && isCompleted && (
@@ -601,7 +582,7 @@ function CourseCard({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-gray-800 truncate">
-                              {getLocalizedLessonTitle(lesson, lang)}
+                              {getLocalizedLessonTitle(lesson)}
                             </span>
                             {lessonProgress === 'completed' && (
                               <CheckCircle className="h-4 w-4 flex-shrink-0" style={{ color: COLORS.green }} />
@@ -633,7 +614,7 @@ function CourseCard({
                         <div className="px-4 pb-4 pt-2 space-y-3">
                           {/* Lesson description */}
                           <p className="text-sm text-gray-600">
-                            {getLocalizedLessonDesc(lesson, lang)}
+                            {getLocalizedLessonDesc(lesson)}
                           </p>
 
                           {/* Road Sign SVG display */}
@@ -721,15 +702,15 @@ function CourseCard({
                               borderLeft: `3px solid ${COLORS.green}`,
                             }}
                           >
-                            {getLocalizedLessonContent(lesson, lang)}
+                            {getLocalizedLessonContent(lesson)}
                           </div>
 
                           {/* TTS Player */}
                           <TTSPlayer
-                            text={getLocalizedLessonContent(lesson, lang)}
-                            language={lang}
-                            showLanguageBadge={lang !== 'fr'}
-                            label={`Leçon : ${getLocalizedLessonTitle(lesson, lang)}`}
+                            text={getLocalizedLessonContent(lesson)}
+                            language={'fr'}
+                            showLanguageBadge={false}
+                            label={`Leçon : ${getLocalizedLessonTitle(lesson)}`}
                           />
                         </div>
                       )}

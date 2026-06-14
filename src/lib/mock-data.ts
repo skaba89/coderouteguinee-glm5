@@ -11,35 +11,11 @@ export const languages: LanguageConfig[] = [
     flag: 'france',
     regions: ['Toutes les régions'],
     population: 'Langue officielle'
-  },
-  {
-    code: 'ss',
-    name: 'Soussou',
-    nativeName: 'Sossoxui',
-    flag: 'wave',
-    regions: ['Conakry', 'Kindia', 'Boké'],
-    population: '~3 millions'
-  },
-  {
-    code: 'fu',
-    name: 'Poular',
-    nativeName: 'Pulaar',
-    flag: 'mountain',
-    regions: ['Labé', 'Mamou', 'Faranah'],
-    population: '~5 millions'
-  },
-  {
-    code: 'ml',
-    name: 'Malinké',
-    nativeName: 'Maninka',
-    flag: 'tree',
-    regions: ['Kankan', 'Kouroussa', 'Siguiri'],
-    population: '~4 millions'
   }
 ];
 
 // ============================================================
-// Question Bank — 40 questions with multimedia & translations
+// Question Bank — 40 questions with multimedia
 // ============================================================
 export const questions: Question[] = [
   // ---- SIGNALISATION — With road sign images ----
@@ -56,12 +32,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["panneau", "stop", "arrêt"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Kabɛ ma bɔ", "I ma sɔrɔ sira di", "Sira banna", "Kanu wo ma"], explication: "Tɔgɔrɔ STOP ma kabɛ bɔ kɔrɔ i na taga." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Darto saawata", "Hokku laawol", "Laawol haɗaaŋol", "Laawol aranal"], explication: "Maandeeji STOP waɗɗude dartol so'a yahde." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Ka bɔ ma", "Ka sɔrɔ sira di", "Sira banna", "Kanu wo ma"], explication: "Tɔgɔrɔ STOP ma ka bɔ kɔrɔ i na taga." }
-    }
+    actif: true
+
   },
   {
     id: 2,
@@ -76,12 +48,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["panneau", "interdiction", "sens interdit"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Banna", "Ma kɛ", "Caya", "Xili"], explication: "Tɔgɔrɔ nguuru bord xili fɔ banna. Sira banna." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Haɗere", "Waɗɗude", "Habrude", "Kulol"], explication: "Maandeeji nguuru boɗejo holno haɗere. Laawol haɗaaŋol." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Banna", "Wuli", "Caya", "Tariku"], explication: "Tɔgɔrɔ nguuru bord tariku fɔ banna. Sira banna." }
-    }
+    actif: true
+
   },
   {
     id: 3,
@@ -96,12 +64,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["panneau", "cédez le passage", "priorité"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Kabɛ", "I ma sɔrɔ sira di", "Kanu wo ma", "Xili"], explication: "Tɔgɔrɔ na i ma sɔrɔ sira di gari bɛɛ ma." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Darto", "Hokku laawol", "Laawol aranal", "Kulol"], explication: "Maandeeji ngal hokkata laawol kaaɗe goɗɗe." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Ka bɔ", "Ka sɔrɔ sira di", "Kanu wo ma", "Tariku"], explication: "Tɔgɔrɔ na ka sɔrɔ sira di kɛrɛ bɛɛ ma." }
-    }
+    actif: true
+
   },
   {
     id: 4,
@@ -116,12 +80,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["panneau", "priorité", "losange"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Banna", "Ma kɛ", "Caya", "Kanu"], explication: "Tɔgɔrɔ diamaŋ fɔ kanu carrefour kɔnɔ." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Haɗere", "Waɗɗude", "Habrude", "Laawol aranal"], explication: "Maandeeji diamaŋ holno laawol aranal e carol." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Banna", "Wuli", "Caya", "Kanu"], explication: "Tɔgɔrɔ diamaŋ fɔ kanu carrefour kɔnɔ." }
-    }
+    actif: true
+
   },
   {
     id: 5,
@@ -136,12 +96,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["panneau", "vitesse", "limitation"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Yɛrɛyɛrɛ ma 50 km/h", "Yɛrɛyɛrɛ piti 50 km/h", "Yɛrɛyɛrɛ di 50 km/h", "Yɛrɛyɛrɛ banna ta"], explication: "Tɔgɔrɔ nguuru bord xili yɛrɛyɛrɛ ma 50 km/h." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Yaawol haa 50 km/h", "Yaawol lesdi 50 km/h", "Yaawol wasiya 50 km/h", "Fin yaawol"], explication: "Maandeeji nguuru boɗejo holno yaawol haa 50 km/h." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Yɛlɛ ma 50 km/h", "Yɛlɛ piti 50 km/h", "Yɛlɛ di 50 km/h", "Yɛlɛ banna ta"], explication: "Tɔgɔrɔ nguuru bord tariku yɛlɛ ma 50 km/h." }
-    }
+    actif: true
+
   },
   {
     id: 6,
@@ -156,12 +112,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["panneau", "dépassement", "interdiction"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Siri banna", "Kamyon sira banna", "Kamyon xili", "Banna ta"], explication: "Tɔgɔrɔ na siri banna gari bɛɛ ma." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Haɗere yahde lesdi", "Laawol haɗaaŋol loɗɓe", "Kulol loɗɓe", "Fin haɗere"], explication: "Maandeeji ngal haɗata yahde lesdi kaaɗe goɗɗe." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Siri banna", "Kamyon sira banna", "Kamyon tariku", "Banna ta"], explication: "Tɔgɔrɔ na siri banna kɛrɛ bɛɛ ma." }
-    }
+    actif: true
+
   },
   {
     id: 7,
@@ -176,12 +128,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["panneau", "piéton", "passage"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Mɔgɔ ta sira", "Sikolo kɔnɔ", "Parki", "Bisi kabɛ"], explication: "Tɔgɔrɔ bulu kɔnɔ mɔgɔ ta sira." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Laawol yahɓe", "Nokku janngirde", "Parki", "Bisi dartol"], explication: "Maandeeji bulo holno laawol yahɓe." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Mɔgɔ ta sira", "Kalan kɔnɔ", "Parki", "Bisi kabɛ"], explication: "Tɔgɔrɔ bulu kɔnɔ mɔgɔ ta sira." }
-    }
+    actif: true
+
   },
   {
     id: 8,
@@ -196,12 +144,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["panneau", "obligation", "direction"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["I ma wuli wo ma", "Sira ma wo ma", "Wo ma xili", "Wuli banna"], explication: "Tɔgɔrɔ nguuru bulu sira ma wo ma." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Waɗɗude fayta ñaamo", "Laawol waɗɗude ñaamo", "Kulol fayta ñaamo", "Haɗere fayta"], explication: "Maandeeji nguuru bulo holno laawol waɗɗude ñaamo." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["I ma wuli wo ma", "Sira ma wo ma", "Wo ma tariku", "Wuli banna"], explication: "Tɔgɔrɔ nguuru bulu sira ma wo ma." }
-    }
+    actif: true
+
   },
   {
     id: 9,
@@ -216,12 +160,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["panneau", "danger", "virage"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Wuli xili", "Rond-point", "Carrefour", "Sira sili"], explication: "Tɔgɔrɔ na wuli xili, i ma yɛrɛyɛrɛ diya." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Fayta kulol", "Rond-point", "Carol", "Laawol ɓuuɓol"], explication: "Maandeeji ngal holno fayta kulol, ma leeltina." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Wuli tariku", "Rond-point", "Carrefour", "Sira sili"], explication: "Tɔgɔrɔ na wuli tariku, i ma yɛlɛ diya." }
-    }
+    actif: true
+
   },
   {
     id: 10,
@@ -236,12 +176,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["panneau", "rond-point", "priorité"],
-    actif: true,
-    translations: {
-      ss: { texte: "I mu tɔgɔrɔ na ye?", options: ["Sira banna", "Rond-point", "Carrefour 4 sira", "I ma sɔrɔ sira di"], explication: "Tɔgɔrɔ bulu kɔnɔ rond-point. Gari rond-point kɔnɔ bɛ kanu." },
-      fu: { texte: "Ko maandeeji ngal holno wadde?", options: ["Laawol haɗaaŋol", "Rond-point", "Carol 4 laawol", "Hokku laawol"], explication: "Maandeeji bulo holno rond-point. Kaaɗe e nder mayre laawol aranal." },
-      ml: { texte: "Mun ye tɔgɔrɔ na ye?", options: ["Sira banna", "Rond-point", "Carrefour 4 sira", "Ka sɔrɔ sira di"], explication: "Tɔgɔrɔ bulu kɔnɔ rond-point. Kɛrɛ rond-point kɔnɔ bɛ kanu." }
-    }
+    actif: true
+
   },
 
   // ---- SCENARIOS — With scenario images ----
@@ -258,12 +194,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 30,
     tags: ["priorité", "rond-point", "intersection"],
-    actif: true,
-    translations: {
-      ss: { texte: "I bɛ carrefour na. Mɔgɔ sɛnɛ bɛ kanu?", options: ["I, i na wo ma bɛ", "Gari bulu, a bɛ rond-point kɔnɔ", "Mɔgɔ tɛgɛn dɛrɛ", "Mɔgɔ na bɛ xɔlɔ"], explication: "Rond-point kɔnɔ gari bɛ kanu gari na bɛ tɛ ma." },
-      fu: { texte: "Aɗa sosa carol ngal. Hommbo laawol aranal?", options: ["Aɗa, aɗa arda e ñaamo", "Kaaɗe bulu, e nder rond-point", "Yahɓe tan", "Moƴƴino arata"], explication: "E nder rond-point, kaaɗe nder mayre laawol aranal." },
-      ml: { texte: "I bɛ carrefour na. Mɔgɔ sɛnɛ bɛ kanu?", options: ["I, i na wo ma bɛ", "Kɛrɛ bulu, a bɛ rond-point kɔnɔ", "Mɔgɔ tɛgɛn dɛrɛ", "Mɔgɔ na bɛ xɔlɔ"], explication: "Rond-point kɔnɔ kɛrɛ bɛ kanu kɛrɛ na bɛ tɛ ma." }
-    }
+    actif: true
+
   },
   {
     id: 12,
@@ -278,12 +210,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["priorité", "piéton", "passage"],
-    actif: true,
-    translations: {
-      ss: { texte: "Xili na, i ma kɛ mun?", options: ["Yɛrɛyɛrɛ kɛ i na tɛli", "Yɛrɛyɛrɛ diya i ma sɔrɔ sira di mɔgɔ ma", "Klaksoni i na fɔ mɔgɔ", "Taga yɛrɛyɛrɛ kelen na"], explication: "Mɔgɔ ta sira na i ma yɛrɛyɛrɛ diya i ma sɔrɔ sira di mɔgɔ ma." },
-      fu: { texte: "E nder ngonka ngal, ko haɗa waɗde?", options: ["Yaawna ngam yahde", "Leeltina hokku yahɓe laawol", "Fiyu hoore", "Jokku e yaawre ndee"], explication: "So aɗa sosa laawol yahɓe, aɗa haɗa leeltina hokku yahɓe laawol." },
-      ml: { texte: "Xili na, i ma kɛ mun?", options: ["Yɛlɛ kɛ i na tɛli", "Yɛlɛ diya ka sɔrɔ sira di mɔgɔ ma", "Klaksoni i na fɔ mɔgɔ", "Taga yɛlɛ kelen na"], explication: "Mɔgɔ ta sira na i ma yɛlɛ diya ka sɔrɔ sira di mɔgɔ ma." }
-    }
+    actif: true
+
   },
   {
     id: 13,
@@ -298,12 +226,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 35,
     tags: ["dépassement", "sécurité", "visibilité"],
-    actif: true,
-    translations: {
-      ss: { texte: "Xili na, siri ma kɛ?", options: ["Awo, sira bɛ xɔlɔmɛ", "Ti, i ma ye diya", "Awo, fɔ 80 km/h", "Awo, kamyon ma yɛrɛyɛrɛ diya"], explication: "Siri banna i ma ye diya na." },
-      fu: { texte: "E nder ngonka ngal, yahde lesdi ina yaawi?", options: ["Eey, laawol ngol ina heewi", "Alaa, yi'ete ina ŋakki", "Eey, kono tan e 80 km/h", "Eey, so loɗɗe ndee ina leelti"], explication: "Yahde lesdi haɗaa so yi'ete ŋakki." },
-      ml: { texte: "Xili na, siri ma kɛ?", options: ["Awo, sira bɛ xɔlɔmɛ", "Ti, i ma ye diya", "Awo, fɔ 80 km/h", "Awo, kamyon ma yɛlɛ diya"], explication: "Siri banna i ma ye diya na." }
-    }
+    actif: true
+
   },
 
   // ---- QUESTIONS TEXTE — Classic without images ----
@@ -319,12 +243,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["vitesse", "agglomération"],
-    actif: true,
-    translations: {
-      ss: { texte: "Yɛrɛyɛrɛ ma mun dugu kɔnɔ Guinée?", options: ["40 km/h", "50 km/h", "60 km/h", "80 km/h"], explication: "Yɛrɛyɛrɛ ma 50 km/h dugu kɔnɔ Guinée." },
-      fu: { texte: "Yaawol ɓurɗo saɗde e nder gure e Gine?", options: ["40 km/h", "50 km/h", "60 km/h", "80 km/h"], explication: "Yaawol ɓurɗo saɗde e nder gure ko 50 km/h." },
-      ml: { texte: "Yɛlɛ ma mun dugu kɔnɔ Guinée?", options: ["40 km/h", "50 km/h", "60 km/h", "80 km/h"], explication: "Yɛlɛ ma 50 km/h dugu kɔnɔ Guinée." }
-    }
+    actif: true
+
   },
   {
     id: 15,
@@ -338,12 +258,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["alcool", "réglementation"],
-    actif: true,
-    translations: {
-      ss: { texte: "Alcoolémie ma mun kɛrɛ na Guinée kɔnɔ?", options: ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"], explication: "Alcoolémie ma 0,5 g/l Guinée kɔnɔ." },
-      fu: { texte: "Alkool ɓurɗo saɗde ngam yahde e Gine?", options: ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"], explication: "Alkool ɓurɗo saɗde ko 0,5 g/l e Gine." },
-      ml: { texte: "Alcoolémie ma mun kɛrɛ na Guinée kɔnɔ?", options: ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"], explication: "Alcoolémie ma 0,5 g/l Guinée kɔnɔ." }
-    }
+    actif: true
+
   },
   {
     id: 16,
@@ -357,12 +273,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["documents", "réglementation", "permis"],
-    actif: true,
-    translations: {
-      ss: { texte: "Fɛn mun ma sɔrɔ gari na Guinée kɔnɔ?", options: ["Karti identité dɛrɛ", "Permis yé karti grise", "Passeport", "Karti xɔlɔ"], explication: "Permis yé karti grise ma sɔrɔ." },
-      fu: { texte: "Ko ɓataake waɗɗude ngam yahde e Gine?", options: ["Kartal anndinde tan", "Yamiroore e kartal boɗeelo", "Paaspoota", "Seedantaagal hoɗde"], explication: "Yamiroore e kartal boɗeelo ko waɗɗude." },
-      ml: { texte: "Fɛn mun ma sɔrɔ kɛrɛ na Guinée kɔnɔ?", options: ["Karti identité dɛrɛ", "Permis yé karti grise", "Passeport", "Karti xɔlɔ"], explication: "Permis yé karti grise ma sɔrɔ." }
-    }
+    actif: true
+
   },
   {
     id: 17,
@@ -376,12 +288,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["feu", "signalisation", "prudence"],
-    actif: true,
-    translations: {
-      ss: { texte: "Lamɛ orange clignotant mu ye?", options: ["Kabɛ ma bɔ", "Lamɛ ti yɛ", "Xɛrɛfɔ, xili bɛrɛ", "Kanu wo ma"], explication: "Lamɛ orange clignotant xɛrɛfɔ xili bɛrɛ kɔnɔ." },
-      fu: { texte: "Lamɗe oraaɗe wiyteeje holno wadde?", options: ["Darto saawata", "Lamɗe bonɗe", "Reeno, laawol kulol", "Laawol aranal"], explication: "Lamɗe oraaɗe holno reeno e laawol kulol." },
-      ml: { texte: "Lamɛ orange clignotant mu ye?", options: ["Ka bɔ ma", "Lamɛ ti yɛ", "Xɛrɛfɔ, tariku bɛrɛ", "Kanu wo ma"], explication: "Lamɛ orange clignotant xɛrɛfɔ tariku bɛrɛ kɔnɔ." }
-    }
+    actif: true
+
   },
   {
     id: 18,
@@ -395,12 +303,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["stationnement", "piéton", "distance"],
-    actif: true,
-    translations: {
-      ss: { texte: "I ma parki mɛtri mun mɔgɔ ta sira na?", options: ["3 mɛtri", "5 mɛtri", "10 mɛtri", "15 mɛtri"], explication: "I ti parki 5 mɛtri mɔgɔ ta sira na." },
-      fu: { texte: "Ko keeweendi ɓurndi famɗude ngam parkaade ɓadi laawol yahɓe?", options: ["3 meete", "5 meete", "10 meete", "15 meete"], explication: "Haɗaa parkaade ɓadi laawol yahɓe ko 5 meete." },
-      ml: { texte: "I ma parki mɛtri mun mɔgɔ ta sira na?", options: ["3 mɛtri", "5 mɛtri", "10 mɛtri", "15 mɛtri"], explication: "I ti parki 5 mɛtri mɔgɔ ta sira na." }
-    }
+    actif: true
+
   },
   {
     id: 19,
@@ -414,12 +318,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["priorité", "carrefour", "droite"],
-    actif: true,
-    translations: {
-      ss: { texte: "Mɔgɔ sɛnɛ bɛ kanu carrefour kɔnɔ tɔgɔrɔ tɛ na Guinée?", options: ["Gari yɛrɛyɛrɛ tɛli", "Gari wo ma bɛ", "Gari numan ma bɛ", "Gari baba"], explication: "Kanu wo ma bɛ carrefour kɔnɔ tɔgɔrɔ tɛ na." },
-      fu: { texte: "Hommbo laawol aranal e carol tawa alaa maandeeji e Gine?", options: ["Kaaɗe ɓurɗe yaawde", "Kaaɗe ummiiɗe e ñaamo", "Kaaɗe ummiiɗe e nano", "Kaaɗe ɓurɗe mawnude"], explication: "Laawol aranal e ñaamo e carol tawa alaa maandeeji." },
-      ml: { texte: "Mɔgɔ sɛnɛ bɛ kanu carrefour kɔnɔ tɔgɔrɔ tɛ na Guinée?", options: ["Kɛrɛ yɛlɛ tɛli", "Kɛrɛ wo ma bɛ", "Kɛrɛ numan ma bɛ", "Kɛrɛ baba"], explication: "Kanu wo ma bɛ carrefour kɔnɔ tɔgɔrɔ tɛ na." }
-    }
+    actif: true
+
   },
   {
     id: 20,
@@ -433,12 +333,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["âge", "permis", "réglementation"],
-    actif: true,
-    translations: {
-      ss: { texte: "Awa mun ma sɔrɔ permis B Guinée kɔnɔ?", options: ["16 awa", "18 awa", "20 awa", "21 awa"], explication: "Awa 18 ma sɔrɔ permis B." },
-      fu: { texte: "Duuɓi ɓurɗi famɗude ngam heɓde yamiroore B e Gine?", options: ["16 duuɓi", "18 duuɓi", "20 duuɓi", "21 duuɓi"], explication: "Duuɓi 18 ko ɓuri famɗude ngam yamiroore B." },
-      ml: { texte: "Awa mun ma sɔrɔ permis B Guinée kɔnɔ?", options: ["16 awa", "18 awa", "20 awa", "21 awa"], explication: "Awa 18 ma sɔrɔ permis B." }
-    }
+    actif: true
+
   },
   {
     id: 21,
@@ -452,12 +348,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["panneau", "obligation", "bleu"],
-    actif: true,
-    translations: {
-      ss: { texte: "Tɔgɔrɔ rectangle bulu fɔ ye:", options: ["Banna", "Caya walima ma kɛ", "Xili", "Goli"], explication: "Tɔgɔrɔ rectangle bulu caya walima ma kɛ." },
-      fu: { texte: "Panel tobeeki bulo holno:", options: ["Haɗere", "Habrude walla waɗɗude", "Kulol", "Golle"], explication: "Panel tobeeki bulo holno habrude walla waɗɗude." },
-      ml: { texte: "Tɔgɔrɔ rectangle bulu fɔ ye:", options: ["Banna", "Caya walima wuli", "Tariku", "Goli"], explication: "Tɔgɔrɔ rectangle bulu caya walima wuli." }
-    }
+    actif: true
+
   },
   {
     id: 22,
@@ -471,12 +363,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["ceinture", "sécurité", "obligation"],
-    actif: true,
-    translations: {
-      ss: { texte: "Ceinture ma bɛ:", options: ["Xɔlɔma dɛrɛ", "Autoroute dɛrɛ", "Mɔgɔ bɛɛ", "Kɛrɛ kɛlɛ dɛrɛ"], explication: "Ceinture ma bɛ mɔgɔ bɛɛ." },
-      fu: { texte: "Sarworgal ko waɗɗude:", options: ["Yeeso tan", "Laawol mawngol tan", "Yimɓe fof e nder kaaɗe", "Koolaaɗo tan"], explication: "Sarworgal ko waɗɗude yimɓe fof e nder kaaɗe." },
-      ml: { texte: "Ceinture ma bɛ:", options: ["Xɔlɔma dɛrɛ", "Autoroute dɛrɛ", "Mɔgɔ bɛɛ", "Kɛrɛ kɛlɛ dɛrɛ"], explication: "Ceinture ma bɛ mɔgɔ bɛɛ." }
-    }
+    actif: true
+
   },
   {
     id: 23,
@@ -490,12 +378,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["accident", "secours", "sécurité"],
-    actif: true,
-    translations: {
-      ss: { texte: "Aksida kɔnɔ mɔgɔ bɛ sɔrɔ, i ma kɛ mun?", options: ["Taga tɛ sira", "Kabɛ, xili, fɔ samu", "Siri mɔgɔ tɛli", "Fɔ polis dɛrɛ"], explication: "I ma kabɛ, xili, fɔ samu (115)." },
-      fu: { texte: "Ko waɗde so aksida waɗi yimɓe njiɓɓi?", options: ["Jokku yahde", "Darto, reeno, neldu ballal", "Ritin yimɓe ɓe", "Nodda polis tan"], explication: "Darto, reeno, neldu ballal (115)." },
-      ml: { texte: "Aksida kɔnɔ mɔgɔ bɛ sɔrɔ, i ma kɛ mun?", options: ["Taga tɛ sira", "Ka bɔ, ka xili, ka fɔ samu", "Ka siri mɔgɔ tɛli", "Ka fɔ polis dɛrɛ"], explication: "I ma ka bɔ, ka xili, ka fɔ samu (115)." }
-    }
+    actif: true
+
   },
   {
     id: 24,
@@ -509,12 +393,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["circulation", "sens", "réglementation"],
-    actif: true,
-    translations: {
-      ss: { texte: "Sira mun bɛ Guinée kɔnɔ?", options: ["Numan", "Wo ma", "Bɛɛ la sira", "Sariya tɛ"], explication: "Guinée bɛ wo ma." },
-      fu: { texte: "Ko laawol yahde e Gine?", options: ["Nano", "Ñaamo", "Goɗɗum e laawol", "Alaa sariya"], explication: "Gine yahata e ñaamo." },
-      ml: { texte: "Sira mun bɛ Guinée kɔnɔ?", options: ["Numan", "Wo ma", "Bɛɛ la sira", "Sariya tɛ"], explication: "Guinée bɛ wo ma." }
-    }
+    actif: true
+
   },
   {
     id: 25,
@@ -528,12 +408,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["distance", "sécurité", "vitesse"],
-    actif: true,
-    translations: {
-      ss: { texte: "Kɛrɛ mɛrɛ diya gari bɛɛ kɔnɔ bɛ:", options: ["1 sɛkɔnd", "2 sɛkɔnd", "5 sɛkɔnd", "10 sɛkɔnd"], explication: "2 sɛkɔnd bɛ kɛrɛ diya gari bɛɛ kɔnɔ." },
-      fu: { texte: "Ko keeweendi reenoɓe hakkunde kaaɗe ɗiɗi?", options: ["1 sekonde", "2 sekonde", "5 sekonde", "10 sekonde"], explication: "Sekonde 2 ko reenoɓe hakkunde kaaɗe." },
-      ml: { texte: "Kɛrɛ mɛrɛ diya kɛrɛ bɛɛ kɔnɔ bɛ:", options: ["1 sɛkɔnd", "2 sɛkɔnd", "5 sɛkɔnd", "10 sɛkɔnd"], explication: "2 sɛkɔnd bɛ kɛrɛ diya kɛrɛ bɛɛ kɔnɔ." }
-    }
+    actif: true
+
   },
   {
     id: 26,
@@ -547,12 +423,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["panneau", "obligation", "direction"],
-    actif: true,
-    translations: {
-      ss: { texte: "Tɔgɔrɔ nguuru bulu flèche blanche wo ma fɔ ye:", options: ["Wuli banna", "Ma tɛli taga", "Sira kɛlɛ", "Banna ta"], explication: "Tɔgɔrɔ nguuru bulu ma tɛli taga." },
-      fu: { texte: "Panel nguuru bulo feewuɗo holno:", options: ["Haɗere fayta", "Waɗɗude yahde yeeso", "Laawol gootol", "Fin haɗere"], explication: "Panel nguuru bulo waɗɗude yahde yeeso." },
-      ml: { texte: "Tɔgɔrɔ nguuru bulu flèche blanche wo ma fɔ ye:", options: ["Wuli banna", "Ma tɛli taga", "Sira kɛlɛ", "Banna ta"], explication: "Tɔgɔrɔ nguuru bulu ma tɛli taga." }
-    }
+    actif: true
+
   },
   {
     id: 27,
@@ -566,12 +438,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["feux", "détresse", "sécurité"],
-    actif: true,
-    translations: {
-      ss: { texte: "I ma lamɛ xili sɛrɛ kɛ?", options: ["Parki na", "Xili walima gari ti yɛ", "Barika fɔ na", "Su dɛrɛ"], explication: "Lamɛ xili ma kɛ xili walima gari ti yɛ na." },
-      fu: { texte: "Ko waɗde huutoraade lamɗe caɗeele?", options: ["Ngam parkaade", "So kulol walla kaaɗe njaɓii", "Ngam yettaade", "Hitaande tan"], explication: "Lamɗe caɗeele huutortee so kulol walla kaaɗe njaɓii." },
-      ml: { texte: "I ma lamɛ xili sɛrɛ kɛ?", options: ["Parki na", "Tariku walima kɛrɛ ti yɛ", "Barika fɔ na", "Su dɛrɛ"], explication: "Lamɛ xili ma kɛ tariku walima kɛrɛ ti yɛ na." }
-    }
+    actif: true
+
   },
   {
     id: 28,
@@ -585,12 +453,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["urgence", "priorité", "gyrophaire"],
-    actif: true,
-    translations: {
-      ss: { texte: "Gari urgence gyrophaire bɛ. I ma kɛ mun?", options: ["Yɛrɛyɛrɛ kɛ i na tɛli", "Kabɛ walima siri kɔlɔma", "Taga tɛ", "Klaksoni"], explication: "I ma sɔrɔ sira di gari urgence ma." },
-      fu: { texte: "Kaaɗe caɗeele njaajotooɗe njiytii. Ko haɗa waɗde?", options: ["Yaawna ngam yahde", "Darto walla fayto e daande", "Yaajde e yahde", "Fiyu hoore"], explication: "Haɗa hokkude laawol kaaɗe caɗeele." },
-      ml: { texte: "Kɛrɛ urgence gyrophaire bɛ. I ma kɛ mun?", options: ["Yɛlɛ kɛ i na tɛli", "Ka bɔ walima ka siri kɔlɔma", "Taga tɛ", "Klaksoni"], explication: "I ma sɔrɔ sira di kɛrɛ urgence ma." }
-    }
+    actif: true
+
   },
   {
     id: 29,
@@ -604,12 +468,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["ligne", "signalisation", "interdiction"],
-    actif: true,
-    translations: {
-      ss: { texte: "Ligne blanche sira kɔnɔ mu ye?", options: ["I ma siri ka fɛn", "Banna ka siri", "Sira banna ta", "Parki kɔnɔ"], explication: "Ligne blanche banna ka siri." },
-      fu: { texte: "Dariindi ɓaleeri jokkondiri e nder laawol holno?", options: ["Ena waawi taƴde", "Haɗaa taƴde", "Fin laawol", "Nokku parkaade"], explication: "Dariindi ɓaleeri haɗaa taƴde." },
-      ml: { texte: "Ligne blanche sira kɔnɔ mu ye?", options: ["I ma siri ka fɛn", "Banna ka siri", "Sira banna ta", "Parki kɔnɔ"], explication: "Ligne blanche banna ka siri." }
-    }
+    actif: true
+
   },
   {
     id: 30,
@@ -623,12 +483,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["sanction", "permis", "réglementation"],
-    actif: true,
-    translations: {
-      ss: { texte: "Sanction mun bɛ permis tɛ Guinée kɔnɔ?", options: ["Xɛrɛfɔ", "Amende walima kasu", "Pɔinti bɔ", "Fɔrmasiɔn"], explication: "Permis tɛ bɛ amende walima kasu." },
-      fu: { texte: "Ko lelta yahde tawa alaa yamiroore e Gine?", options: ["Jaŋde", "Lelda e/walla kasu", "Momde dottaaɗe", "Janngude"], explication: "Yahde tawa alaa yamiroore ko lelda e kasu." },
-      ml: { texte: "Sanction mun bɛ permis tɛ Guinée kɔnɔ?", options: ["Xɛrɛfɔ", "Amende walima kasu", "Pɔinti bɔ", "Fɔrmasiɔn"], explication: "Permis tɛ bɛ amende walima kasu." }
-    }
+    actif: true
+
   },
   {
     id: 31,
@@ -642,12 +498,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 10,
     tags: ["urgence", "SAMU", "sécurité"],
-    actif: true,
-    translations: {
-      ss: { texte: "Numéro urgence médicale Guinée kɔnɔ mun ye?", options: ["15", "115", "17", "18"], explication: "SAMU Guinée bɛ 115." },
-      fu: { texte: "Ko limre caɗeele safaara e Gine?", options: ["15", "115", "17", "18"], explication: "SAMU e Gine ko 115." },
-      ml: { texte: "Numéro urgence médicale Guinée kɔnɔ mun ye?", options: ["15", "115", "17", "18"], explication: "SAMU Guinée bɛ 115." }
-    }
+    actif: true
+
   },
   {
     id: 32,
@@ -661,12 +513,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["rond-point", "priorité"],
-    actif: true,
-    translations: {
-      ss: { texte: "Rond-point kɔnɔ, mɔgɔ sɛnɛ bɛ kanu?", options: ["Gari na bɛ tɛ", "Gari bɛ rond-point kɔnɔ", "Mɔgɔ tɛgɛn", "Gari yɛrɛyɛrɛ tɛli"], explication: "Gari bɛ rond-point kɔnɔ bɛ kanu gari na bɛ tɛ ma." },
-      fu: { texte: "E nder rond-point, hommbo laawol aranal?", options: ["Kaaɗe naatooɗe", "Kaaɗe e nder rond-point", "Yahɓe", "Kaaɗe ɓurɗe yaawde"], explication: "Kaaɗe e nder rond-point ina njogii laawol aranal." },
-      ml: { texte: "Rond-point kɔnɔ, mɔgɔ sɛnɛ bɛ kanu?", options: ["Kɛrɛ na bɛ tɛ", "Kɛrɛ bɛ rond-point kɔnɔ", "Mɔgɔ tɛgɛn", "Kɛrɛ yɛlɛ tɛli"], explication: "Kɛrɛ bɛ rond-point kɔnɔ bɛ kanu kɛrɛ na bɛ tɛ ma." }
-    }
+    actif: true
+
   },
   {
     id: 33,
@@ -680,12 +528,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 10,
     tags: ["permis", "catégorie", "moto"],
-    actif: true,
-    translations: {
-      ss: { texte: "Permis A fɔ ye:", options: ["Kɛrɛ", "Moto", "Kamyon", "Bisi"], explication: "Permis A bɛ moto." },
-      fu: { texte: "Yamiroore A ko fii:", options: ["Kaaɗe", "Moota", "Loruuji", "Basi"], explication: "Yamiroore A ko fii moota." },
-      ml: { texte: "Permis A fɔ ye:", options: ["Kɛrɛ", "Moto", "Kamyon", "Bisi"], explication: "Permis A bɛ moto." }
-    }
+    actif: true
+
   },
   {
     id: 34,
@@ -699,12 +543,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["dépassement", "gauche", "réglementation"],
-    actif: true,
-    translations: {
-      ss: { texte: "Siri gari sɛrɛ kɛ?", options: ["Wo ma", "Numan", "Kɔlɔma kɛlɛ", "Bɛɛ kɔlɔma"], explication: "Siri bɛ numan." },
-      fu: { texte: "Yahde lesdi waɗata e:", options: ["Ñaamo", "Nano", "Ɓadiɗum", "Goɗɗum kaaɗe"], explication: "Yahde lesdi waɗata e nano." },
-      ml: { texte: "Siri kɛrɛ sɛrɛ kɛ?", options: ["Wo ma", "Numan", "Kɔlɔma kɛlɛ", "Bɛɛ kɔlɔma"], explication: "Siri bɛ numan." }
-    }
+    actif: true
+
   },
   {
     id: 35,
@@ -718,12 +558,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["équipement", "sécurité", "obligation"],
-    actif: true,
-    translations: {
-      ss: { texte: "Fɛn mun ma sɔrɔ gari kɔnɔ Guinée?", options: ["GPS", "Trousse yé extincteur", "Kamera", "Climatisation"], explication: "Trousse yé extincteur ma sɔrɔ gari kɔnɔ." },
-      fu: { texte: "Ko huutoraade waɗɗude e nder kaaɗe e Gine?", options: ["GPS", "Trousse safrirde e jaagnoowo", "Kamera", "Wulnde"], explication: "Trousse safrirde e jaagnoowo ko waɗɗude e nder kaaɗe." },
-      ml: { texte: "Fɛn mun ma sɔrɔ kɛrɛ kɔnɔ Guinée?", options: ["GPS", "Trousse yé extincteur", "Kamera", "Climatisation"], explication: "Trousse yé extincteur ma sɔrɔ kɛrɛ kɔnɔ." }
-    }
+    actif: true
+
   },
   {
     id: 36,
@@ -737,12 +573,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["vitesse", "route nationale"],
-    actif: true,
-    translations: {
-      ss: { texte: "Yɛrɛyɛrɛ ma mun route nationale kɔnɔ Guinée?", options: ["80 km/h", "90 km/h", "110 km/h", "130 km/h"], explication: "Yɛrɛyɛrɛ ma 90 km/h route nationale kɔnɔ." },
-      fu: { texte: "Yaawol ɓurɗo saɗde e laawol ngenndiwal e Gine?", options: ["80 km/h", "90 km/h", "110 km/h", "130 km/h"], explication: "Yaawol ɓurɗo saɗde e laawol ngenndiwal ko 90 km/h." },
-      ml: { texte: "Yɛlɛ ma mun tɛ nasyonali kɔnɔ Guinée?", options: ["80 km/h", "90 km/h", "110 km/h", "130 km/h"], explication: "Yɛlɛ ma 90 km/h tɛ nasyonali kɔnɔ." }
-    }
+    actif: true
+
   },
   {
     id: 37,
@@ -756,12 +588,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 20,
     tags: ["brouillard", "feux", "sécurité"],
-    actif: true,
-    translations: {
-      ss: { texte: "Brouillard kɔnɔ, lamɛ sɛrɛ i ma allumer?", options: ["Lamɛ croisement", "Lamɛ brouillard xɔlɔma yé numan", "Lamɛ route", "Lamɛ xili dɛrɛ"], explication: "Brouillard kɔnɔ lamɛ brouillard ma allumer." },
-      fu: { texte: "So loope heewi, ko lamɗe haɗa fuɗɗaade?", options: ["Lamɗe naatgol", "Lamɗe loope yeeso e caggal", "Lamɗe laawol", "Lamɗe caɗeele tan"], explication: "So loope heewi lamɗe loope yeeso e caggal ma fuɗɗaade." },
-      ml: { texte: "Brouillard kɔnɔ, lamɛ sɛrɛ i ma allumer?", options: ["Lamɛ croisement", "Lamɛ brouillard xɔlɔma yé numan", "Lamɛ route", "Lamɛ xili dɛrɛ"], explication: "Brouillard kɔnɔ lamɛ brouillard ma allumer." }
-    }
+    actif: true
+
   },
   {
     id: 38,
@@ -775,12 +603,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 15,
     tags: ["panneau", "danger", "triangle"],
-    actif: true,
-    translations: {
-      ss: { texte: "Tɔgɔrɔ triangle bord xili fɔ ye:", options: ["Banna", "Ma kɛ", "Xili", "Caya"], explication: "Tɔgɔrɔ triangle bord xili fɔ xili." },
-      fu: { texte: "Panel nguuru boɗejo holno:", options: ["Haɗere", "Waɗɗude", "Kulol", "Habrude"], explication: "Panel nguuru boɗejo holno kulol." },
-      ml: { texte: "Tɔgɔrɔ triangle bord tariku fɔ ye:", options: ["Banna", "Wuli", "Tariku", "Caya"], explication: "Tɔgɔrɔ triangle bord tariku fɔ tariku." }
-    }
+    actif: true
+
   },
   {
     id: 39,
@@ -794,12 +618,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["alcool", "professionnel", "réglementation"],
-    actif: true,
-    translations: {
-      ss: { texte: "Alcoolémie ma mun gari professionnel na?", options: ["0,1 g/l", "0,2 g/l", "0,5 g/l", "0,8 g/l"], explication: "Gari professionnel alcoolémie ma 0,2 g/l." },
-      fu: { texte: "Alkool ɓurɗo saɗde ngam kaaɗe gollorɗe?", options: ["0,1 g/l", "0,2 g/l", "0,5 g/l", "0,8 g/l"], explication: "Alkool ɓurɗo saɗde ngam kaaɗe gollorɗe ko 0,2 g/l." },
-      ml: { texte: "Alcoolémie ma mun kɛrɛ professionnel na?", options: ["0,1 g/l", "0,2 g/l", "0,5 g/l", "0,8 g/l"], explication: "Kɛrɛ professionnel alcoolémie ma 0,2 g/l." }
-    }
+    actif: true
+
   },
   {
     id: 40,
@@ -813,12 +633,8 @@ export const questions: Question[] = [
     points: 1,
     tempsEstime: 25,
     tags: ["panneau", "priorité", "intersection"],
-    actif: true,
-    translations: {
-      ss: { texte: "Tɔgɔrɔ triangle blanche bulu kɔnɔ fɔ ye:", options: ["Kanu ta", "Kanu carrefour kɔnɔ", "I ma sɔrɔ sira di", "Sira banna"], explication: "Tɔgɔrɔ na kanu carrefour kɔnɔ." },
-      fu: { texte: "Panel nguuru daneejo e bulo holno:", options: ["Fin laawol aranal", "Laawol aranal e carol", "Hokku laawol", "Laawol haɗaaŋol"], explication: "Panel ngal holno laawol aranal e carol." },
-      ml: { texte: "Tɔgɔrɔ triangle blanche bulu kɔnɔ fɔ ye:", options: ["Kanu ta", "Kanu carrefour kɔnɔ", "Ka sɔrɔ sira di", "Sira banna"], explication: "Tɔgɔrɔ na kanu carrefour kɔnɔ." }
-    }
+    actif: true
+
   }
 ];
 
@@ -838,7 +654,7 @@ export const centres: Centre[] = [
     actif: true,
     accreditation: { dateDebut: "2025-01-01", dateFin: "2027-12-31", statut: "actif", scoreQualite: 92 },
     equipements: ["Salle informatique", "Vidéoprojecteur", "Bureau examen", "Accessibilité PMR"],
-    languesDisponibles: ["fr", "ss", "fu", "ml"]
+    languesDisponibles: ['fr']
   },
   {
     id: "CTR-002",
@@ -852,7 +668,7 @@ export const centres: Centre[] = [
     actif: true,
     accreditation: { dateDebut: "2025-03-01", dateFin: "2027-03-01", statut: "actif", scoreQualite: 88 },
     equipements: ["Salle informatique", "Webcam surveillance", "Climatisation"],
-    languesDisponibles: ["fr", "ss"]
+    languesDisponibles: ['fr']
   },
   {
     id: "CTR-003",
@@ -866,7 +682,7 @@ export const centres: Centre[] = [
     actif: true,
     accreditation: { dateDebut: "2024-06-01", dateFin: "2026-06-01", statut: "en_renouvellement", scoreQualite: 75 },
     equipements: ["Salle informatique"],
-    languesDisponibles: ["fr", "ss", "fu"]
+    languesDisponibles: ['fr']
   },
   {
     id: "CTR-004",
@@ -880,7 +696,7 @@ export const centres: Centre[] = [
     actif: true,
     accreditation: { dateDebut: "2025-01-01", dateFin: "2027-12-31", statut: "actif", scoreQualite: 85 },
     equipements: ["Salle informatique", "Vidéoprojecteur"],
-    languesDisponibles: ["fr", "ml"]
+    languesDisponibles: ['fr']
   },
   {
     id: "CTR-005",
@@ -894,7 +710,7 @@ export const centres: Centre[] = [
     actif: true,
     accreditation: { dateDebut: "2025-06-01", dateFin: "2027-06-01", statut: "actif", scoreQualite: 80 },
     equipements: ["Salle informatique"],
-    languesDisponibles: ["fr"]
+    languesDisponibles: ['fr']
   },
   {
     id: "CTR-006",
@@ -908,7 +724,7 @@ export const centres: Centre[] = [
     actif: true,
     accreditation: { dateDebut: "2025-01-01", dateFin: "2026-12-31", statut: "actif", scoreQualite: 78 },
     equipements: ["Salle informatique"],
-    languesDisponibles: ["fr", "ss"]
+    languesDisponibles: ['fr']
   },
   {
     id: "CTR-007",
@@ -922,7 +738,7 @@ export const centres: Centre[] = [
     actif: false,
     accreditation: { dateDebut: "2024-01-01", dateFin: "2025-12-31", statut: "expire", scoreQualite: 65 },
     equipements: ["Salle informatique"],
-    languesDisponibles: ["fr", "ss"]
+    languesDisponibles: ['fr']
   }
 ];
 
@@ -1016,7 +832,7 @@ export const mockExamResults: ExamResult[] = [
       centreNom: "Centre Auto-Plus Dixinn",
       date: "2025-11-20",
       heure: "14:00",
-      langue: "ss",
+      langue: "fr",
       statut: "echoue",
       score: 30,
       totalQuestions: 40,
@@ -1051,17 +867,13 @@ export const courses: Course[] = [
     dureeTotale: 45,
     nbInscrits: 2340,
     rating: 4.8,
-    translations: {
-      ss: { titre: "Tɔgɔrɔ bɛɛ", description: "I kan tɔgɔrɔ bɛɛ Guinée sira kɔnɔ." },
-      fu: { titre: "Maandeeji laawol", description: "Janngo maandeeji laawol fof e Gine." },
-      ml: { titre: "Tɔgɔrɔ bɛɛ", description: "I kan tɔgɔrɔ bɛɛ Guinée sira kɔnɔ." }
-    },
+
     lessons: [
-      { id: "LSN-001", titre: "Panneaux d'interdiction", description: "Forme circulaire, bord rouge", type: "sign", contenu: "Les panneaux d'interdiction sont circulaires avec un bord rouge.", signImage: "/signs/sens-interdit.png", duree: 10, ordre: 1, translations: { ss: { titre: "Banna tɔgɔrɔ", description: "Nguuru xumu, bord xili", contenu: "Banna tɔgɔrɔ bɛ nguuru xumu bord xili." } } },
-      { id: "LSN-002", titre: "Panneaux d'obligation", description: "Forme circulaire, fond bleu", type: "sign", contenu: "Les panneaux d'obligation sont circulaires avec fond bleu.", signImage: "/signs/sens-obligatoire.png", duree: 10, ordre: 2, translations: {} },
-      { id: "LSN-003", titre: "Panneaux de danger", description: "Forme triangulaire, bord rouge", type: "sign", contenu: "Les panneaux de danger sont triangulaires avec bord rouge.", signImage: "/signs/virage-dangereux.png", duree: 10, ordre: 3, translations: {} },
-      { id: "LSN-004", titre: "Panneaux d'indication", description: "Forme rectangulaire ou carrée", type: "sign", contenu: "Les panneaux d'indication sont rectangulaires ou carrés.", signImage: "/signs/passage-pietons.png", duree: 10, ordre: 4, translations: {} },
-      { id: "LSN-005", titre: "Quiz signalisation", description: "Testez vos connaissances", type: "quiz", contenu: "Quiz sur les panneaux de signalisation.", duree: 5, ordre: 5, translations: {} }
+      { id: "LSN-001", titre: "Panneaux d'interdiction", description: "Forme circulaire, bord rouge", type: "sign", contenu: "Les panneaux d'interdiction sont circulaires avec un bord rouge.", signImage: "/signs/sens-interdit.png", duree: 10, ordre: 1 },
+      { id: "LSN-002", titre: "Panneaux d'obligation", description: "Forme circulaire, fond bleu", type: "sign", contenu: "Les panneaux d'obligation sont circulaires avec fond bleu.", signImage: "/signs/sens-obligatoire.png", duree: 10, ordre: 2 },
+      { id: "LSN-003", titre: "Panneaux de danger", description: "Forme triangulaire, bord rouge", type: "sign", contenu: "Les panneaux de danger sont triangulaires avec bord rouge.", signImage: "/signs/virage-dangereux.png", duree: 10, ordre: 3 },
+      { id: "LSN-004", titre: "Panneaux d'indication", description: "Forme rectangulaire ou carrée", type: "sign", contenu: "Les panneaux d'indication sont rectangulaires ou carrés.", signImage: "/signs/passage-pietons.png", duree: 10, ordre: 4 },
+      { id: "LSN-005", titre: "Quiz signalisation", description: "Testez vos connaissances", type: "quiz", contenu: "Quiz sur les panneaux de signalisation.", duree: 5, ordre: 5 }
     ]
   },
   {
@@ -1074,15 +886,11 @@ export const courses: Course[] = [
     dureeTotale: 35,
     nbInscrits: 1890,
     rating: 4.6,
-    translations: {
-      ss: { titre: "Kanu sariya", description: "I kan kanu sariya bɛɛ: carrefour, rond-point, mɔgɔ ta sira." },
-      fu: { titre: "Sariya laawol aranal", description: "Heɓtu sariya laawol aranal: carol, rond-point, laawol yahɓe." },
-      ml: { titre: "Kanu sariya", description: "I kan kanu sariya bɛɛ: carrefour, rond-point, mɔgɔ ta sira." }
-    },
+
     lessons: [
-      { id: "LSN-006", titre: "Priorité à droite", description: "La règle fondamentale", type: "text", contenu: "En l'absence de signalisation, la priorité est à droite.", duree: 10, ordre: 1, translations: {} },
-      { id: "LSN-007", titre: "Les ronds-points", description: "Comment aborder un rond-point", type: "sign", contenu: "Les véhicules dans le rond-point ont la priorité.", signImage: "/signs/rond-point.png", duree: 10, ordre: 2, translations: {} },
-      { id: "LSN-008", titre: "Passages piétons en situation", description: "Cas pratiques", type: "interactive", contenu: "Exercices interactifs sur les passages piétons.", scenarioImage: "/scenarios/passage-pietons-approche.png", duree: 15, ordre: 3, translations: {} }
+      { id: "LSN-006", titre: "Priorité à droite", description: "La règle fondamentale", type: "text", contenu: "En l'absence de signalisation, la priorité est à droite.", duree: 10, ordre: 1 },
+      { id: "LSN-007", titre: "Les ronds-points", description: "Comment aborder un rond-point", type: "sign", contenu: "Les véhicules dans le rond-point ont la priorité.", signImage: "/signs/rond-point.png", duree: 10, ordre: 2 },
+      { id: "LSN-008", titre: "Passages piétons en situation", description: "Cas pratiques", type: "interactive", contenu: "Exercices interactifs sur les passages piétons.", scenarioImage: "/scenarios/passage-pietons-approche.png", duree: 15, ordre: 3 }
     ]
   },
   {
@@ -1095,16 +903,12 @@ export const courses: Course[] = [
     dureeTotale: 50,
     nbInscrits: 3120,
     rating: 4.9,
-    translations: {
-      ss: { titre: "Kɛrɛ xili na taga", description: "Yɛrɛyɛrɛ, kɛrɛ diya, fɛn ma sɔrɔ yé xili na taga." },
-      fu: { titre: "Yaawre e reeno", description: "Yaawol, keeweendi reeno, huutoraade waɗɗude e yahde e caɗe." },
-      ml: { titre: "Kɛrɛ tariku na taga", description: "Yɛlɛ, kɛrɛ diya, fɛn ma sɔrɔ yé tariku na taga." }
-    },
+
     lessons: [
-      { id: "LSN-009", titre: "Limitations de vitesse", description: "Vitesse maximale par type de route", type: "sign", contenu: "Limitation de vitesse : 50 km/h en ville, 90 km/h sur route nationale.", signImage: "/signs/limitation-50.png", duree: 10, ordre: 1, translations: {} },
-      { id: "LSN-010", titre: "Distance de sécurité", description: "La règle des 2 secondes", type: "video", contenu: "Vidéo explicative sur la distance de sécurité.", duree: 10, ordre: 2, translations: {} },
-      { id: "LSN-011", titre: "Dépassement en sécurité", description: "Quand et comment dépasser", type: "interactive", contenu: "Cas pratiques de dépassement.", scenarioImage: "/scenarios/depassement.png", duree: 15, ordre: 3, translations: {} },
-      { id: "LSN-012", titre: "Conduite par intempéries", description: "Pluie, brouillard, nuit", type: "text", contenu: "Adaptation de la conduite selon les conditions météo.", duree: 15, ordre: 4, translations: {} }
+      { id: "LSN-009", titre: "Limitations de vitesse", description: "Vitesse maximale par type de route", type: "sign", contenu: "Limitation de vitesse : 50 km/h en ville, 90 km/h sur route nationale.", signImage: "/signs/limitation-50.png", duree: 10, ordre: 1 },
+      { id: "LSN-010", titre: "Distance de sécurité", description: "La règle des 2 secondes", type: "video", contenu: "Vidéo explicative sur la distance de sécurité.", duree: 10, ordre: 2 },
+      { id: "LSN-011", titre: "Dépassement en sécurité", description: "Quand et comment dépasser", type: "interactive", contenu: "Cas pratiques de dépassement.", scenarioImage: "/scenarios/depassement.png", duree: 15, ordre: 3 },
+      { id: "LSN-012", titre: "Conduite par intempéries", description: "Pluie, brouillard, nuit", type: "text", contenu: "Adaptation de la conduite selon les conditions météo.", duree: 15, ordre: 4 }
     ]
   }
 ];
@@ -1135,18 +939,17 @@ export function getUpcomingDates(): string[] {
   return dates;
 }
 
-export function getQuestionInLanguage(q: Question, lang: NationalLanguage): { texte: string; options: string[]; explication: string } {
-  if (lang === 'fr' || !q.translations[lang]) {
-    return { texte: q.texte, options: q.options, explication: q.explication };
-  }
-  const t = q.translations[lang]!;
-  return { texte: t.texte, options: t.options, explication: t.explication };
+export function getQuestionInLanguage(question: Question, _lang: NationalLanguage): Question {
+  // Translations temporarily disabled - always return French
+  return question;
 }
 
 export function getLanguageName(code: NationalLanguage): string {
-  return languages.find(l => l.code === code)?.name || code;
+  const lang = languages.find(l => l.code === code);
+  return lang ? lang.name : 'Français';
 }
 
 export function getLanguageNativeName(code: NationalLanguage): string {
-  return languages.find(l => l.code === code)?.nativeName || code;
+  const lang = languages.find(l => l.code === code);
+  return lang ? lang.nativeName : 'Français';
 }

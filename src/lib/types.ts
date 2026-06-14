@@ -3,7 +3,9 @@
 // ============================================================
 
 // --- Languages ---
-export type NationalLanguage = 'fr' | 'ss' | 'fu' | 'ml';
+export type NationalLanguage = 'fr';
+// Local languages temporarily disabled — will be re-enabled as improvements:
+// | 'ss' | 'fu' | 'ml'
 
 export interface LanguageConfig {
   code: NationalLanguage;
@@ -47,7 +49,7 @@ export interface User {
   categoriePermis: string;
   role: UserRole;
   numeroUnique: string;
-  langueMaternelle: NationalLanguage;
+  langueMaternelle: NationalLanguage; // Currently always 'fr'
   photo?: string;
   createdAt?: string;
   lastLogin?: string;
@@ -56,11 +58,12 @@ export interface User {
 // --- Question & Multimedia ---
 export type MediaType = 'text' | 'sign' | 'scenario' | 'video' | 'sign+scenario';
 
-export interface QuestionTranslation {
-  texte: string;
-  options: string[];
-  explication: string;
-}
+// QuestionTranslation — reserved for future local language support
+// export interface QuestionTranslation {
+//   texte: string;
+//   options: string[];
+//   explication: string;
+// }
 
 export interface Question {
   id: number;
@@ -75,7 +78,7 @@ export interface Question {
   videoUrl?: string;
   videoThumbnail?: string;
   audioFr?: string;
-  translations: Partial<Record<NationalLanguage, QuestionTranslation>>;
+  // translations: Partial<Record<NationalLanguage, QuestionTranslation>>; // TODO: re-enable for local languages
   explication: string;
   points: number;
   tempsEstime: number; // seconds
@@ -98,7 +101,7 @@ export interface Lesson {
   scenarioImage?: string;
   duree: number; // minutes
   ordre: number;
-  translations: Partial<Record<NationalLanguage, { titre: string; description: string; contenu: string }>>;
+  // translations: Partial<Record<NationalLanguage, { titre: string; description: string; contenu: string }>>; // TODO: re-enable
 }
 
 export interface Course {
@@ -112,7 +115,7 @@ export interface Course {
   dureeTotale: number;
   nbInscrits: number;
   rating: number;
-  translations: Partial<Record<NationalLanguage, { titre: string; description: string }>>;
+  // translations: Partial<Record<NationalLanguage, { titre: string; description: string }>>; // TODO: re-enable
 }
 
 // --- Center & Regions ---
@@ -156,7 +159,7 @@ export interface ExamSession {
   centreNom: string;
   date: string;
   heure: string;
-  langue: NationalLanguage;
+  langue: NationalLanguage; // Currently always 'fr'
   statut: ExamStatus;
   score?: number;
   totalQuestions: number;
@@ -221,7 +224,7 @@ export interface BookingData {
   step1: BookingStep1;
   step2: BookingStep2;
   step3: BookingStep3;
-  langue: NationalLanguage;
+  langue: NationalLanguage; // Currently always 'fr'
 }
 
 // --- Analytics ---

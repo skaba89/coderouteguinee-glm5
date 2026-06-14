@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth-context';
-import { useLanguage } from '@/lib/language-context';
-import { ViewType, ExamSession } from '@/lib/types';
-import { mockExamResults, questions, languages } from '@/lib/mock-data';
+import { ViewType, ExamSession, NationalLanguage } from '@/lib/types';
+import { mockExamResults, questions } from '@/lib/mock-data';
 import {
   User,
   Calendar,
@@ -33,7 +32,6 @@ interface CandidateDashboardProps {
 
 export default function CandidateDashboard({ onViewChange }: CandidateDashboardProps) {
   const { user } = useAuth();
-  const { currentLanguage, setLanguage, languageConfig } = useLanguage();
 
   const passedExams = mockExamResults.filter(r => r.reussi).length;
   const totalExams = mockExamResults.length;
@@ -46,7 +44,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
     { title: 'Examens passés', value: totalExams.toString(), icon: FileText, color: '#009460', bgColor: '#00946015' },
     { title: 'Taux de réussite', value: `${successRate}%`, icon: TrendingUp, color: '#FCD116', bgColor: '#FCD11615' },
     { title: 'Prochain examen', value: '15 mars 2026', icon: Calendar, color: '#CE1126', bgColor: '#CE112615' },
-    { title: 'Langue active', value: languageConfig.nativeName, icon: Globe, color: '#7C3AED', bgColor: '#7C3AED15' },
+    { title: 'Langue', value: 'Français', icon: Globe, color: '#7C3AED', bgColor: '#7C3AED15' },
   ];
 
   const recentSessions: ExamSession[] = [
@@ -57,7 +55,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
       centreNom: 'Centre RouteSafe Kaloum',
       date: '2026-03-15',
       heure: '09:00',
-      langue: currentLanguage,
+      langue: 'fr' as NationalLanguage,
       statut: 'programme',
       totalQuestions: 40,
       dateInscription: '2026-03-01'
@@ -107,7 +105,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                     </Badge>
                     <Badge variant="outline" className="text-xs flex items-center gap-1" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
                       <Globe className="w-3 h-3" />
-                      {languageConfig.nativeName}
+                      Français
                     </Badge>
                   </div>
                 </div>
@@ -178,7 +176,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                     <Eye className="w-3 h-3 mr-1" /> {scenarioQuestions} scénarios visuels
                   </Badge>
                   <Badge className="bg-orange-500/20 text-orange-200 border border-orange-400/30">
-                    <Volume2 className="w-3 h-3 mr-1" /> 4 langues nationales
+                    <Volume2 className="w-3 h-3 mr-1" /> Français
                   </Badge>
                 </div>
               </div>
@@ -194,10 +192,10 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                 <Button
                   variant="outline"
                   className="w-full font-semibold text-sm"
-                  onClick={() => onViewChange('language-select')}
+                  disabled
                 >
                   <Globe className="w-4 h-4 mr-2" />
-                  Changer de langue
+                  Langues locales (bientôt)
                 </Button>
               </div>
             </div>
@@ -226,11 +224,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                       <p className="font-medium text-sm" style={{ color: '#1A2332' }}>{session.centreNom}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-xs text-gray-500">{new Date(session.date).toLocaleDateString('fr-FR')} à {session.heure}</p>
-                        {session.langue && session.langue !== 'fr' && (
-                          <Badge variant="outline" className="text-xs py-0 px-1" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
-                            {languages.find(l => l.code === session.langue)?.nativeName}
-                          </Badge>
-                        )}
+                        {/* Language badge removed — always French for now */}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -284,18 +278,18 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                 </button>
 
                 <button
-                  className="w-full p-4 rounded-xl border-2 border-gray-100 hover:border-orange-200 bg-white hover:bg-orange-50/50 transition-all text-left flex items-center gap-4"
-                  onClick={() => onViewChange('language-select')}
+                  className="w-full p-4 rounded-xl border-2 border-gray-100 bg-gray-50 text-left flex items-center gap-4 opacity-60 cursor-not-allowed"
+                  disabled
                 >
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#F9731615' }}>
                     <Volume2 className="w-6 h-6" style={{ color: '#F97316' }} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold" style={{ color: '#1A2332' }}>Langue de l&apos;examen</p>
-                    <p className="text-sm text-gray-500">Choisissez parmi 4 langues nationales</p>
+                    <p className="font-semibold" style={{ color: '#1A2332' }}>Langues locales</p>
+                    <p className="text-sm text-gray-500">Bientôt disponible (Soussou, Poular, Malinké)</p>
                   </div>
                   <Badge variant="outline" className="text-xs" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
-                    {languageConfig.nativeName}
+                    Français
                   </Badge>
                 </button>
               </div>

@@ -104,8 +104,10 @@ export default function AuthModals({
       telephone: regTelephone,
       email: regEmail,
       ville: regVille,
+      region: regVille, // Using ville as region for now
       categoriePermis: regCategorie,
       role: regRole,
+      langueMaternelle: 'fr',
     });
 
     if (success) {

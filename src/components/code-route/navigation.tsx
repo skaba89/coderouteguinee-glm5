@@ -22,8 +22,6 @@ import {
   CommandItem,
 } from '@/components/ui/command';
 import { useAuth } from '@/lib/auth-context';
-import { useLanguage } from '@/lib/language-context';
-import { getLanguageNativeName } from '@/lib/mock-data';
 import {
   Car,
   LogOut,
@@ -55,7 +53,6 @@ interface NavigationProps {
 
 export default function Navigation({ currentView, onViewChange }: NavigationProps) {
   const { user, logout, isLoggedIn } = useAuth();
-  const { currentLanguage } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -183,16 +180,6 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
               >
                 <Search className="w-4 h-4" />
               </Button>
-
-              {/* Language badge */}
-              <Badge
-                variant="outline"
-                className="text-xs flex items-center gap-1 hidden sm:flex"
-                style={{ borderColor: '#FCD116', color: '#1A2332' }}
-              >
-                <Globe className="w-3 h-3" />
-                {getLanguageNativeName(currentLanguage)}
-              </Badge>
 
               {/* Notifications */}
               <Button variant="ghost" size="sm" className="relative text-gray-500 hover:text-gray-700">
@@ -371,7 +358,7 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
           <CommandGroup heading="Actions">
             <CommandItem onSelect={() => { setSearchOpen(false); }}>
               <Globe className="w-4 h-4 mr-2" />
-              Changer la langue
+              Paramètres de langue (bientôt disponible)
             </CommandItem>
             <CommandItem onSelect={() => { setSearchOpen(false); }}>
               <HelpCircle className="w-4 h-4 mr-2" />

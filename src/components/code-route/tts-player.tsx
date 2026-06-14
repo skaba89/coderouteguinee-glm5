@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { NationalLanguage } from '@/lib/types';
-import { languages } from '@/lib/mock-data';
 import {
   Volume2,
   VolumeX,
@@ -15,16 +14,13 @@ import {
 // ─── Language to speechSynthesis lang code mapping ──────────────
 const LANG_CODES: Record<NationalLanguage, string> = {
   fr: 'fr-FR',
-  ss: 'fr-FR', // Fallback: closest available
-  fu: 'fr-FR', // Fallback: closest available
-  ml: 'fr-FR', // Fallback: closest available
+  // Local languages disabled for now — will be re-enabled as improvements:
+  // ss: 'fr-FR', fu: 'fr-FR', ml: 'fr-FR'
 };
 
 const LANG_LABELS: Record<NationalLanguage, string> = {
   fr: 'Français',
-  ss: 'Soussou',
-  fu: 'Poular',
-  ml: 'Malinke',
+  // ss: 'Soussou', fu: 'Poular', ml: 'Malinke'
 };
 
 // ─── Waveform bars for animation ──────────────────────────────
@@ -77,7 +73,7 @@ export default function TTSPlayer({
   language,
   autoPlay = false,
   compact = false,
-  showLanguageBadge = true,
+  showLanguageBadge = false,
   className = '',
   label,
   onSpeechStart,
@@ -119,13 +115,13 @@ export default function TTSPlayer({
     setIsLoading(true);
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = LANG_CODES[language];
+    utterance.lang = LANG_CODES[language] || 'fr-FR';
     utterance.rate = 0.9;
     utterance.pitch = 1;
 
     // Try to find an appropriate voice
     const voices = window.speechSynthesis.getVoices();
-    const langCode = LANG_CODES[language];
+    const langCode = LANG_CODES[language] || 'fr-FR';
     const matchingVoice = voices.find(v => v.lang === langCode) || voices.find(v => v.lang.startsWith('fr'));
     if (matchingVoice) utterance.voice = matchingVoice;
 
@@ -169,7 +165,7 @@ export default function TTSPlayer({
     }
   }, [autoPlay, text, speak]);
 
-  const langConfig = languages.find(l => l.code === language);
+  const langLabel = LANG_LABELS[language] || 'Français';
 
   // ─── Compact mode ────────────────────────────────────────
   if (compact) {
@@ -196,14 +192,6 @@ export default function TTSPlayer({
           )}
         </Button>
         {isPlaying && <WaveformAnimation isPlaying={isPlaying} />}
-        {showLanguageBadge && langConfig && language !== 'fr' && (
-          <Badge
-            variant="outline"
-            className="text-[10px] px-1.5 py-0 h-5 border-green-300 text-green-700 bg-green-50"
-          >
-            {langConfig.nativeName}
-          </Badge>
-        )}
       </div>
     );
   }
@@ -244,17 +232,17 @@ export default function TTSPlayer({
           {label && (
             <span className="text-xs font-medium text-gray-700 truncate">{label}</span>
           )}
-          {showLanguageBadge && langConfig && (
+          {showLanguageBadge && (
             <Badge
               variant="outline"
               className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0"
               style={{
-                borderColor: language === 'fr' ? '#1A2332' : '#009460',
-                color: language === 'fr' ? '#1A2332' : '#009460',
-                backgroundColor: language === 'fr' ? '#F3F4F6' : '#E6F5EE',
+                borderColor: '#1A2332',
+                color: '#1A2332',
+                backgroundColor: '#F3F4F6',
               }}
             >
-              {langConfig.nativeName}
+              {langLabel}
             </Badge>
           )}
         </div>
