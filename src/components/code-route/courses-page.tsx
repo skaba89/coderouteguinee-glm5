@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ViewType, Course, NationalLanguage, Lesson, LessonType } from '@/lib/types';
-import { courses } from '@/lib/mock-data';
+import { courses as mockCourses } from '@/lib/mock-data';
 import { RoadSignDisplay } from '@/components/code-route/road-signs';
 import TTSPlayer from '@/components/code-route/tts-player';
 import {
@@ -137,6 +137,49 @@ export default function CoursesPage({ onViewChange }: { onViewChange: (view: Vie
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [speakingLessonId, setSpeakingLessonId] = useState<string | null>(null);
+  const [courses, setCourses] = useState<Course[]>(mockCourses);
+
+  // Load courses from API on mount
+  useEffect(() => {
+    async function loadCourses() {
+      try {
+        const res = await fetch('/api/courses');
+        if (res.ok) {
+          const apiCourses = await res.json();
+          if (apiCourses.length > 0) {
+            // Map API course data to our Course type
+            const mapped: Course[] = apiCourses.map((c: Record<string, unknown>) => ({
+              id: c.id as string,
+              titre: c.titre as string,
+              description: c.description as string,
+              categorie: c.categorie as string,
+              status: (c.status as Course['status']) || 'publie',
+              lessons: ((c.lessons as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
+                id: l.id as string,
+                titre: l.titre as string,
+                description: l.description as string,
+                type: (l.type as LessonType) || 'text',
+                contenu: l.contenu as string,
+                mediaUrl: l.mediaUrl as string | undefined,
+                signImage: l.signImage as string | undefined,
+                scenarioImage: l.scenarioImage as string | undefined,
+                duree: (l.duree as number) || 5,
+                ordre: (l.ordre as number) || 0,
+              })),
+              imageCover: c.imageCover as string | undefined,
+              dureeTotale: (c.dureeTotale as number) || 0,
+              nbInscrits: (c.nbInscrits as number) || 0,
+              rating: (c.rating as number) || 0,
+            }));
+            setCourses(mapped);
+          }
+        }
+      } catch {
+        // Keep mock courses as fallback
+      }
+    }
+    loadCourses();
+  }, []);
 
   // ── Filter courses ──
   const filteredCourses = courses.filter((course) => {

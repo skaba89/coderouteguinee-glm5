@@ -1,13 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth-context';
 import { ViewType, ExamSession, NationalLanguage } from '@/lib/types';
-import { mockExamResults, questions } from '@/lib/mock-data';
+import { questions } from '@/lib/mock-data';
 import {
   User,
   Calendar,
@@ -23,44 +23,73 @@ import {
   Volume2,
   Eye,
   Image as ImageIcon,
-  GraduationCap
+  GraduationCap,
+  Loader2,
 } from 'lucide-react';
 
 interface CandidateDashboardProps {
   onViewChange: (view: ViewType) => void;
 }
 
+interface CandidateStats {
+  totalExams: number;
+  passedExams: number;
+  failedExams: number;
+  successRate: number;
+  bestScore: string | null;
+  upcomingExam: { date: string; heure: string; centreNom: string } | null;
+}
+
 export default function CandidateDashboard({ onViewChange }: CandidateDashboardProps) {
   const { user } = useAuth();
-
-  const passedExams = mockExamResults.filter(r => r.reussi).length;
-  const totalExams = mockExamResults.length;
-  const successRate = totalExams > 0 ? Math.round((passedExams / totalExams) * 100) : 0;
+  const [examSessions, setExamSessions] = useState<ExamSession[]>([]);
+  const [stats, setStats] = useState<CandidateStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const signQuestions = questions.filter(q => q.mediaType === 'sign' || q.mediaType === 'sign+scenario').length;
   const scenarioQuestions = questions.filter(q => q.mediaType === 'scenario' || q.mediaType === 'sign+scenario').length;
 
-  const stats = [
+  // Fetch candidate data from API
+  const fetchCandidateData = useCallback(async () => {
+    try {
+      const res = await fetch('/api/exams/candidate');
+      if (res.ok) {
+        const data = await res.json();
+        setExamSessions(data.examSessions.map((s: Record<string, unknown>) => ({
+          id: s.id as string,
+          candidatId: s.candidatId as string,
+          centreId: s.centreId as string,
+          centreNom: s.centreNom as string,
+          date: s.date as string,
+          heure: s.heure as string,
+          langue: (s.langue as NationalLanguage) || 'fr',
+          statut: s.statut as ExamSession['statut'],
+          score: s.score as number | undefined,
+          totalQuestions: s.totalQuestions as number,
+          dateInscription: s.dateInscription as string,
+        })));
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch candidate data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCandidateData();
+  }, [fetchCandidateData]);
+
+  const totalExams = stats?.totalExams || 0;
+  const successRate = stats?.successRate || 0;
+  const upcomingExam = stats?.upcomingExam;
+
+  const dashboardStats = [
     { title: 'Examens passés', value: totalExams.toString(), icon: FileText, color: '#009460', bgColor: '#00946015' },
     { title: 'Taux de réussite', value: `${successRate}%`, icon: TrendingUp, color: '#FCD116', bgColor: '#FCD11615' },
-    { title: 'Prochain examen', value: '15 mars 2026', icon: Calendar, color: '#CE1126', bgColor: '#CE112615' },
+    { title: 'Prochain examen', value: upcomingExam ? new Date(upcomingExam.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : 'Aucun', icon: Calendar, color: '#CE1126', bgColor: '#CE112615' },
     { title: 'Langue', value: 'Français', icon: Globe, color: '#7C3AED', bgColor: '#7C3AED15' },
-  ];
-
-  const recentSessions: ExamSession[] = [
-    {
-      id: 'SES-003',
-      candidatId: user?.id || '',
-      centreId: 'CTR-001',
-      centreNom: 'Centre RouteSafe Kaloum',
-      date: '2026-03-15',
-      heure: '09:00',
-      langue: 'fr' as NationalLanguage,
-      statut: 'programme',
-      totalQuestions: 40,
-      dateInscription: '2026-03-01'
-    },
-    ...mockExamResults.map(r => r.session)
   ];
 
   const getStatusBadge = (statut: string) => {
@@ -71,10 +100,23 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
         return <Badge className="bg-red-100 text-red-700 hover:bg-red-100"><XCircle className="w-3 h-3 mr-1" />Échoué</Badge>;
       case 'programme':
         return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100"><Clock className="w-3 h-3 mr-1" />Programmé</Badge>;
+      case 'en_cours':
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100"><Clock className="w-3 h-3 mr-1" />En cours</Badge>;
       default:
         return <Badge>{statut}</Badge>;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#009460' }} />
+          <span className="text-gray-500">Chargement de vos données...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,7 +186,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-          {stats.map((stat, index) => (
+          {dashboardStats.map((stat, index) => (
             <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
@@ -211,31 +253,48 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                   <FileText className="w-5 h-5" style={{ color: '#009460' }} />
                   Résultats récents
                 </span>
-                <Button variant="ghost" size="sm" onClick={() => onViewChange('results')} style={{ color: '#009460' }}>
-                  Voir tout <ChevronRight className="w-4 h-4" />
-                </Button>
+                {examSessions.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => onViewChange('results')} style={{ color: '#009460' }}>
+                    Voir tout <ChevronRight className="w-4 h-4" />
+                  </Button>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {recentSessions.map(session => (
-                  <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div>
-                      <p className="font-medium text-sm" style={{ color: '#1A2332' }}>{session.centreNom}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs text-gray-500">{new Date(session.date).toLocaleDateString('fr-FR')} à {session.heure}</p>
-                        {/* Language badge removed — always French for now */}
+              {examSessions.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium">Aucun examen passé</p>
+                  <p className="text-sm text-gray-400 mt-1">Réservez votre premier examen pour commencer</p>
+                  <Button
+                    className="mt-4 text-white font-semibold"
+                    style={{ backgroundColor: '#009460' }}
+                    onClick={() => onViewChange('exam-booking')}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Réserver un examen
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {examSessions.map(session => (
+                    <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: '#1A2332' }}>{session.centreNom}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-gray-500">{new Date(session.date).toLocaleDateString('fr-FR')} à {session.heure}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {session.score !== undefined && session.score !== null && (
+                          <span className="text-sm font-semibold">{session.score}/{session.totalQuestions}</span>
+                        )}
+                        {getStatusBadge(session.statut)}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {session.score !== undefined && (
-                        <span className="text-sm font-semibold">{session.score}/{session.totalQuestions}</span>
-                      )}
-                      {getStatusBadge(session.statut)}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -258,7 +317,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold" style={{ color: '#1A2332' }}>Cours et formation</p>
-                    <p className="text-sm text-gray-500">3 cours, 12 leçons avec panneaux et audio</p>
+                    <p className="text-sm text-gray-500">Cours avec panneaux et audio en français</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-300" />
                 </button>
@@ -299,7 +358,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Score requis: 35/40</span>
                   <span className="text-sm font-semibold" style={{ color: successRate >= 88 ? '#009460' : '#CE1126' }}>
-                    Meilleur score: {mockExamResults.length > 0 ? `${mockExamResults[0].score}/${mockExamResults[0].totalQuestions}` : 'N/A'}
+                    Meilleur score: {stats?.bestScore || 'N/A'}
                   </span>
                 </div>
                 <Progress value={successRate} className="h-3" />

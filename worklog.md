@@ -51,3 +51,34 @@ Test Accounts:
   Candidat:  candidat@demo.gn / Candidat@2024
   Candidat:  aicha@demo.gn / Candidat@2024
   Candidat:  ousmane@demo.gn / Candidat@2024
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Connect frontend components to real API data instead of mock-data
+
+Work Log:
+- Created /api/exams/candidate route — returns exam sessions, bookings, and stats for logged-in candidate
+- Created /api/admin/stats route — returns full dashboard data (KPI, monthly volume, regional stats, fraud alerts, centres, category scores)
+- Updated candidate-dashboard.tsx to fetch exam sessions and stats from /api/exams/candidate
+  - Loading state while data fetches
+  - Empty state when no exams exist
+  - Dynamic stats from real DB data
+- Updated exam-taking.tsx to load questions from /api/questions?random=true instead of mock-data
+  - Fallback to mock-data if API fails
+  - Dynamic question count based on practice vs real exam
+- Updated courses-page.tsx to load courses from /api/courses with fallback to mock-data
+  - Maps API response to Course type
+  - Dynamically loaded on component mount
+- Updated admin-dashboard.tsx (via sub-agent) to load all data from /api/admin/stats
+  - Replaced ~90 lines of hardcoded mock data with API-fetched state
+  - Added loading state, error handling, refresh button
+  - All charts now use real data from the database
+  - Empty state displays for sections with no data
+- Build verification: ✅ All 22 routes compile successfully
+
+Stage Summary:
+- candidate-dashboard: ✅ Connected to /api/exams/candidate
+- exam-taking: ✅ Connected to /api/questions with fallback
+- courses-page: ✅ Connected to /api/courses with fallback
+- admin-dashboard: ✅ Connected to /api/admin/stats with full data refresh

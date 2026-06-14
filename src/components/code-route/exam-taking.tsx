@@ -16,7 +16,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Question, ViewType, ExamResult, CategoryResult, NationalLanguage } from '@/lib/types';
-import { getRandomQuestions } from '@/lib/mock-data';
 import { useAuth } from '@/lib/auth-context';
 import { RoadSignDisplay } from '@/components/code-route/road-signs';
 import TTSPlayer from '@/components/code-route/tts-player';
@@ -190,13 +189,36 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
   const autoSubmitRef = useRef(false);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Initialize exam
+  // Initialize exam — fetch questions from API
   useEffect(() => {
-    const count = isPractice ? 20 : 40;
-    const selected = getRandomQuestions(count);
-    setExamQuestions(selected);
-    setAnswers(new Array(count).fill(null));
-    setFlagged(new Array(count).fill(false));
+    async function loadQuestions() {
+      try {
+        const count = isPractice ? 20 : 40;
+        const res = await fetch(`/api/questions?random=true&count=${count}&actif=true`);
+        if (res.ok) {
+          const data = await res.json();
+          setExamQuestions(data.questions);
+          setAnswers(new Array(data.questions.length).fill(null));
+          setFlagged(new Array(data.questions.length).fill(false));
+        } else {
+          // Fallback to mock data
+          const { getRandomQuestions } = await import('@/lib/mock-data');
+          const selected = getRandomQuestions(count);
+          setExamQuestions(selected);
+          setAnswers(new Array(count).fill(null));
+          setFlagged(new Array(count).fill(false));
+        }
+      } catch {
+        // Fallback to mock data
+        const { getRandomQuestions } = await import('@/lib/mock-data');
+        const count = isPractice ? 20 : 40;
+        const selected = getRandomQuestions(count);
+        setExamQuestions(selected);
+        setAnswers(new Array(count).fill(null));
+        setFlagged(new Array(count).fill(false));
+      }
+    }
+    loadQuestions();
   }, [isPractice]);
 
   // Timer
