@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { createSession, setSessionCookie } from '@/lib/session'
 
 function generateCandidateNumber(): string {
   const year = new Date().getFullYear()
@@ -28,7 +29,15 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!email || !password || !nom || !prenom || !dateNaissance || !numeroIdentite || !telephone) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Veuillez remplir tous les champs obligatoires' },
+        { status: 400 }
+      )
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Le mot de passe doit contenir au moins 6 caractères' },
         { status: 400 }
       )
     }
@@ -37,7 +46,7 @@ export async function POST(request: NextRequest) {
     const existingUser = await db.user.findUnique({ where: { email } })
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Email already registered' },
+        { error: 'Un compte avec cet email existe déjà' },
         { status: 409 }
       )
     }
@@ -46,7 +55,7 @@ export async function POST(request: NextRequest) {
     const existingIdentite = await db.user.findUnique({ where: { numeroIdentite } })
     if (existingIdentite) {
       return NextResponse.json(
-        { error: 'Identity number already registered' },
+        { error: 'Ce numéro d\'identité est déjà enregistré' },
         { status: 409 }
       )
     }
@@ -81,13 +90,27 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Create JWT session
+    const token = await createSession({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      numeroUnique: user.numeroUnique,
+      nom: user.nom,
+      prenom: user.prenom,
+    })
+
     // Return user without passwordHash
     const { passwordHash: _, ...userWithoutPassword } = user
-    return NextResponse.json({ user: userWithoutPassword }, { status: 201 })
+
+    const response = NextResponse.json({ user: userWithoutPassword }, { status: 201 })
+    setSessionCookie(response, token)
+
+    return response
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Erreur interne du serveur' },
       { status: 500 }
     )
   }

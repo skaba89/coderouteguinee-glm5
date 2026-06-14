@@ -44,18 +44,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const isLoggedIn = user !== null;
 
-  // Hydrate from localStorage after mount to avoid SSR mismatch
+  // Hydrate user from session cookie on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('coderoute_user');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        queueMicrotask(() => setUser(mapApiUser(parsed)));
+    async function restoreSession() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            setUser(mapApiUser(data.user));
+            // Also store in localStorage for quick access
+            localStorage.setItem('coderoute_user', JSON.stringify(data.user));
+          }
+        } else {
+          // Session invalid or expired — clear localStorage
+          localStorage.removeItem('coderoute_user');
+        }
+      } catch {
+        // Network error — try localStorage fallback
+        try {
+          const stored = localStorage.getItem('coderoute_user');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setUser(mapApiUser(parsed));
+          }
+        } catch {
+          localStorage.removeItem('coderoute_user');
+        }
       }
-    } catch {
-      localStorage.removeItem('coderoute_user');
+      setMounted(true);
     }
-    queueMicrotask(() => setMounted(true));
+    restoreSession();
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -67,7 +86,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!res.ok) return false;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error('Login failed:', data.error);
+        return false;
+      }
 
       const data = await res.json();
       const mappedUser = mapApiUser(data.user);
@@ -108,20 +131,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setUser(null);
     localStorage.removeItem('coderoute_user');
+    // Also invalidate server session
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore errors on logout
+    }
   }, []);
 
   const loginAsAdmin = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const success = await login(email, password);
-    if (success && user?.role !== 'administration' && user?.role !== 'super-admin') {
-      // Not an admin - logout and return false
-      logout();
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        return false;
+      }
+
+      const data = await res.json();
+      const mappedUser = mapApiUser(data.user);
+
+      // Verify admin role
+      if (mappedUser.role !== 'administration' && mappedUser.role !== 'super-admin') {
+        // Not an admin — logout immediately
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+        } catch { /* ignore */ }
+        return false;
+      }
+
+      setUser(mappedUser);
+      localStorage.setItem('coderoute_user', JSON.stringify(data.user));
+      return true;
+    } catch {
       return false;
+    } finally {
+      setLoading(false);
     }
-    return success;
-  }, [login, user, logout]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isLoggedIn, mounted, loading, login, register, logout, loginAsAdmin }}>

@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -31,10 +30,29 @@ import {
   User,
   AlertTriangle,
   Loader2,
+  Phone,
+  Shield,
+  RefreshCw,
 } from 'lucide-react';
 
 interface ExamBookingProps {
   onViewChange: (view: ViewType) => void;
+}
+
+// Provider info for display
+const providerInfo: Record<string, { name: string; color: string; ussd: string }> = {
+  orange_money: { name: 'Orange Money', color: '#FF6600', ussd: '#144*1#' },
+  mtn_money: { name: 'MTN Mobile Money', color: '#FFCC00', ussd: '*156*1#' },
+  celcom_money: { name: 'Celcom Money', color: '#00A651', ussd: '*400*1#' },
+};
+
+// Detect provider from phone number
+function detectProvider(phone: string): string | null {
+  const cleaned = phone.replace(/[\s\-]/g, '').replace(/^\+224/, '');
+  if (/^(622|621|620)/.test(cleaned)) return 'orange_money';
+  if (/^(623|624|625)/.test(cleaned)) return 'celcom_money';
+  if (/^(626|627|628)/.test(cleaned)) return 'mtn_money';
+  return null;
 }
 
 function RealQRCode({ data }: { data: string }) {
@@ -60,6 +78,8 @@ function RealQRCode({ data }: { data: string }) {
   return <div dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
+type PaymentStep = 'idle' | 'initiating' | 'pending' | 'verifying' | 'confirmed' | 'failed';
+
 export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
@@ -71,6 +91,13 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   const [selectedTime, setSelectedTime] = useState('');
   const [mobileMoneyNumber, setMobileMoneyNumber] = useState('');
 
+  // Payment state
+  const [paymentStep, setPaymentStep] = useState<PaymentStep>('idle');
+  const [paymentError, setPaymentError] = useState('');
+  const [detectedProvider, setDetectedProvider] = useState<string | null>(null);
+  const [transactionRef, setTransactionRef] = useState('');
+  const [ussdCode, setUssdCode] = useState('');
+
   const availableDates = getUpcomingDates();
   const currentRegion = regions.find(r => r.id === selectedRegion);
   const currentVille = currentRegion?.villes.find(v => v.id === selectedVille);
@@ -80,7 +107,30 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   const canProceedStep1 = selectedRegion && selectedVille;
   const canProceedStep2 = selectedCentre;
   const canProceedStep3 = selectedDate && selectedTime;
-  const canProceedStep4 = mobileMoneyNumber.length >= 8;
+
+  // Validate Mobile Money number
+  const validatePhoneNumber = useCallback((phone: string): { valid: boolean; error?: string } => {
+    const cleaned = phone.replace(/[\s\-]/g, '').replace(/^\+224/, '');
+    if (cleaned.length < 9) return { valid: false, error: 'Numéro incomplet' };
+    if (!/^\d{9}$/.test(cleaned)) return { valid: false, error: 'Format invalide' };
+    const provider = detectProvider(phone);
+    if (!provider) {
+      return { valid: false, error: 'Préfixe non reconnu. Utilisez Orange (622/621/620), Celcom (623/624/625) ou MTN (626/627/628)' };
+    }
+    return { valid: true };
+  }, []);
+
+  const phoneValidation = mobileMoneyNumber.length >= 3 ? validatePhoneNumber(mobileMoneyNumber) : { valid: false };
+  const canProceedStep4 = mobileMoneyNumber.length >= 9 && phoneValidation.valid;
+
+  // Detect provider as user types
+  useEffect(() => {
+    if (mobileMoneyNumber.length >= 3) {
+      setDetectedProvider(detectProvider(mobileMoneyNumber));
+    } else {
+      setDetectedProvider(null);
+    }
+  }, [mobileMoneyNumber]);
 
   const steps = [
     { num: 1, label: 'Région & Ville', icon: MapPin },
@@ -93,10 +143,15 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   const [bookingRef, setBookingRef] = useState<string>('');
   const [bookingId, setBookingId] = useState<string>('');
 
+  // ─── Initiate Mobile Money Payment ────────────────────────
   const handleConfirm = async () => {
     setIsSubmitting(true);
+    setPaymentStep('initiating');
+    setPaymentError('');
+
     try {
-      const res = await fetch('/api/bookings', {
+      // Step 1: Create booking
+      const bookingRes = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,20 +169,96 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setBookingRef(data.reference);
-        setBookingId(data.booking.id);
-        setConfirmed(true);
+      if (!bookingRes.ok) {
+        const errData = await bookingRes.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erreur lors de la création de la réservation');
       }
-    } catch {
-      // Fallback: still confirm locally
-      setBookingRef(`CONV-${Date.now().toString(36).toUpperCase()}`);
-      setConfirmed(true);
+
+      const bookingData = await bookingRes.json();
+      const newBookingId = bookingData.id;
+      const newBookingRef = bookingData.numeroConvocation;
+      setBookingId(newBookingId);
+      setBookingRef(newBookingRef);
+
+      // Step 2: Initiate Mobile Money payment
+      setPaymentStep('pending');
+      const paymentRes = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: newBookingId,
+          phoneNumber: mobileMoneyNumber,
+          amount: 50000,
+        }),
+      });
+
+      const paymentData = await paymentRes.json();
+
+      if (!paymentRes.ok || !paymentData.success) {
+        throw new Error(paymentData.error || 'Le paiement a échoué');
+      }
+
+      setTransactionRef(paymentData.transactionRef);
+      setUssdCode(paymentData.ussdCode || '');
+
+      // Step 3: Start polling for payment confirmation
+      pollPaymentStatus(paymentData.transactionRef);
+
+    } catch (error) {
+      console.error('Booking/payment error:', error);
+      setPaymentStep('failed');
+      setPaymentError(error instanceof Error ? error.message : 'Une erreur est survenue');
+      // If booking was created but payment failed, still show reference
+      if (bookingRef) {
+        setPaymentError(error instanceof Error ? error.message : 'Le paiement a échoué, mais votre réservation a été créée.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // ─── Poll payment status ──────────────────────────────────
+  const pollPaymentStatus = useCallback((ref: string) => {
+    let attempts = 0;
+    const maxAttempts = 20; // 20 * 3s = 60 seconds max
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await fetch('/api/payments/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transactionRef: ref }),
+        });
+        const data = await res.json();
+
+        if (data.status === 'confirmed') {
+          clearInterval(interval);
+          setPaymentStep('confirmed');
+          setConfirmed(true);
+        } else if (data.status === 'failed') {
+          clearInterval(interval);
+          setPaymentStep('failed');
+          setPaymentError('Le paiement a été refusé. Veuillez réessayer.');
+        }
+
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          // In sandbox, auto-confirm after timeout
+          if (process.env.NODE_ENV !== 'production') {
+            setPaymentStep('confirmed');
+            setConfirmed(true);
+          } else {
+            setPaymentStep('failed');
+            setPaymentError('Délai de confirmation dépassé. Veuillez vérifier votre paiement et réessayer.');
+          }
+        }
+      } catch {
+        // Network error — continue polling
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const bookingData: BookingData = {
     step1: { region: currentRegion?.nom || '', ville: currentVille?.nom || '' },
@@ -136,6 +267,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
     langue: 'fr'
   };
 
+  // ─── Confirmed View ───────────────────────────────────────
   if (confirmed) {
     const qrData = JSON.stringify({
       ref: bookingRef,
@@ -143,6 +275,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
       centre: selectedCentreData?.nom,
       date: selectedDate,
       heure: selectedTime,
+      transaction: transactionRef,
     });
 
     return (
@@ -155,7 +288,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                 <Check className="w-10 h-10" style={{ color: '#009460' }} />
               </div>
               <h2 className="text-2xl font-bold mb-2" style={{ color: '#1A2332' }}>Réservation confirmée !</h2>
-              <p className="text-gray-500 mb-6">Votre convocation a été générée avec succès</p>
+              <p className="text-gray-500 mb-6">Votre convocation a été générée et le paiement a été confirmé</p>
 
               <div className="bg-gray-50 rounded-xl p-6 mb-6 text-left">
                 <div className="flex justify-center mb-6">
@@ -191,6 +324,20 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                     <span className="text-gray-500 text-sm">Catégorie</span>
                     <span className="font-medium text-sm">Permis {user?.categoriePermis}</span>
                   </div>
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-sm">Paiement</span>
+                      <span className="font-medium text-sm" style={{ color: '#009460' }}>Confirmé</span>
+                    </div>
+                  </div>
+                  {detectedProvider && providerInfo[detectedProvider] && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-sm">Opérateur</span>
+                      <span className="font-medium text-sm" style={{ color: providerInfo[detectedProvider].color }}>
+                        {providerInfo[detectedProvider].name}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -213,6 +360,75 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                   Imprimer
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Payment Pending View ─────────────────────────────────
+  if (paymentStep === 'pending') {
+    const provider = detectedProvider && providerInfo[detectedProvider];
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-lg mx-auto px-4 py-12">
+          <Card className="border-0 shadow-xl overflow-hidden">
+            <div className="h-2" style={{ background: 'linear-gradient(to right, #CE1126, #FCD116, #009460)' }}></div>
+            <CardContent className="p-8 text-center">
+              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#FCD11615' }}>
+                <Phone className="w-10 h-10 animate-pulse" style={{ color: '#FCD116' }} />
+              </div>
+              <h2 className="text-xl font-bold mb-2" style={{ color: '#1A2332' }}>Confirmez le paiement</h2>
+              <p className="text-gray-500 mb-6">
+                Un SMS de confirmation a été envoyé au <span className="font-semibold">{mobileMoneyNumber}</span>
+              </p>
+
+              {provider && (
+                <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left space-y-3">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${provider.color}20` }}>
+                      <Smartphone className="w-5 h-5" style={{ color: provider.color }} />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{provider.name}</p>
+                      <p className="text-xs text-gray-500">50 000 GNF</p>
+                    </div>
+                  </div>
+
+                  {ussdCode && (
+                    <div className="bg-white border rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Code USSD pour confirmer :</p>
+                      <p className="font-mono font-bold text-lg text-center" style={{ color: provider.color }}>
+                        {ussdCode}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Vérification du paiement en cours...
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-2">
+                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-800 text-left">
+                  Vérifiez votre téléphone et entrez votre code PIN Mobile Money pour confirmer le paiement. La confirmation est automatique.
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setPaymentStep('idle');
+                  setPaymentError('');
+                }}
+              >
+                Annuler
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -406,7 +622,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold" style={{ color: '#1A2332' }}>Récapitulatif et paiement</h2>
-                    <p className="text-gray-500 text-sm">Vérifiez les détails et effectuez le paiement</p>
+                    <p className="text-gray-500 text-sm">Vérifiez les détails et effectuez le paiement Mobile Money</p>
                   </div>
                 </div>
 
@@ -442,19 +658,79 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Paiement Mobile Money *</Label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      placeholder="Numéro Mobile Money (ex: 622 00 00 00)"
-                      value={mobileMoneyNumber}
-                      onChange={e => setMobileMoneyNumber(e.target.value)}
-                      className="pl-10"
-                    />
+                {/* Mobile Money Provider Selection */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Paiement Mobile Money *</Label>
+
+                  {/* Provider badges */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {Object.entries(providerInfo).map(([id, info]) => (
+                      <div
+                        key={id}
+                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+                          detectedProvider === id ? 'bg-gray-50' : 'bg-gray-50 border-transparent opacity-60'
+                        }`}
+                        style={detectedProvider === id ? { borderColor: info.color } : {}}
+                      >
+                        <Smartphone className="w-5 h-5 mx-auto mb-1" style={{ color: info.color }} />
+                        <p className="text-xs font-semibold" style={{ color: info.color }}>{info.name}</p>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-xs text-gray-400">Orange Money, MTN Mobile Money, ou Celcom</p>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="mobile-money-number">Numéro Mobile Money</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        id="mobile-money-number"
+                        placeholder="622 00 00 00"
+                        value={mobileMoneyNumber}
+                        onChange={e => {
+                          setMobileMoneyNumber(e.target.value);
+                          setPaymentError('');
+                        }}
+                        className="pl-10"
+                        maxLength={15}
+                      />
+                      {detectedProvider && providerInfo[detectedProvider] && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <span
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: `${providerInfo[detectedProvider].color}15`, color: providerInfo[detectedProvider].color }}
+                          >
+                            {providerInfo[detectedProvider].name}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Validation feedback */}
+                    {mobileMoneyNumber.length >= 3 && !phoneValidation.valid && phoneValidation.error && (
+                      <p className="text-xs text-red-500">{phoneValidation.error}</p>
+                    )}
+                    {mobileMoneyNumber.length >= 9 && phoneValidation.valid && detectedProvider && (
+                      <p className="text-xs" style={{ color: '#009460' }}>
+                        ✓ {providerInfo[detectedProvider]?.name} détecté — Paiement sécurisé
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Security notice */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                    <Shield className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-800">
+                      Votre paiement est sécurisé. Vous recevrez une notification sur votre téléphone pour confirmer la transaction via votre code PIN Mobile Money.
+                    </p>
+                  </div>
                 </div>
+
+                {/* Payment error */}
+                {paymentError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-sm text-red-700">{paymentError}</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -463,7 +739,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
               <Button
                 variant="outline"
                 onClick={() => setStep(Math.max(1, step - 1))}
-                disabled={step === 1}
+                disabled={step === 1 || isSubmitting}
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Précédent
@@ -489,8 +765,17 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                   disabled={!canProceedStep4 || isSubmitting}
                   onClick={handleConfirm}
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <QrCode className="w-4 h-4 mr-1" />}
-                  {isSubmitting ? 'Traitement en cours...' : 'Confirmer et payer'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      Traitement en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="w-4 h-4 mr-1" />
+                      Payer 50 000 GNF
+                    </>
+                  )}
                 </Button>
               )}
             </div>

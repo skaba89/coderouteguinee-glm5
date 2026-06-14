@@ -1,0 +1,956 @@
+     1→import { Question, Centre, Region, ExamResult, LanguageConfig, NationalLanguage, Course } from './types';
+     2→
+     3→// ============================================================
+     4→// Language Configuration
+     5→// ============================================================
+     6→export const languages: LanguageConfig[] = [
+     7→  {
+     8→    code: 'fr',
+     9→    name: 'Français',
+    10→    nativeName: 'Français',
+    11→    flag: 'france',
+    12→    regions: ['Toutes les régions'],
+    13→    population: 'Langue officielle'
+    14→  }
+    15→];
+    16→
+    17→// ============================================================
+    18→// Question Bank — 40 questions with multimedia
+    19→// ============================================================
+    20→export const questions: Question[] = [
+    21→  // ---- SIGNALISATION — With road sign images ----
+    22→  {
+    23→    id: 1,
+    24→    texte: "Que signifie ce panneau ?",
+    25→    options: ["Arrêt obligatoire", "Cédez le passage", "Sens interdit", "Priorité à droite"],
+    26→    bonneReponse: 0,
+    27→    categorie: "Signalisation",
+    28→    difficulte: "facile",
+    29→    mediaType: "sign",
+    30→    signImage: "/signs/stop.png",
+    31→    explication: "Le panneau STOP (octogonal rouge) impose un arrêt absolu avant de continuer.",
+    32→    points: 1,
+    33→    tempsEstime: 20,
+    34→    tags: ["panneau", "stop", "arrêt"],
+    35→    actif: true
+    36→
+    37→  },
+    38→  {
+    39→    id: 2,
+    40→    texte: "Que signifie ce panneau ?",
+    41→    options: ["Interdiction", "Obligation", "Indication", "Danger"],
+    42→    bonneReponse: 0,
+    43→    categorie: "Signalisation",
+    44→    difficulte: "facile",
+    45→    mediaType: "sign",
+    46→    signImage: "/signs/sens-interdit.png",
+    47→    explication: "Un panneau circulaire avec bord rouge indique une interdiction. Ici, sens interdit.",
+    48→    points: 1,
+    49→    tempsEstime: 20,
+    50→    tags: ["panneau", "interdiction", "sens interdit"],
+    51→    actif: true
+    52→
+    53→  },
+    54→  {
+    55→    id: 3,
+    56→    texte: "Que signifie ce panneau ?",
+    57→    options: ["Arrêt", "Cédez le passage", "Priorité à droite", "Danger"],
+    58→    bonneReponse: 1,
+    59→    categorie: "Signalisation",
+    60→    difficulte: "moyen",
+    61→    mediaType: "sign",
+    62→    signImage: "/signs/cedezer-passage.png",
+    63→    explication: "Le panneau triangulaire inversé (cédez le passage) impose de laisser passer les autres véhicules.",
+    64→    points: 1,
+    65→    tempsEstime: 25,
+    66→    tags: ["panneau", "cédez le passage", "priorité"],
+    67→    actif: true
+    68→
+    69→  },
+    70→  {
+    71→    id: 4,
+    72→    texte: "Que signifie ce panneau ?",
+    73→    options: ["Interdiction", "Obligation", "Indication", "Priorité"],
+    74→    bonneReponse: 3,
+    75→    categorie: "Signalisation",
+    76→    difficulte: "moyen",
+    77→    mediaType: "sign",
+    78→    signImage: "/signs/priorite-droite.png",
+    79→    explication: "Le panneau en losange indique une priorité, ici la priorité à l'intersection.",
+    80→    points: 1,
+    81→    tempsEstime: 25,
+    82→    tags: ["panneau", "priorité", "losange"],
+    83→    actif: true
+    84→
+    85→  },
+    86→  {
+    87→    id: 5,
+    88→    texte: "Que signifie ce panneau ?",
+    89→    options: ["Vitesse limitée à 50 km/h", "Vitesse minimale 50 km/h", "Vitesse recommandée 50 km/h", "Fin de limitation"],
+    90→    bonneReponse: 0,
+    91→    categorie: "Signalisation",
+    92→    difficulte: "facile",
+    93→    mediaType: "sign",
+    94→    signImage: "/signs/limitation-50.png",
+    95→    explication: "Un panneau circulaire avec bord rouge et chiffre indique une limitation de vitesse maximale.",
+    96→    points: 1,
+    97→    tempsEstime: 20,
+    98→    tags: ["panneau", "vitesse", "limitation"],
+    99→    actif: true
+   100→
+   101→  },
+   102→  {
+   103→    id: 6,
+   104→    texte: "Que signifie ce panneau ?",
+   105→    options: ["Interdiction de dépasser", "Sens interdit aux camions", "Danger poids lourd", "Fin d'interdiction"],
+   106→    bonneReponse: 0,
+   107→    categorie: "Signalisation",
+   108→    difficulte: "moyen",
+   109→    mediaType: "sign",
+   110→    signImage: "/signs/interdiction-depasser.png",
+   111→    explication: "Ce panneau interdit le dépassement de véhicules pour tous les conducteurs.",
+   112→    points: 1,
+   113→    tempsEstime: 25,
+   114→    tags: ["panneau", "dépassement", "interdiction"],
+   115→    actif: true
+   116→
+   117→  },
+   118→  {
+   119→    id: 7,
+   120→    texte: "Que signifie ce panneau ?",
+   121→    options: ["Passage piétons", "Zone scolaire", "Parking", "Arrêt de bus"],
+   122→    bonneReponse: 0,
+   123→    categorie: "Signalisation",
+   124→    difficulte: "facile",
+   125→    mediaType: "sign",
+   126→    signImage: "/signs/passage-pietons.png",
+   127→    explication: "Le panneau bleu carré avec piéton indique un passage pour piétons.",
+   128→    points: 1,
+   129→    tempsEstime: 20,
+   130→    tags: ["panneau", "piéton", "passage"],
+   131→    actif: true
+   132→
+   133→  },
+   134→  {
+   135→    id: 8,
+   136→    texte: "Que signifie ce panneau ?",
+   137→    options: ["Obligation de tourner à droite", "Sens obligatoire à droite", "Danger virage à droite", "Interdiction de tourner"],
+   138→    bonneReponse: 1,
+   139→    categorie: "Signalisation",
+   140→    difficulte: "moyen",
+   141→    mediaType: "sign",
+   142→    signImage: "/signs/sens-obligatoire.png",
+   143→    explication: "Le panneau rond bleu avec flèche indique une direction obligatoire.",
+   144→    points: 1,
+   145→    tempsEstime: 25,
+   146→    tags: ["panneau", "obligation", "direction"],
+   147→    actif: true
+   148→
+   149→  },
+   150→  {
+   151→    id: 9,
+   152→    texte: "Que signifie ce panneau ?",
+   153→    options: ["Virage dangereux", "Rond-point", "Carrefour", "Route glissante"],
+   154→    bonneReponse: 0,
+   155→    categorie: "Signalisation",
+   156→    difficulte: "facile",
+   157→    mediaType: "sign",
+   158→    signImage: "/signs/virage-dangereux.png",
+   159→    explication: "Le triangle rouge avec flèche courbe signale un virage dangereux, il faut ralentir.",
+   160→    points: 1,
+   161→    tempsEstime: 20,
+   162→    tags: ["panneau", "danger", "virage"],
+   163→    actif: true
+   164→
+   165→  },
+   166→  {
+   167→    id: 10,
+   168→    texte: "Que signifie ce panneau ?",
+   169→    options: ["Sens interdit", "Rond-point", "Carrefour à 4 voies", "Cédez le passage"],
+   170→    bonneReponse: 1,
+   171→    categorie: "Signalisation",
+   172→    difficulte: "moyen",
+   173→    mediaType: "sign",
+   174→    signImage: "/signs/rond-point.png",
+   175→    explication: "Le panneau bleu avec flèches circulaires indique un rond-point. Les véhicules dans le rond-point ont la priorité.",
+   176→    points: 1,
+   177→    tempsEstime: 25,
+   178→    tags: ["panneau", "rond-point", "priorité"],
+   179→    actif: true
+   180→
+   181→  },
+   182→
+   183→  // ---- SCENARIOS — With scenario images ----
+   184→  {
+   185→    id: 11,
+   186→    texte: "Vous approchez de cette intersection. Qui a la priorité ?",
+   187→    options: ["Vous, car vous venez de la droite", "Le véhicule bleu, il est dans le rond-point", "Les piétons uniquement", "Celui qui arrive le premier"],
+   188→    bonneReponse: 1,
+   189→    categorie: "Priorité",
+   190→    difficulte: "moyen",
+   191→    mediaType: "scenario",
+   192→    scenarioImage: "/scenarios/intersection-conakry.png",
+   193→    explication: "Dans un rond-point, les véhicules qui y circulent ont toujours la priorité sur ceux qui veulent y entrer.",
+   194→    points: 1,
+   195→    tempsEstime: 30,
+   196→    tags: ["priorité", "rond-point", "intersection"],
+   197→    actif: true
+   198→
+   199→  },
+   200→  {
+   201→    id: 12,
+   202→    texte: "Dans cette situation, que devez-vous faire ?",
+   203→    options: ["Accélérer pour passer rapidement", "Ralentir et céder le passage aux piétons", "Klaxonner pour les prévenir", "Continuer à la même vitesse"],
+   204→    bonneReponse: 1,
+   205→    categorie: "Priorité",
+   206→    difficulte: "facile",
+   207→    mediaType: "scenario",
+   208→    scenarioImage: "/scenarios/passage-pietons-approche.png",
+   209→    explication: "Lorsqu'on approche d'un passage piétons avec des piétons, on doit ralentir et céder le passage.",
+   210→    points: 1,
+   211→    tempsEstime: 25,
+   212→    tags: ["priorité", "piéton", "passage"],
+   213→    actif: true
+   214→
+   215→  },
+   216→  {
+   217→    id: 13,
+   218→    texte: "Dans cette situation, le dépassement est-il autorisé ?",
+   219→    options: ["Oui, la route est libre", "Non, la visibilité est insuffisante", "Oui, mais seulement à 80 km/h", "Oui, si le camion roule lentement"],
+   220→    bonneReponse: 1,
+   221→    categorie: "Réglementation",
+   222→    difficulte: "difficile",
+   223→    mediaType: "scenario",
+   224→    scenarioImage: "/scenarios/depassement.png",
+   225→    explication: "Le dépassement est interdit lorsque la visibilité est insuffisante, même si la route semble libre.",
+   226→    points: 1,
+   227→    tempsEstime: 35,
+   228→    tags: ["dépassement", "sécurité", "visibilité"],
+   229→    actif: true
+   230→
+   231→  },
+   232→
+   233→  // ---- QUESTIONS TEXTE — Classic without images ----
+   234→  {
+   235→    id: 14,
+   236→    texte: "Quelle est la vitesse maximale autorisée en agglomération en Guinée ?",
+   237→    options: ["40 km/h", "50 km/h", "60 km/h", "80 km/h"],
+   238→    bonneReponse: 1,
+   239→    categorie: "Vitesse",
+   240→    difficulte: "facile",
+   241→    mediaType: "text",
+   242→    explication: "La vitesse maximale en agglomération est de 50 km/h en Guinée.",
+   243→    points: 1,
+   244→    tempsEstime: 15,
+   245→    tags: ["vitesse", "agglomération"],
+   246→    actif: true
+   247→
+   248→  },
+   249→  {
+   250→    id: 15,
+   251→    texte: "Quel est le taux d'alcoolémie maximal autorisé pour conduire en Guinée ?",
+   252→    options: ["0,2 g/l", "0,5 g/l", "0,8 g/l", "1,0 g/l"],
+   253→    bonneReponse: 1,
+   254→    categorie: "Réglementation",
+   255→    difficulte: "facile",
+   256→    mediaType: "text",
+   257→    explication: "Le taux d'alcoolémie maximal autorisé est de 0,5 g/l en Guinée.",
+   258→    points: 1,
+   259→    tempsEstime: 15,
+   260→    tags: ["alcool", "réglementation"],
+   261→    actif: true
+   262→
+   263→  },
+   264→  {
+   265→    id: 16,
+   266→    texte: "Quel document est obligatoire pour conduire un véhicule en Guinée ?",
+   267→    options: ["Carte d'identité uniquement", "Permis de conduire et carte grise", "Passeport", "Attestation de domicile"],
+   268→    bonneReponse: 1,
+   269→    categorie: "Réglementation",
+   270→    difficulte: "facile",
+   271→    mediaType: "text",
+   272→    explication: "Le permis de conduire et la carte grise sont obligatoires.",
+   273→    points: 1,
+   274→    tempsEstime: 15,
+   275→    tags: ["documents", "réglementation", "permis"],
+   276→    actif: true
+   277→
+   278→  },
+   279→  {
+   280→    id: 17,
+   281→    texte: "Que signifie un feu orange clignotant ?",
+   282→    options: ["Arrêt obligatoire", "Feu en panne", "Prudence, passage à caractère dangereux", "Priorité à droite"],
+   283→    bonneReponse: 2,
+   284→    categorie: "Signalisation",
+   285→    difficulte: "moyen",
+   286→    mediaType: "text",
+   287→    explication: "Un feu orange clignotant indique la prudence à un passage dangereux.",
+   288→    points: 1,
+   289→    tempsEstime: 20,
+   290→    tags: ["feu", "signalisation", "prudence"],
+   291→    actif: true
+   292→
+   293→  },
+   294→  {
+   295→    id: 18,
+   296→    texte: "À quelle distance minimum devez-vous stationner d'un passage piéton ?",
+   297→    options: ["3 mètres", "5 mètres", "10 mètres", "15 mètres"],
+   298→    bonneReponse: 1,
+   299→    categorie: "Stationnement",
+   300→    difficulte: "moyen",
+   301→    mediaType: "text",
+   302→    explication: "Il est interdit de stationner à moins de 5 mètres d'un passage piéton.",
+   303→    points: 1,
+   304→    tempsEstime: 20,
+   305→    tags: ["stationnement", "piéton", "distance"],
+   306→    actif: true
+   307→
+   308→  },
+   309→  {
+   310→    id: 19,
+   311→    texte: "Qui a la priorité à un carrefour sans signalisation en Guinée ?",
+   312→    options: ["Le véhicule le plus rapide", "Le véhicule venant de droite", "Le véhicule venant de gauche", "Le plus gros véhicule"],
+   313→    bonneReponse: 1,
+   314→    categorie: "Priorité",
+   315→    difficulte: "facile",
+   316→    mediaType: "text",
+   317→    explication: "La priorité à droite s'applique en l'absence de signalisation.",
+   318→    points: 1,
+   319→    tempsEstime: 20,
+   320→    tags: ["priorité", "carrefour", "droite"],
+   321→    actif: true
+   322→
+   323→  },
+   324→  {
+   325→    id: 20,
+   326→    texte: "Quel est l'âge minimal pour obtenir le permis de conduire catégorie B en Guinée ?",
+   327→    options: ["16 ans", "18 ans", "20 ans", "21 ans"],
+   328→    bonneReponse: 1,
+   329→    categorie: "Réglementation",
+   330→    difficulte: "facile",
+   331→    mediaType: "text",
+   332→    explication: "L'âge minimal pour le permis B est de 18 ans.",
+   333→    points: 1,
+   334→    tempsEstime: 15,
+   335→    tags: ["âge", "permis", "réglementation"],
+   336→    actif: true
+   337→
+   338→  },
+   339→  {
+   340→    id: 21,
+   341→    texte: "Un panneau rectangulaire avec fond bleu indique :",
+   342→    options: ["Interdiction", "Indication ou obligation", "Danger", "Travaux"],
+   343→    bonneReponse: 1,
+   344→    categorie: "Signalisation",
+   345→    difficulte: "moyen",
+   346→    mediaType: "text",
+   347→    explication: "Un panneau rectangulaire bleu indique une obligation ou une indication.",
+   348→    points: 1,
+   349→    tempsEstime: 20,
+   350→    tags: ["panneau", "obligation", "bleu"],
+   351→    actif: true
+   352→
+   353→  },
+   354→  {
+   355→    id: 22,
+   356→    texte: "La ceinture de sécurité est obligatoire :",
+   357→    options: ["Uniquement à l'avant", "Uniquement sur autoroute", "Pour tous les occupants", "Seulement pour le conducteur"],
+   358→    bonneReponse: 2,
+   359→    categorie: "Sécurité",
+   360→    difficulte: "facile",
+   361→    mediaType: "text",
+   362→    explication: "La ceinture de sécurité est obligatoire pour tous les occupants du véhicule.",
+   363→    points: 1,
+   364→    tempsEstime: 15,
+   365→    tags: ["ceinture", "sécurité", "obligation"],
+   366→    actif: true
+   367→
+   368→  },
+   369→  {
+   370→    id: 23,
+   371→    texte: "Que faire en cas d'accident avec des blessés ?",
+   372→    options: ["Continuer votre route", "S'arrêter, sécuriser, alerter les secours", "Déplacer les blessés immédiatement", "Appeler uniquement la police"],
+   373→    bonneReponse: 1,
+   374→    categorie: "Sécurité",
+   375→    difficulte: "facile",
+   376→    mediaType: "text",
+   377→    explication: "Il faut s'arrêter, sécuriser le lieu et alerter les secours (SAMU : 115).",
+   378→    points: 1,
+   379→    tempsEstime: 20,
+   380→    tags: ["accident", "secours", "sécurité"],
+   381→    actif: true
+   382→
+   383→  },
+   384→  {
+   385→    id: 24,
+   386→    texte: "Quel est le sens de circulation en Guinée ?",
+   387→    options: ["Gauche", "Droite", "Les deux selon les routes", "Pas de règle définie"],
+   388→    bonneReponse: 1,
+   389→    categorie: "Réglementation",
+   390→    difficulte: "facile",
+   391→    mediaType: "text",
+   392→    explication: "La Guinée circule à droite, comme la majorité des pays d'Afrique de l'Ouest.",
+   393→    points: 1,
+   394→    tempsEstime: 15,
+   395→    tags: ["circulation", "sens", "réglementation"],
+   396→    actif: true
+   397→
+   398→  },
+   399→  {
+   400→    id: 25,
+   401→    texte: "La distance de sécurité recommandée entre deux véhicules est de :",
+   402→    options: ["1 seconde", "2 secondes", "5 secondes", "10 secondes"],
+   403→    bonneReponse: 1,
+   404→    categorie: "Sécurité",
+   405→    difficulte: "moyen",
+   406→    mediaType: "text",
+   407→    explication: "La règle des 2 secondes est recommandée pour maintenir une distance de sécurité.",
+   408→    points: 1,
+   409→    tempsEstime: 20,
+   410→    tags: ["distance", "sécurité", "vitesse"],
+   411→    actif: true
+   412→
+   413→  },
+   414→  {
+   415→    id: 26,
+   416→    texte: "Un panneau rond avec fond bleu et une flèche blanche pointant vers le haut signifie :",
+   417→    options: ["Interdiction de tourner", "Obligation d'aller tout droit", "Sens unique", "Fin d'interdiction"],
+   418→    bonneReponse: 1,
+   419→    categorie: "Signalisation",
+   420→    difficulte: "moyen",
+   421→    mediaType: "text",
+   422→    explication: "Un panneau rond bleu avec flèche blanche vers le haut = obligation d'aller tout droit.",
+   423→    points: 1,
+   424→    tempsEstime: 25,
+   425→    tags: ["panneau", "obligation", "direction"],
+   426→    actif: true
+   427→
+   428→  },
+   429→  {
+   430→    id: 27,
+   431→    texte: "Quand faut-il utiliser les feux de détresse ?",
+   432→    options: ["Pour se garer", "En cas de danger sur la route ou véhicule en panne", "Pour dire merci", "La nuit uniquement"],
+   433→    bonneReponse: 1,
+   434→    categorie: "Sécurité",
+   435→    difficulte: "facile",
+   436→    mediaType: "text",
+   437→    explication: "Les feux de détresse sont utilisés pour signaler un danger ou un véhicule en panne.",
+   438→    points: 1,
+   439→    tempsEstime: 15,
+   440→    tags: ["feux", "détresse", "sécurité"],
+   441→    actif: true
+   442→
+   443→  },
+   444→  {
+   445→    id: 28,
+   446→    texte: "Un véhicule d'urgence avec gyrophaire approche. Que devez-vous faire ?",
+   447→    options: ["Accélérer pour passer", "Vous arrêter ou vous ranger sur le côté", "Ignorer et continuer", "Klaxonner en retour"],
+   448→    bonneReponse: 1,
+   449→    categorie: "Priorité",
+   450→    difficulte: "facile",
+   451→    mediaType: "text",
+   452→    explication: "Il faut céder le passage aux véhicules d'urgence en se rangeant sur le côté.",
+   453→    points: 1,
+   454→    tempsEstime: 15,
+   455→    tags: ["urgence", "priorité", "gyrophaire"],
+   456→    actif: true
+   457→
+   458→  },
+   459→  {
+   460→    id: 29,
+   461→    texte: "Que signifie une ligne blanche continue au milieu de la chaussée ?",
+   462→    options: ["On peut la franchir pour doubler", "Interdiction de la franchir", "Fin de route", "Zone de stationnement"],
+   463→    bonneReponse: 1,
+   464→    categorie: "Signalisation",
+   465→    difficulte: "moyen",
+   466→    mediaType: "text",
+   467→    explication: "Une ligne blanche continue ne peut pas être franchie.",
+   468→    points: 1,
+   469→    tempsEstime: 20,
+   470→    tags: ["ligne", "signalisation", "interdiction"],
+   471→    actif: true
+   472→
+   473→  },
+   474→  {
+   475→    id: 30,
+   476→    texte: "Quelle est la sanction pour conduite sans permis en Guinée ?",
+   477→    options: ["Avertissement", "Amende et/ou peine de prison", "Retrait de points", "Stage obligatoire"],
+   478→    bonneReponse: 1,
+   479→    categorie: "Réglementation",
+   480→    difficulte: "moyen",
+   481→    mediaType: "text",
+   482→    explication: "La conduite sans permis est punie d'une amende et/ou d'une peine de prison.",
+   483→    points: 1,
+   484→    tempsEstime: 20,
+   485→    tags: ["sanction", "permis", "réglementation"],
+   486→    actif: true
+   487→
+   488→  },
+   489→  {
+   490→    id: 31,
+   491→    texte: "Quel est le numéro d'urgence médicale en Guinée ?",
+   492→    options: ["15", "115", "17", "18"],
+   493→    bonneReponse: 1,
+   494→    categorie: "Sécurité",
+   495→    difficulte: "facile",
+   496→    mediaType: "text",
+   497→    explication: "Le SAMU en Guinée est joignable au 115.",
+   498→    points: 1,
+   499→    tempsEstime: 10,
+   500→    tags: ["urgence", "SAMU", "sécurité"],
+   501→    actif: true
+   502→
+   503→  },
+   504→  {
+   505→    id: 32,
+   506→    texte: "Dans un rond-point, qui a la priorité ?",
+   507→    options: ["Les véhicules entrant", "Les véhicules circulant dans le rond-point", "Les piétons", "Les véhicules les plus rapides"],
+   508→    bonneReponse: 1,
+   509→    categorie: "Priorité",
+   510→    difficulte: "facile",
+   511→    mediaType: "text",
+   512→    explication: "Les véhicules circulant dans le rond-point ont la priorité sur ceux qui y entrent.",
+   513→    points: 1,
+   514→    tempsEstime: 15,
+   515→    tags: ["rond-point", "priorité"],
+   516→    actif: true
+   517→
+   518→  },
+   519→  {
+   520→    id: 33,
+   521→    texte: "La catégorie A du permis de conduire concerne :",
+   522→    options: ["Les voitures", "Les motocyclettes", "Les camions", "Les autobus"],
+   523→    bonneReponse: 1,
+   524→    categorie: "Réglementation",
+   525→    difficulte: "facile",
+   526→    mediaType: "text",
+   527→    explication: "La catégorie A est pour les motocyclettes.",
+   528→    points: 1,
+   529→    tempsEstime: 10,
+   530→    tags: ["permis", "catégorie", "moto"],
+   531→    actif: true
+   532→
+   533→  },
+   534→  {
+   535→    id: 34,
+   536→    texte: "Le dépassement d'un autre véhicule s'effectue par :",
+   537→    options: ["La droite", "La gauche", "Le côté le plus proche", "Les deux côtés"],
+   538→    bonneReponse: 1,
+   539→    categorie: "Réglementation",
+   540→    difficulte: "facile",
+   541→    mediaType: "text",
+   542→    explication: "Le dépassement s'effectue normalement par la gauche.",
+   543→    points: 1,
+   544→    tempsEstime: 15,
+   545→    tags: ["dépassement", "gauche", "réglementation"],
+   546→    actif: true
+   547→
+   548→  },
+   549→  {
+   550→    id: 35,
+   551→    texte: "Quel équipement est obligatoire dans un véhicule en Guinée ?",
+   552→    options: ["GPS", "Trousse de premiers secours et extincteur", "Caméra de recul", "Climatisation"],
+   553→    bonneReponse: 1,
+   554→    categorie: "Sécurité",
+   555→    difficulte: "moyen",
+   556→    mediaType: "text",
+   557→    explication: "La trousse de premiers secours et l'extincteur sont obligatoires.",
+   558→    points: 1,
+   559→    tempsEstime: 15,
+   560→    tags: ["équipement", "sécurité", "obligation"],
+   561→    actif: true
+   562→
+   563→  },
+   564→  {
+   565→    id: 36,
+   566→    texte: "Quelle est la vitesse maximale sur route nationale en Guinée ?",
+   567→    options: ["80 km/h", "90 km/h", "110 km/h", "130 km/h"],
+   568→    bonneReponse: 1,
+   569→    categorie: "Vitesse",
+   570→    difficulte: "facile",
+   571→    mediaType: "text",
+   572→    explication: "La vitesse maximale sur route nationale est de 90 km/h.",
+   573→    points: 1,
+   574→    tempsEstime: 15,
+   575→    tags: ["vitesse", "route nationale"],
+   576→    actif: true
+   577→
+   578→  },
+   579→  {
+   580→    id: 37,
+   581→    texte: "En cas de brouillard dense, quels feux devez-vous allumer ?",
+   582→    options: ["Feux de croisement", "Feux de brouillard avant et arrière", "Feux de route", "Feux de détresse uniquement"],
+   583→    bonneReponse: 1,
+   584→    categorie: "Sécurité",
+   585→    difficulte: "moyen",
+   586→    mediaType: "text",
+   587→    explication: "Par brouillard dense, les feux de brouillard avant et arrière doivent être allumés.",
+   588→    points: 1,
+   589→    tempsEstime: 20,
+   590→    tags: ["brouillard", "feux", "sécurité"],
+   591→    actif: true
+   592→
+   593→  },
+   594→  {
+   595→    id: 38,
+   596→    texte: "Un panneau triangulaire avec un bord rouge indique :",
+   597→    options: ["Une interdiction", "Une obligation", "Un danger", "Une indication"],
+   598→    bonneReponse: 2,
+   599→    categorie: "Signalisation",
+   600→    difficulte: "facile",
+   601→    mediaType: "text",
+   602→    explication: "Un panneau triangulaire avec bord rouge signale un danger.",
+   603→    points: 1,
+   604→    tempsEstime: 15,
+   605→    tags: ["panneau", "danger", "triangle"],
+   606→    actif: true
+   607→
+   608→  },
+   609→  {
+   610→    id: 39,
+   611→    texte: "Quel est le taux d'alcoolémie maximal pour les conducteurs professionnels ?",
+   612→    options: ["0,1 g/l", "0,2 g/l", "0,5 g/l", "0,8 g/l"],
+   613→    bonneReponse: 1,
+   614→    categorie: "Réglementation",
+   615→    difficulte: "difficile",
+   616→    mediaType: "text",
+   617→    explication: "Pour les conducteurs professionnels, le taux maximal est de 0,2 g/l, plus strict que pour les conducteurs ordinaires.",
+   618→    points: 1,
+   619→    tempsEstime: 25,
+   620→    tags: ["alcool", "professionnel", "réglementation"],
+   621→    actif: true
+   622→
+   623→  },
+   624→  {
+   625→    id: 40,
+   626→    texte: "Un panneau avec un triangle blanc sur fond bleu indique :",
+   627→    options: ["Fin de priorité", "Priorité à l'intersection", "Cédez le passage", "Sens interdit"],
+   628→    bonneReponse: 1,
+   629→    categorie: "Signalisation",
+   630→    difficulte: "difficile",
+   631→    mediaType: "text",
+   632→    explication: "Le panneau priorité à l'intersection a un triangle blanc sur fond bleu.",
+   633→    points: 1,
+   634→    tempsEstime: 25,
+   635→    tags: ["panneau", "priorité", "intersection"],
+   636→    actif: true
+   637→
+   638→  }
+   639→];
+   640→
+   641→// ============================================================
+   642→// Centers
+   643→// ============================================================
+   644→export const centres: Centre[] = [
+   645→  {
+   646→    id: "CTR-001",
+   647→    nom: "Centre RouteSafe Kaloum",
+   648→    ville: "Conakry",
+   649→    region: "Conakry",
+   650→    adresse: "Avenue de la République, Kaloum",
+   651→    capacite: 50,
+   652→    telephone: "+224 622 11 11 11",
+   653→    email: "contact@routesafe-kaloum.gn",
+   654→    actif: true,
+   655→    accreditation: { dateDebut: "2025-01-01", dateFin: "2027-12-31", statut: "actif", scoreQualite: 92 },
+   656→    equipements: ["Salle informatique", "Vidéoprojecteur", "Bureau examen", "Accessibilité PMR"],
+   657→    languesDisponibles: ['fr']
+   658→  },
+   659→  {
+   660→    id: "CTR-002",
+   661→    nom: "Centre Auto-Plus Dixinn",
+   662→    ville: "Conakry",
+   663→    region: "Conakry",
+   664→    adresse: "Boulevard du Commerce, Dixinn",
+   665→    capacite: 40,
+   666→    telephone: "+224 622 22 22 22",
+   667→    email: "info@autoplus-dixinn.gn",
+   668→    actif: true,
+   669→    accreditation: { dateDebut: "2025-03-01", dateFin: "2027-03-01", statut: "actif", scoreQualite: 88 },
+   670→    equipements: ["Salle informatique", "Webcam surveillance", "Climatisation"],
+   671→    languesDisponibles: ['fr']
+   672→  },
+   673→  {
+   674→    id: "CTR-003",
+   675→    nom: "Centre Conduite Matam",
+   676→    ville: "Conakry",
+   677→    region: "Conakry",
+   678→    adresse: "Route du Niger, Matam",
+   679→    capacite: 35,
+   680→    telephone: "+224 622 33 33 33",
+   681→    email: "contact@conduite-matam.gn",
+   682→    actif: true,
+   683→    accreditation: { dateDebut: "2024-06-01", dateFin: "2026-06-01", statut: "en_renouvellement", scoreQualite: 75 },
+   684→    equipements: ["Salle informatique"],
+   685→    languesDisponibles: ['fr']
+   686→  },
+   687→  {
+   688→    id: "CTR-004",
+   689→    nom: "Centre Permis Kankan",
+   690→    ville: "Kankan",
+   691→    region: "Kankan",
+   692→    adresse: "Avenue Sékou Touré, Kankan",
+   693→    capacite: 30,
+   694→    telephone: "+224 622 44 44 44",
+   695→    email: "info@permis-kankan.gn",
+   696→    actif: true,
+   697→    accreditation: { dateDebut: "2025-01-01", dateFin: "2027-12-31", statut: "actif", scoreQualite: 85 },
+   698→    equipements: ["Salle informatique", "Vidéoprojecteur"],
+   699→    languesDisponibles: ['fr']
+   700→  },
+   701→  {
+   702→    id: "CTR-005",
+   703→    nom: "Centre Routier Nzérékoré",
+   704→    ville: "Nzérékoré",
+   705→    region: "Nzérékoré",
+   706→    adresse: "Route de la Forêt, Nzérékoré",
+   707→    capacite: 25,
+   708→    telephone: "+224 622 55 55 55",
+   709→    email: "contact@routier-nzerekore.gn",
+   710→    actif: true,
+   711→    accreditation: { dateDebut: "2025-06-01", dateFin: "2027-06-01", statut: "actif", scoreQualite: 80 },
+   712→    equipements: ["Salle informatique"],
+   713→    languesDisponibles: ['fr']
+   714→  },
+   715→  {
+   716→    id: "CTR-006",
+   717→    nom: "Centre Auto-École Kindia",
+   718→    ville: "Kindia",
+   719→    region: "Kindia",
+   720→    adresse: "Avenue de l'Indépendance, Kindia",
+   721→    capacite: 20,
+   722→    telephone: "+224 622 66 66 66",
+   723→    email: "info@autoecole-kindia.gn",
+   724→    actif: true,
+   725→    accreditation: { dateDebut: "2025-01-01", dateFin: "2026-12-31", statut: "actif", scoreQualite: 78 },
+   726→    equipements: ["Salle informatique"],
+   727→    languesDisponibles: ['fr']
+   728→  },
+   729→  {
+   730→    id: "CTR-007",
+   731→    nom: "Centre Routier Boké",
+   732→    ville: "Boké",
+   733→    region: "Boké",
+   734→    adresse: "Avenue de la Mine, Boké",
+   735→    capacite: 20,
+   736→    telephone: "+224 622 77 77 77",
+   737→    email: "contact@routier-boke.gn",
+   738→    actif: false,
+   739→    accreditation: { dateDebut: "2024-01-01", dateFin: "2025-12-31", statut: "expire", scoreQualite: 65 },
+   740→    equipements: ["Salle informatique"],
+   741→    languesDisponibles: ['fr']
+   742→  }
+   743→];
+   744→
+   745→// ============================================================
+   746→// Regions
+   747→// ============================================================
+   748→export const regions: Region[] = [
+   749→  {
+   750→    id: "REG-01",
+   751→    nom: "Conakry",
+   752→    villes: [{ id: "VIL-01", nom: "Conakry", centres: centres.filter(c => c.region === "Conakry") }]
+   753→  },
+   754→  {
+   755→    id: "REG-02",
+   756→    nom: "Kankan",
+   757→    villes: [{ id: "VIL-04", nom: "Kankan", centres: centres.filter(c => c.region === "Kankan") }]
+   758→  },
+   759→  {
+   760→    id: "REG-03",
+   761→    nom: "Nzérékoré",
+   762→    villes: [{ id: "VIL-05", nom: "Nzérékoré", centres: centres.filter(c => c.region === "Nzérékoré") }]
+   763→  },
+   764→  {
+   765→    id: "REG-04",
+   766→    nom: "Kindia",
+   767→    villes: [{ id: "VIL-06", nom: "Kindia", centres: centres.filter(c => c.region === "Kindia") }]
+   768→  },
+   769→  {
+   770→    id: "REG-05",
+   771→    nom: "Boké",
+   772→    villes: [{ id: "VIL-07", nom: "Boké", centres: centres.filter(c => c.region === "Boké") }]
+   773→  }
+   774→];
+   775→
+   776→// ============================================================
+   777→// Time slots & permit categories
+   778→// ============================================================
+   779→export const creneauxHoraires = [
+   780→  "08:00", "08:30", "09:00", "09:30",
+   781→  "10:00", "10:30", "11:00", "11:30",
+   782→  "14:00", "14:30", "15:00", "15:30",
+   783→  "16:00", "16:30"
+   784→];
+   785→
+   786→export const categoriesPermis = [
+   787→  { value: "A", label: "A - Motocyclette" },
+   788→  { value: "B", label: "B - Véhicule léger" },
+   789→  { value: "C", label: "C - Camion" },
+   790→  { value: "D", label: "D - Autobus" },
+   791→  { value: "E", label: "E - Remorque" }
+   792→];
+   793→
+   794→// ============================================================
+   795→// Mock exam results
+   796→// ============================================================
+   797→export const mockExamResults: ExamResult[] = [
+   798→  {
+   799→    id: "RES-001",
+   800→    session: {
+   801→      id: "SES-001",
+   802→      candidatId: "USR-001",
+   803→      centreId: "CTR-001",
+   804→      centreNom: "Centre RouteSafe Kaloum",
+   805→      date: "2026-01-15",
+   806→      heure: "09:00",
+   807→      langue: "fr",
+   808→      statut: "reussi",
+   809→      score: 38,
+   810→      totalQuestions: 40,
+   811→      dateInscription: "2026-01-10"
+   812→    },
+   813→    score: 38,
+   814→    totalQuestions: 40,
+   815→    reussi: true,
+   816→    details: [
+   817→      { categorie: "Signalisation", total: 12, correct: 12 },
+   818→      { categorie: "Sécurité", total: 8, correct: 8 },
+   819→      { categorie: "Priorité", total: 6, correct: 5 },
+   820→      { categorie: "Réglementation", total: 8, correct: 7 },
+   821→      { categorie: "Vitesse", total: 4, correct: 4 },
+   822→      { categorie: "Stationnement", total: 2, correct: 2 }
+   823→    ],
+   824→    datePassage: "2026-01-15"
+   825→  },
+   826→  {
+   827→    id: "RES-002",
+   828→    session: {
+   829→      id: "SES-002",
+   830→      candidatId: "USR-001",
+   831→      centreId: "CTR-002",
+   832→      centreNom: "Centre Auto-Plus Dixinn",
+   833→      date: "2025-11-20",
+   834→      heure: "14:00",
+   835→      langue: "fr",
+   836→      statut: "echoue",
+   837→      score: 30,
+   838→      totalQuestions: 40,
+   839→      dateInscription: "2025-11-15"
+   840→    },
+   841→    score: 30,
+   842→    totalQuestions: 40,
+   843→    reussi: false,
+   844→    details: [
+   845→      { categorie: "Signalisation", total: 12, correct: 8 },
+   846→      { categorie: "Sécurité", total: 8, correct: 6 },
+   847→      { categorie: "Priorité", total: 6, correct: 4 },
+   848→      { categorie: "Réglementation", total: 8, correct: 6 },
+   849→      { categorie: "Vitesse", total: 4, correct: 4 },
+   850→      { categorie: "Stationnement", total: 2, correct: 2 }
+   851→    ],
+   852→    datePassage: "2025-11-20"
+   853→  }
+   854→];
+   855→
+   856→// ============================================================
+   857→// Courses
+   858→// ============================================================
+   859→export const courses: Course[] = [
+   860→  {
+   861→    id: "CRS-001",
+   862→    titre: "Les panneaux de signalisation",
+   863→    description: "Apprenez à reconnaître et comprendre tous les panneaux de signalisation routière en Guinée.",
+   864→    categorie: "Signalisation",
+   865→    status: "publie",
+   866→    imageCover: "/signs/stop.png",
+   867→    dureeTotale: 45,
+   868→    nbInscrits: 2340,
+   869→    rating: 4.8,
+   870→
+   871→    lessons: [
+   872→      { id: "LSN-001", titre: "Panneaux d'interdiction", description: "Forme circulaire, bord rouge", type: "sign", contenu: "Les panneaux d'interdiction sont circulaires avec un bord rouge.", signImage: "/signs/sens-interdit.png", duree: 10, ordre: 1 },
+   873→      { id: "LSN-002", titre: "Panneaux d'obligation", description: "Forme circulaire, fond bleu", type: "sign", contenu: "Les panneaux d'obligation sont circulaires avec fond bleu.", signImage: "/signs/sens-obligatoire.png", duree: 10, ordre: 2 },
+   874→      { id: "LSN-003", titre: "Panneaux de danger", description: "Forme triangulaire, bord rouge", type: "sign", contenu: "Les panneaux de danger sont triangulaires avec bord rouge.", signImage: "/signs/virage-dangereux.png", duree: 10, ordre: 3 },
+   875→      { id: "LSN-004", titre: "Panneaux d'indication", description: "Forme rectangulaire ou carrée", type: "sign", contenu: "Les panneaux d'indication sont rectangulaires ou carrés.", signImage: "/signs/passage-pietons.png", duree: 10, ordre: 4 },
+   876→      { id: "LSN-005", titre: "Quiz signalisation", description: "Testez vos connaissances", type: "quiz", contenu: "Quiz sur les panneaux de signalisation.", duree: 5, ordre: 5 }
+   877→    ]
+   878→  },
+   879→  {
+   880→    id: "CRS-002",
+   881→    titre: "Règles de priorité",
+   882→    description: "Maîtrisez les règles de priorité : carrefours, ronds-points, passages piétons.",
+   883→    categorie: "Priorité",
+   884→    status: "publie",
+   885→    imageCover: "/scenarios/intersection-conakry.png",
+   886→    dureeTotale: 35,
+   887→    nbInscrits: 1890,
+   888→    rating: 4.6,
+   889→
+   890→    lessons: [
+   891→      { id: "LSN-006", titre: "Priorité à droite", description: "La règle fondamentale", type: "text", contenu: "En l'absence de signalisation, la priorité est à droite.", duree: 10, ordre: 1 },
+   892→      { id: "LSN-007", titre: "Les ronds-points", description: "Comment aborder un rond-point", type: "sign", contenu: "Les véhicules dans le rond-point ont la priorité.", signImage: "/signs/rond-point.png", duree: 10, ordre: 2 },
+   893→      { id: "LSN-008", titre: "Passages piétons en situation", description: "Cas pratiques", type: "interactive", contenu: "Exercices interactifs sur les passages piétons.", scenarioImage: "/scenarios/passage-pietons-approche.png", duree: 15, ordre: 3 }
+   894→    ]
+   895→  },
+   896→  {
+   897→    id: "CRS-003",
+   898→    titre: "Conduite en sécurité",
+   899→    description: "Vitesse, distance de sécurité, équipements obligatoires et conduite par intempéries.",
+   900→    categorie: "Sécurité",
+   901→    status: "publie",
+   902→    imageCover: "/scenarios/depassement.png",
+   903→    dureeTotale: 50,
+   904→    nbInscrits: 3120,
+   905→    rating: 4.9,
+   906→
+   907→    lessons: [
+   908→      { id: "LSN-009", titre: "Limitations de vitesse", description: "Vitesse maximale par type de route", type: "sign", contenu: "Limitation de vitesse : 50 km/h en ville, 90 km/h sur route nationale.", signImage: "/signs/limitation-50.png", duree: 10, ordre: 1 },
+   909→      { id: "LSN-010", titre: "Distance de sécurité", description: "La règle des 2 secondes", type: "video", contenu: "Vidéo explicative sur la distance de sécurité.", duree: 10, ordre: 2 },
+   910→      { id: "LSN-011", titre: "Dépassement en sécurité", description: "Quand et comment dépasser", type: "interactive", contenu: "Cas pratiques de dépassement.", scenarioImage: "/scenarios/depassement.png", duree: 15, ordre: 3 },
+   911→      { id: "LSN-012", titre: "Conduite par intempéries", description: "Pluie, brouillard, nuit", type: "text", contenu: "Adaptation de la conduite selon les conditions météo.", duree: 15, ordre: 4 }
+   912→    ]
+   913→  }
+   914→];
+   915→
+   916→// ============================================================
+   917→// Helper functions
+   918→// ============================================================
+   919→export function generateCandidateNumber(): string {
+   920→  const num = Math.floor(100000 + Math.random() * 900000);
+   921→  return `GN-CODE-2026-${num}`;
+   922→}
+   923→
+   924→export function getRandomQuestions(count: number): Question[] {
+   925→  const shuffled = [...questions].sort(() => Math.random() - 0.5);
+   926→  return shuffled.slice(0, count);
+   927→}
+   928→
+   929→export function getUpcomingDates(): string[] {
+   930→  const dates: string[] = [];
+   931→  const today = new Date();
+   932→  for (let i = 1; i <= 14; i++) {
+   933→    const date = new Date(today);
+   934→    date.setDate(today.getDate() + i);
+   935→    if (date.getDay() !== 0) {
+   936→      dates.push(date.toISOString().split('T')[0]);
+   937→    }
+   938→  }
+   939→  return dates;
+   940→}
+   941→
+   942→export function getQuestionInLanguage(question: Question, _lang: NationalLanguage): Question {
+   943→  // Translations temporarily disabled - always return French
+   944→  return question;
+   945→}
+   946→
+   947→export function getLanguageName(code: NationalLanguage): string {
+   948→  const lang = languages.find(l => l.code === code);
+   949→  return lang ? lang.name : 'Français';
+   950→}
+   951→
+   952→export function getLanguageNativeName(code: NationalLanguage): string {
+   953→  const lang = languages.find(l => l.code === code);
+   954→  return lang ? lang.nativeName : 'Français';
+   955→}
+   956→
