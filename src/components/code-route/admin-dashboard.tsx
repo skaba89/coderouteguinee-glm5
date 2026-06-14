@@ -89,12 +89,9 @@ const regionalStats: RegionalStat[] = [
 ];
 
 const languageDistribution = [
-  { name: 'Français', value: 45 },
-  { name: 'Soussou', value: 22 },
-  { name: 'Poular', value: 20 },
-  { name: 'Malinké', value: 13 },
+  { name: 'Français', value: 100 },
 ];
-const LANGUAGE_PIE_COLORS = ['#1A2332', '#009460', '#CE1126', '#FCD116'];
+const LANGUAGE_PIE_COLORS = ['#009460'];
 
 const fraudAlerts: FraudAlert[] = [
   { id: 'FRD-001', type: 'Identité suspecte', description: 'Photo du candidat GN-CODE-2026-789012 ne correspond pas à la pièce d\'identité présentée', severity: 'critical', status: 'active', candidatId: 'GN-CODE-2026-789012', centreId: 'CTR-001', timestamp: '2026-03-04T14:32:00' },
@@ -132,9 +129,6 @@ const dailyExamVolume = Array.from({ length: 30 }, (_, i) => {
 
 const successByLanguage = [
   { langue: 'Français', taux: 71 },
-  { langue: 'Soussou', taux: 58 },
-  { langue: 'Poular', taux: 54 },
-  { langue: 'Malinké', taux: 62 },
 ];
 
 const categoryScores = [
@@ -494,44 +488,22 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                   </CardContent>
                 </Card>
 
-                {/* Language Distribution PieChart */}
+                {/* Language Distribution */}
                 <Card className="border-0 shadow-sm bg-white">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                      <Globe className="w-4 h-4" style={{ color: COLORS.primaryDark }} />
-                      Répartition linguistique
+                      <Globe className="w-4 h-4" style={{ color: COLORS.green }} />
+                      Langue de l&apos;examen
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <div className="h-56">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={languageDistribution}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={55}
-                            outerRadius={85}
-                            paddingAngle={3}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {languageDistribution.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={LANGUAGE_PIE_COLORS[index]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value: number) => [`${value}%`, '']} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {languageDistribution.map((lang, i) => (
-                        <div key={lang.name} className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: LANGUAGE_PIE_COLORS[i] }} />
-                          <span className="text-xs" style={{ color: '#6B7280' }}>{lang.name}</span>
-                          <span className="text-xs font-semibold ml-auto" style={{ color: COLORS.primaryDark }}>{lang.value}%</span>
-                        </div>
-                      ))}
+                    <div className="h-56 flex flex-col items-center justify-center">
+                      <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: '#E6F5EE' }}>
+                        <Globe className="w-10 h-10" style={{ color: COLORS.green }} />
+                      </div>
+                      <p className="text-2xl font-bold" style={{ color: COLORS.primaryDark }}>Français</p>
+                      <p className="text-sm text-gray-500 mt-1">100% des examens</p>
+                      <p className="text-xs text-gray-400 mt-3">Soussou, Poular, Malinké — bientôt disponible</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -859,25 +831,23 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                 <Card className="border-0 shadow-sm bg-white">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
-                      <Globe className="w-4 h-4" style={{ color: COLORS.primaryDark }} />
-                      Taux de réussite par langue
+                      <Globe className="w-4 h-4" style={{ color: COLORS.green }} />
+                      Taux de réussite global
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={successByLanguage} margin={{ top: 5, right: 10, left: -10, bottom: 5 }} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                          <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} domain={[0, 100]} unit="%" />
-                          <YAxis type="category" dataKey="langue" tick={{ fontSize: 11, fill: '#6B7280' }} width={80} />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Bar dataKey="taux" name="Taux de réussite" radius={[0, 4, 4, 0]} barSize={24}>
-                            {successByLanguage.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={LANGUAGE_PIE_COLORS[index]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+                    <div className="h-64 flex flex-col items-center justify-center">
+                      <div className="relative w-32 h-32">
+                        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="8" />
+                          <circle cx="50" cy="50" r="40" fill="none" stroke={COLORS.green} strokeWidth="8" strokeDasharray={`${71 * 2.51} ${100 * 2.51}`} strokeLinecap="round" />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-2xl font-bold" style={{ color: COLORS.primaryDark }}>71%</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-4">Taux de réussite en français</p>
+                      <p className="text-xs text-gray-400 mt-1">Les langues nationales seront bientôt disponibles</p>
                     </div>
                   </CardContent>
                 </Card>

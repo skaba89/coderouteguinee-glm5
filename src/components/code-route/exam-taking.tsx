@@ -379,7 +379,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                     <Globe className="w-5 h-5" style={{ color: '#009460' }} />
                     <span className="font-semibold" style={{ color: '#1A2332' }}>Langue : Français</span>
                   </div>
-                  <p className="text-xs text-gray-400 text-center">Les langues nationales (Soussou, Poular, Malinké) seront bientôt disponibles</p>
+                  <p className="text-xs text-gray-400 text-center">L&apos;examen est actuellement disponible uniquement en français</p>
                 </div>
 
                 {/* Exam Info Grid */}

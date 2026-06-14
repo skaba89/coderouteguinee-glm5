@@ -286,7 +286,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold" style={{ color: '#1A2332' }}>Langues locales</p>
-                    <p className="text-sm text-gray-500">Bientôt disponible (Soussou, Poular, Malinké)</p>
+                    <p className="text-sm text-gray-500">Langues nationales bientôt disponibles</p>
                   </div>
                   <Badge variant="outline" className="text-xs" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
                     Français

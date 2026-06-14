@@ -17,9 +17,6 @@ export async function POST(request: NextRequest) {
     // Map national languages to TTS language codes
     const languageMap: Record<string, string> = {
       'fr': 'fr-FR',
-      'ss': 'fr-GN', // Soussou - fallback to French with Guinea context
-      'fu': 'fr-GN', // Poular - fallback to French with Guinea context
-      'ml': 'fr-GN', // Malinké - fallback to French with Guinea context
     };
 
     const ttsLanguage = languageMap[language] || 'fr-FR';

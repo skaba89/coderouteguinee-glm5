@@ -98,9 +98,9 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
 
   /* ── 5 Steps ── */
   const steps = [
-    { icon: UserPlus, title: 'Inscription', desc: 'Créez votre compte avec votre pièce d\'identité et choisissez votre langue maternelle', color: '#009460' },
+    { icon: UserPlus, title: 'Inscription', desc: 'Créez votre compte avec votre pièce d\'identité et commencez votre préparation', color: '#009460' },
     { icon: CalendarCheck, title: 'Réservation', desc: 'Choisissez votre centre, date et créneau horaire. Paiement Mobile Money sécurisé', color: '#FCD116' },
-    { icon: BookOpen, title: 'Préparation', desc: 'Étudiez avec des panneaux visuels, vidéos et cours en langues nationales', color: '#0EA5E9' },
+    { icon: BookOpen, title: 'Préparation', desc: 'Étudiez avec des panneaux visuels, vidéos et cours avec lecture audio', color: '#0EA5E9' },
     { icon: FileCheck, title: 'Examen', desc: 'Passez votre examen en toute sécurité avec surveillance anti-fraude biométrique', color: '#CE1126' },
     { icon: Award, title: 'Permis', desc: 'Recevez votre certificat avec QR code vérifiable, transmis directement à l\'administration', color: '#7C3AED' },
   ];
@@ -115,8 +115,8 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
     },
     {
       icon: Volume2,
-      title: 'Lecture en langues nationales',
-      desc: 'Écoutez les questions en Soussou, Poular ou Malinké. Pour ceux qui ne lisent pas le français ou préfèrent leur langue maternelle',
+      title: 'Lecture audio en français',
+      desc: 'Écoutez les questions lues à voix haute. Idéal pour une meilleure compréhension, même sans savoir lire',
       accent: '#009460'
     },
     {
@@ -137,38 +137,13 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       population: '',
       accentColor: '#3b5998'
     },
-    {
-      icon: Waves,
-      name: 'Soussou',
-      native: 'Sossoxui',
-      regions: 'Conakry, Kindia, Boké',
-      population: '~3M',
-      accentColor: '#0891b2'
-    },
-    {
-      icon: Mountain,
-      name: 'Poular',
-      native: 'Pulaar',
-      regions: 'Labé, Mamou, Faranah',
-      population: '~5M',
-      accentColor: '#b45309'
-    },
-    {
-      icon: TreePine,
-      name: 'Malinké',
-      native: 'Maninka',
-      regions: 'Kankan, Kouroussa, Siguiri',
-      population: '~4M',
-      accentColor: '#047857'
-    }
   ];
 
   /* ── Comparison data ── */
   const comparisons = [
-    { feature: 'Multi-langue', us: true, other: false },
+    { feature: 'Lecture audio', us: true, other: false },
     { feature: 'Panneaux visuels', us: true, other: 'partial' },
     { feature: 'Scénarios photo', us: true, other: false },
-    { feature: 'Lecture audio', us: true, other: false },
     { feature: 'Anti-fraude biométrique', us: true, other: 'partial' },
     { feature: 'Certification QR code', us: true, other: false }
   ];
@@ -177,7 +152,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
   const stats = [
     { icon: Users, value: 50000, suffix: '+', label: 'Candidats inscrits', color: '#FCD116' },
     { icon: Building2, value: 15, suffix: '+', label: 'Centres agréés', color: '#FCD116' },
-    { icon: Globe, value: 4, suffix: '', label: 'Langues disponibles', color: '#FCD116' },
+    { icon: Globe, value: 1, suffix: '', label: 'Langue disponible', color: '#FCD116' },
     { icon: ThumbsUp, value: 98, suffix: '%', label: 'Taux de satisfaction', color: '#FCD116' }
   ];
 
@@ -251,7 +226,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
 
             {/* New tagline */}
             <p className="text-base sm:text-lg font-medium max-w-xl mx-auto mb-8" style={{ color: '#FCD116' }}>
-              Avec panneaux, vidéos et lecture en langues nationales
+              Avec panneaux, vidéos et lecture audio
             </p>
 
             {/* Feature pills */}
@@ -263,7 +238,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                 <Eye className="w-4 h-4" /> Scénarios visuels
               </span>
               <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
-                <Volume2 className="w-4 h-4" /> 4 langues nationales
+                <Volume2 className="w-4 h-4" /> Lecture audio
               </span>
             </div>
 
@@ -366,21 +341,22 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       </section>
 
       {/* ═══════════════════════════════════════════════════════
-          4. 4 LANGUES NATIONALES
+          4. ACCESSIBILITÉ — Examen en français avec lecture audio
           ═══════════════════════════════════════════════════════ */}
       <section className="py-16 sm:py-24" style={{ backgroundColor: '#1A2332' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#FCD116' }}>Accessibilité</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              L&apos;examen dans votre langue
+              Un examen accessible à tous
             </h2>
             <p className="text-gray-400 text-lg max-w-xl mx-auto">
-              Passez votre examen dans la langue que vous maîtrisez le mieux
+              Passez votre examen en français avec lecture audio pour une meilleure compréhension
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* French language card */}
             {languages.map((lang, index) => {
               const IconComp = lang.icon;
               return (
@@ -392,9 +368,6 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                     <h3 className="text-xl font-bold text-white mb-1">{lang.name}</h3>
                     <p className="text-sm font-medium mb-2" style={{ color: '#FCD116' }}>{lang.native}</p>
                     <p className="text-gray-400 text-sm mb-3">{lang.regions}</p>
-                    {lang.population && (
-                      <p className="text-gray-500 text-xs mb-3">{lang.population} locuteurs</p>
-                    )}
                     {/* Waveform audio indicator */}
                     <div className="flex items-center justify-center gap-2 text-white/40">
                       <Volume2 className="w-4 h-4" />
@@ -404,6 +377,18 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                 </Card>
               );
             })}
+
+            {/* Coming soon cards for local languages */}
+            <Card className="group border-0 bg-white/[0.03] backdrop-blur-sm border border-white/[0.06] opacity-60" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <CardContent className="p-6 text-center">
+                <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center bg-white/[0.06]">
+                  <Languages className="w-7 h-7 text-white/40" />
+                </div>
+                <h3 className="text-lg font-bold text-white/50 mb-1">Soussou, Poular, Malinké</h3>
+                <p className="text-sm font-medium mb-2 text-white/30">Bientôt disponible</p>
+                <p className="text-gray-500 text-xs">Langues nationales</p>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="text-center mt-10">
@@ -414,7 +399,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
               onClick={onRegister}
             >
               <Globe className="w-5 h-5 mr-2" />
-              Choisir ma langue lors de l&apos;inscription
+              S&apos;inscrire maintenant
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -521,7 +506,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
             Prêt à passer votre code ?
           </h2>
           <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
-            Inscrivez-vous et choisissez votre langue maternelle
+            Inscrivez-vous et préparez votre examen du code
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button

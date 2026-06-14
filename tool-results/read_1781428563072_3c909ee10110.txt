@@ -1,0 +1,993 @@
+     1→'use client';
+     2→
+     3→import React, { useState } from 'react';
+     4→import { Button } from '@/components/ui/button';
+     5→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     6→import { Badge } from '@/components/ui/badge';
+     7→import { Progress } from '@/components/ui/progress';
+     8→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+     9→import { Separator } from '@/components/ui/separator';
+    10→import { ViewType, FraudAlert, FraudSeverity, RegionalStat } from '@/lib/types';
+    11→import { useAuth } from '@/lib/auth-context';
+    12→import { centres, languages } from '@/lib/mock-data';
+    13→import {
+    14→  LineChart,
+    15→  Line,
+    16→  BarChart,
+    17→  Bar,
+    18→  PieChart,
+    19→  Pie,
+    20→  Cell,
+    21→  XAxis,
+    22→  YAxis,
+    23→  CartesianGrid,
+    24→  Tooltip,
+    25→  Legend,
+    26→  ResponsiveContainer,
+    27→  AreaChart,
+    28→  Area,
+    29→} from 'recharts';
+    30→import {
+    31→  Users,
+    32→  Building2,
+    33→  FileCheck,
+    34→  AlertTriangle,
+    35→  TrendingUp,
+    36→  Shield,
+    37→  CheckCircle,
+    38→  XCircle,
+    39→  Clock,
+    40→  MapPin,
+    41→  Phone,
+    42→  Eye,
+    43→  BarChart3,
+    44→  Globe,
+    45→  Activity,
+    46→  Search,
+    47→  Filter,
+    48→  Download,
+    49→  RefreshCw,
+    50→  ChevronRight,
+    51→  CircleAlert,
+    52→  Ban,
+    53→  AlertOctagon,
+    54→  Settings,
+    55→  LayoutDashboard,
+    56→  FileDown,
+    57→  ChevronDown,
+    58→  Bell,
+    59→} from 'lucide-react';
+    60→
+    61→// ─── Color Palette ──────────────────────────────────────
+    62→const COLORS = {
+    63→  primaryDark: '#1A2332',
+    64→  red: '#CE1126',
+    65→  yellow: '#FCD116',
+    66→  green: '#009460',
+    67→};
+    68→
+    69→const CHART_COLORS = ['#009460', '#FCD116', '#CE1126', '#1A2332', '#7C3AED', '#0EA5E9'];
+    70→
+    71→// ─── Mock Data ──────────────────────────────────────────
+    72→const monthlyExamData = [
+    73→  { month: 'Jan', totalExamens: 3200, reussis: 2100 },
+    74→  { month: 'Fév', totalExamens: 2800, reussis: 1900 },
+    75→  { month: 'Mar', totalExamens: 3500, reussis: 2400 },
+    76→  { month: 'Avr', totalExamens: 3100, reussis: 2050 },
+    77→  { month: 'Mai', totalExamens: 3900, reussis: 2650 },
+    78→  { month: 'Jun', totalExamens: 4200, reussis: 2900 },
+    79→];
+    80→
+    81→const regionalStats: RegionalStat[] = [
+    82→  { region: 'Conakry', centres: 3, candidates: 22150, examsPassed: 16200, successRate: 73, revenue: 445000000 },
+    83→  { region: 'Kankan', centres: 1, candidates: 8200, examsPassed: 5340, successRate: 65, revenue: 168000000 },
+    84→  { region: 'Nzérékoré', centres: 1, candidates: 5800, examsPassed: 3480, successRate: 60, revenue: 116000000 },
+    85→  { region: 'Kindia', centres: 1, candidates: 6100, examsPassed: 3906, successRate: 64, revenue: 122000000 },
+    86→  { region: 'Boké', centres: 1, candidates: 4200, examsPassed: 2180, successRate: 52, revenue: 84000000 },
+    87→  { region: 'Labé', centres: 0, candidates: 3400, examsPassed: 2040, successRate: 60, revenue: 68000000 },
+    88→  { region: 'Mamou', centres: 0, candidates: 2497, examsPassed: 1374, successRate: 55, revenue: 49900000 },
+    89→];
+    90→
+    91→const languageDistribution = [
+    92→  { name: 'Français', value: 45 },
+    93→  { name: 'Soussou', value: 22 },
+    94→  { name: 'Poular', value: 20 },
+    95→  { name: 'Malinké', value: 13 },
+    96→];
+    97→const LANGUAGE_PIE_COLORS = ['#1A2332', '#009460', '#CE1126', '#FCD116'];
+    98→
+    99→const fraudAlerts: FraudAlert[] = [
+   100→  { id: 'FRD-001', type: 'Identité suspecte', description: 'Photo du candidat GN-CODE-2026-789012 ne correspond pas à la pièce d\'identité présentée', severity: 'critical', status: 'active', candidatId: 'GN-CODE-2026-789012', centreId: 'CTR-001', timestamp: '2026-03-04T14:32:00' },
+   101→  { id: 'FRD-002', type: 'Comportement anormal', description: 'Temps de réponse moyen de 3.2s — seuil normal: 8-15s au centre de Dixinn', severity: 'high', status: 'investigating', candidatId: 'GN-CODE-2026-456789', centreId: 'CTR-002', timestamp: '2026-03-04T12:15:00' },
+   102→  { id: 'FRD-003', type: 'Double inscription', description: 'Même numéro d\'identité GN-ID-99887766 détecté dans les centres CTR-001 et CTR-004', severity: 'critical', status: 'active', timestamp: '2026-03-04T09:45:00' },
+   103→  { id: 'FRD-004', type: 'Photo non conforme', description: 'Image webcam floue — impossible de vérifier l\'identité du candidat au centre de Matam', severity: 'medium', status: 'investigating', centreId: 'CTR-003', timestamp: '2026-03-04T08:20:00' },
+   104→  { id: 'FRD-005', type: 'Temps de réponse anormal', description: 'Candidat a répondu à 15 questions en 45 secondes — motif de triche probable', severity: 'high', status: 'active', candidatId: 'GN-CODE-2026-321654', centreId: 'CTR-001', timestamp: '2026-03-03T16:50:00' },
+   105→  { id: 'FRD-006', type: 'Identité suspecte', description: 'Candidat signalé par le surveillant — ressemblance avec un candidat banni', severity: 'medium', status: 'resolved', candidatId: 'GN-CODE-2026-111222', centreId: 'CTR-004', timestamp: '2026-03-03T10:30:00' },
+   106→  { id: 'FRD-007', type: 'Comportement anormal', description: 'Mouvements de tête suspects détectés par la webcam — regard repeté hors écran', severity: 'low', status: 'resolved', candidatId: 'GN-CODE-2026-987654', centreId: 'CTR-002', timestamp: '2026-03-02T14:10:00' },
+   107→];
+   108→
+   109→const fraudByCenter = [
+   110→  { centre: 'Kaloum', alertes: 8 },
+   111→  { centre: 'Dixinn', alertes: 5 },
+   112→  { centre: 'Matam', alertes: 3 },
+   113→  { centre: 'Kankan', alertes: 4 },
+   114→  { centre: 'Nzérékoré', alertes: 2 },
+   115→  { centre: 'Kindia', alertes: 6 },
+   116→  { centre: 'Boké', alertes: 1 },
+   117→];
+   118→
+   119→const blacklistedCandidates = [
+   120→  { nom: 'Diallo A.', id: 'GN-CODE-2025-445566', raison: 'Falsification d\'identité', date: '2026-01-15' },
+   121→  { nom: 'Touré M.', id: 'GN-CODE-2025-778899', raison: 'Tentative de fraude organisée', date: '2026-02-03' },
+   122→  { nom: 'Camara S.', id: 'GN-CODE-2025-112233', raison: 'Double inscription récurrente', date: '2026-02-20' },
+   123→];
+   124→
+   125→const dailyExamVolume = Array.from({ length: 30 }, (_, i) => {
+   126→  const day = i + 1;
+   127→  const base = 120 + Math.floor(Math.sin(i * 0.5) * 30);
+   128→  const volume = base + Math.floor(Math.random() * 40);
+   129→  const passed = Math.floor(volume * (0.6 + Math.random() * 0.15));
+   130→  return { date: `Mar ${day}`, examens: volume, reussis: passed };
+   131→});
+   132→
+   133→const successByLanguage = [
+   134→  { langue: 'Français', taux: 71 },
+   135→  { langue: 'Soussou', taux: 58 },
+   136→  { langue: 'Poular', taux: 54 },
+   137→  { langue: 'Malinké', taux: 62 },
+   138→];
+   139→
+   140→const categoryScores = [
+   141→  { categorie: 'Signalisation', score: 78 },
+   142→  { categorie: 'Sécurité', score: 85 },
+   143→  { categorie: 'Priorité', score: 62 },
+   144→  { categorie: 'Réglementation', score: 70 },
+   145→  { categorie: 'Vitesse', score: 88 },
+   146→  { categorie: 'Stationnement', score: 72 },
+   147→];
+   148→
+   149→const topCentres = [
+   150→  { nom: 'Centre RouteSafe Kaloum', region: 'Conakry', score: 92, taux: 78 },
+   151→  { nom: 'Centre Auto-Plus Dixinn', region: 'Conakry', score: 88, taux: 73 },
+   152→  { nom: 'Centre Permis Kankan', region: 'Kankan', score: 85, taux: 70 },
+   153→  { nom: 'Centre Routier Nzérékoré', region: 'Nzérékoré', score: 80, taux: 65 },
+   154→  { nom: 'Centre Auto-École Kindia', region: 'Kindia', score: 78, taux: 64 },
+   155→];
+   156→
+   157→// Sparkline data for KPI cards
+   158→const sparklineData = {
+   159→  candidates: [38, 42, 45, 44, 48, 52],
+   160→  exams: [3200, 2800, 3500, 3100, 3900, 4200],
+   161→  successRate: [69, 68, 70, 67, 65, 67],
+   162→  centres: [12, 12, 13, 14, 14, 15],
+   163→};
+   164→
+   165→// ─── Helpers ────────────────────────────────────────────
+   166→function formatCurrency(amount: number): string {
+   167→  return new Intl.NumberFormat('fr-GN').format(amount) + ' GNF';
+   168→}
+   169→
+   170→function formatTimestamp(ts: string): string {
+   171→  const d = new Date(ts);
+   172→  const now = new Date('2026-03-04T15:00:00');
+   173→  const diffMs = now.getTime() - d.getTime();
+   174→  const diffH = Math.floor(diffMs / 3600000);
+   175→  if (diffH < 1) return 'Il y a moins d\'1h';
+   176→  if (diffH < 24) return `Il y a ${diffH}h`;
+   177→  const diffD = Math.floor(diffH / 24);
+   178→  return `Il y a ${diffD}j`;
+   179→}
+   180→
+   181→function getSeverityConfig(severity: FraudSeverity) {
+   182→  switch (severity) {
+   183→    case 'critical': return { label: 'Critique', color: '#CE1126', bg: '#CE112610', border: '#CE1126' };
+   184→    case 'high': return { label: 'Élevé', color: '#E85D04', bg: '#E85D0410', border: '#E85D04' };
+   185→    case 'medium': return { label: 'Moyen', color: '#FCD116', bg: '#FCD11610', border: '#FCD116' };
+   186→    case 'low': return { label: 'Faible', color: '#009460', bg: '#00946010', border: '#009460' };
+   187→    default: return { label: 'Info', color: '#6B7280', bg: '#6B728010', border: '#6B7280' };
+   188→  }
+   189→}
+   190→
+   191→function getStatusConfig(status: string) {
+   192→  switch (status) {
+   193→    case 'active': return { label: 'Active', color: '#CE1126', bg: '#CE112615' };
+   194→    case 'investigating': return { label: 'En investigation', color: '#FCD116', bg: '#FCD11615' };
+   195→    case 'resolved': return { label: 'Résolue', color: '#009460', bg: '#00946015' };
+   196→    default: return { label: status, color: '#6B7280', bg: '#6B728015' };
+   197→  }
+   198→}
+   199→
+   200→function getAccreditationBadge(statut: string) {
+   201→  switch (statut) {
+   202→    case 'actif': return { label: 'Actif', color: '#009460', bg: '#00946015' };
+   203→    case 'en_renouvellement': return { label: 'Renouvellement', color: '#FCD116', bg: '#FCD11615' };
+   204→    case 'expire': return { label: 'Expiré', color: '#CE1126', bg: '#CE112615' };
+   205→    case 'suspendu': return { label: 'Suspendu', color: '#6B7280', bg: '#6B728015' };
+   206→    default: return { label: statut, color: '#6B7280', bg: '#6B728015' };
+   207→  }
+   208→}
+   209→
+   210→function getLangName(code: string): string {
+   211→  const lang = languages.find(l => l.code === code);
+   212→  return lang ? lang.name : code;
+   213→}
+   214→
+   215→function getSuccessRateColor(rate: number): string {
+   216→  if (rate >= 70) return '#009460';
+   217→  if (rate >= 50) return '#FCD116';
+   218→  return '#CE1126';
+   219→}
+   220→
+   221→function getQualityColor(score: number): string {
+   222→  if (score >= 90) return '#009460';
+   223→  if (score >= 70) return '#FCD116';
+   224→  return '#CE1126';
+   225→}
+   226→
+   227→// ─── Sparkline component ──────────────────────────────
+   228→function Sparkline({ data, color, width = 80, height = 32 }: { data: number[]; color: string; width?: number; height?: number }) {
+   229→  if (!data || data.length < 2) return null;
+   230→  const max = Math.max(...data);
+   231→  const min = Math.min(...data);
+   232→  const range = max - min || 1;
+   233→  const step = width / (data.length - 1);
+   234→
+   235→  const points = data.map((val, i) => {
+   236→    const x = i * step;
+   237→    const y = height - ((val - min) / range) * (height - 4) - 2;
+   238→    return `${x},${y}`;
+   239→  }).join(' ');
+   240→
+   241→  return (
+   242→    <svg width={width} height={height} className="overflow-visible">
+   243→      <polyline
+   244→        points={points}
+   245→        fill="none"
+   246→        stroke={color}
+   247→        strokeWidth="2"
+   248→        strokeLinecap="round"
+   249→        strokeLinejoin="round"
+   250→      />
+   251→    </svg>
+   252→  );
+   253→}
+   254→
+   255→// ─── Custom Tooltip Component ───────────────────────────
+   256→function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
+   257→  if (!active || !payload) return null;
+   258→  return (
+   259→    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs">
+   260→      <p className="font-semibold mb-1" style={{ color: COLORS.primaryDark }}>{label}</p>
+   261→      {payload.map((entry, index) => (
+   262→        <div key={index} className="flex items-center gap-2">
+   263→          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+   264→          <span style={{ color: '#6B7280' }}>{entry.name}:</span>
+   265→          <span className="font-semibold" style={{ color: COLORS.primaryDark }}>{entry.value.toLocaleString('fr-FR')}</span>
+   266→        </div>
+   267→      ))}
+   268→    </div>
+   269→  );
+   270→}
+   271→
+   272→// ─── Sidebar nav items ──────────────────────────────────
+   273→const sidebarItems = [
+   274→  { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
+   275→  { id: 'analytics', label: 'Analyses', icon: BarChart3 },
+   276→  { id: 'fraud', label: 'Anti-fraude', icon: AlertOctagon },
+   277→  { id: 'centers', label: 'Centres', icon: Building2 },
+   278→  { id: 'settings', label: 'Paramètres', icon: Settings },
+   279→];
+   280→
+   281→// ─── Component ──────────────────────────────────────────
+   282→export default function AdminDashboard({ onViewChange }: { onViewChange?: (view: ViewType) => void }) {
+   283→  const { user } = useAuth();
+   284→  const [activeTab, setActiveTab] = useState('overview');
+   285→  const [isRefreshing, setIsRefreshing] = useState(false);
+   286→  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+   287→
+   288→  const handleRefresh = () => {
+   289→    setIsRefreshing(true);
+   290→    setTimeout(() => setIsRefreshing(false), 1500);
+   291→  };
+   292→
+   293→  const currentDate = new Date('2026-03-04T15:00:00');
+   294→  const dateStr = currentDate.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+   295→  const timeStr = currentDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+   296→
+   297→  return (
+   298→    <div className="min-h-screen flex" style={{ backgroundColor: '#F0F2F5' }}>
+   299→      {/* ─── Sidebar ─── */}
+   300→      <aside
+   301→        className={`hidden lg:flex flex-col border-r bg-white transition-all duration-300 ${
+   302→          sidebarCollapsed ? 'w-16' : 'w-56'
+   303→        }`}
+   304→        style={{ borderColor: '#E5E7EB' }}
+   305→      >
+   306→        {/* Logo area */}
+   307→        <div className="h-14 flex items-center justify-between px-4 border-b" style={{ borderColor: '#E5E7EB' }}>
+   308→          {!sidebarCollapsed && (
+   309→            <div className="flex items-center gap-2">
+   310→              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: COLORS.green }}>
+   311→                <Shield className="w-4 h-4 text-white" />
+   312→              </div>
+   313→              <span className="font-bold text-sm" style={{ color: COLORS.primaryDark }}>Admin</span>
+   314→            </div>
+   315→          )}
+   316→          <button
+   317→            className="p-1 rounded hover:bg-gray-100 transition-colors"
+   318→            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+   319→          >
+   320→            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${sidebarCollapsed ? 'rotate-90' : '-rotate-90'}`} />
+   321→          </button>
+   322→        </div>
+   323→
+   324→        {/* Nav items */}
+   325→        <nav className="flex-1 py-3 px-2 space-y-1">
+   326→          {sidebarItems.map((item) => {
+   327→            const Icon = item.icon;
+   328→            const isActive = activeTab === item.id;
+   329→            return (
+   330→              <button
+   331→                key={item.id}
+   332→                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+   333→                  isActive
+   334→                    ? 'text-white shadow-sm'
+   335→                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+   336→                }`}
+   337→                style={isActive ? { backgroundColor: COLORS.green } : {}}
+   338→                onClick={() => setActiveTab(item.id)}
+   339→                title={sidebarCollapsed ? item.label : undefined}
+   340→              >
+   341→                <Icon className="w-4 h-4 flex-shrink-0" />
+   342→                {!sidebarCollapsed && <span>{item.label}</span>}
+   343→              </button>
+   344→            );
+   345→          })}
+   346→        </nav>
+   347→
+   348→        {/* Bottom section */}
+   349→        {!sidebarCollapsed && (
+   350→          <div className="p-4 border-t" style={{ borderColor: '#E5E7EB' }}>
+   351→            <div className="rounded-xl p-3" style={{ backgroundColor: '#F0F7F4' }}>
+   352→              <p className="text-xs font-semibold" style={{ color: COLORS.green }}>République de Guinée</p>
+   353→              <p className="text-[10px] text-gray-500 mt-0.5">Ministère des Transports</p>
+   354→            </div>
+   355→          </div>
+   356→        )}
+   357→      </aside>
+   358→
+   359→      {/* ─── Main Content ─── */}
+   360→      <main className="flex-1 min-w-0">
+   361→        {/* Guinea stripe */}
+   362→        <div className="w-full h-0.5 flex">
+   363→          <div className="flex-1" style={{ backgroundColor: COLORS.red }} />
+   364→          <div className="flex-1" style={{ backgroundColor: COLORS.yellow }} />
+   365→          <div className="flex-1" style={{ backgroundColor: COLORS.green }} />
+   366→        </div>
+   367→
+   368→        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+   369→          {/* ─── Breadcrumb ─── */}
+   370→          <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
+   371→            <span>Administration</span>
+   372→            <ChevronRight className="w-3 h-3" />
+   373→            <span className="font-medium text-gray-700">
+   374→              {sidebarItems.find(s => s.id === activeTab)?.label || 'Vue d\'ensemble'}
+   375→            </span>
+   376→          </div>
+   377→
+   378→          {/* ─── Header Section ─── */}
+   379→          <div className="mb-6">
+   380→            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+   381→              <div>
+   382→                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight" style={{ color: COLORS.primaryDark }}>
+   383→                  Administration nationale
+   384→                </h1>
+   385→                <div className="flex items-center gap-3 mt-1.5">
+   386→                  <Badge className="px-3 py-1 text-xs font-semibold" style={{ backgroundColor: COLORS.primaryDark, color: '#FFFFFF' }}>
+   387→                    <Shield className="w-3.5 h-3.5 mr-1.5" />
+   388→                    Administrateur
+   389→                  </Badge>
+   390→                  <Badge variant="outline" className="px-3 py-1 text-xs font-medium" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+   391→                    <Activity className="w-3.5 h-3.5 mr-1.5" />
+   392→                    En ligne
+   393→                  </Badge>
+   394→                  <span className="text-xs text-gray-400 hidden sm:inline">
+   395→                    <Clock className="w-3 h-3 inline mr-1" />
+   396→                    {dateStr} — {timeStr}
+   397→                  </span>
+   398→                </div>
+   399→              </div>
+   400→
+   401→              <div className="flex items-center gap-2">
+   402→                <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" style={{ borderColor: COLORS.primaryDark, color: COLORS.primaryDark }}>
+   403→                  <FileDown className="w-3.5 h-3.5" />
+   404→                  Exporter
+   405→                </Button>
+   406→                <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" style={{ borderColor: COLORS.green, color: COLORS.green }} onClick={handleRefresh} disabled={isRefreshing}>
+   407→                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+   408→                  Actualiser
+   409→                </Button>
+   410→              </div>
+   411→            </div>
+   412→          </div>
+   413→
+   414→          {/* ─── KPI Stats Row with Sparklines ─── */}
+   415→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+   416→            {[
+   417→              { title: 'Candidats inscrits', value: '52 347', trend: '+12.5%', trendUp: true, icon: Users, color: COLORS.green, bgColor: '#00946012', sparkData: sparklineData.candidates, sparkColor: COLORS.green },
+   418→              { title: 'Centres agréés', value: '15', subtitle: '2 en attente', icon: Building2, color: COLORS.yellow, bgColor: '#FCD11612', sparkData: sparklineData.centres, sparkColor: COLORS.yellow },
+   419→              { title: 'Examens ce mois', value: '4 200', trend: '+8.3%', trendUp: true, icon: FileCheck, color: COLORS.red, bgColor: '#CE112612', sparkData: sparklineData.exams, sparkColor: COLORS.red },
+   420→              { title: 'Taux de réussite', value: '67%', trend: '-2.1%', trendUp: false, icon: TrendingUp, color: COLORS.primaryDark, bgColor: '#1A233212', sparkData: sparklineData.successRate, sparkColor: COLORS.primaryDark },
+   421→            ].map((stat, i) => (
+   422→              <Card key={i} className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white">
+   423→                <CardContent className="p-5">
+   424→                  <div className="flex items-start justify-between">
+   425→                    <div className="flex-1">
+   426→                      <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#9CA3AF' }}>{stat.title}</p>
+   427→                      <div className="flex items-end gap-3 mt-1">
+   428→                        <p className="text-3xl font-bold" style={{ color: COLORS.primaryDark }}>{stat.value}</p>
+   429→                        <Sparkline data={stat.sparkData} color={stat.sparkColor} />
+   430→                      </div>
+   431→                      {stat.trend && (
+   432→                        <div className="flex items-center gap-1 mt-1.5">
+   433→                          <TrendingUp className={`w-3.5 h-3.5 ${!stat.trendUp ? 'rotate-180' : ''}`} style={{ color: stat.trendUp ? COLORS.green : COLORS.red }} />
+   434→                          <span className="text-xs font-semibold" style={{ color: stat.trendUp ? COLORS.green : COLORS.red }}>
+   435→                            {stat.trend}
+   436→                          </span>
+   437→                        </div>
+   438→                      )}
+   439→                      {stat.subtitle && (
+   440→                        <p className="text-xs mt-1.5" style={{ color: '#9CA3AF' }}>{stat.subtitle}</p>
+   441→                      )}
+   442→                    </div>
+   443→                    <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: stat.bgColor }}>
+   444→                      <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+   445→                    </div>
+   446→                  </div>
+   447→                </CardContent>
+   448→              </Card>
+   449→            ))}
+   450→          </div>
+   451→
+   452→          {/* ─── Tabbed Content ─── */}
+   453→          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+   454→            {/* Mobile tabs (visible on small screens) */}
+   455→            <TabsList className="bg-white shadow-sm border-0 h-11 p-1 rounded-lg lg:hidden flex flex-wrap">
+   456→              {sidebarItems.map(item => (
+   457→                <TabsTrigger
+   458→                  key={item.id}
+   459→                  value={item.id}
+   460→                  className="text-xs font-medium px-3 data-[state=active]:shadow-sm rounded-md data-[state=active]:text-white"
+   461→                  style={{ color: COLORS.primaryDark }}
+   462→                >
+   463→                  <item.icon className="w-3.5 h-3.5 mr-1" />
+   464→                  {item.label}
+   465→                </TabsTrigger>
+   466→              ))}
+   467→            </TabsList>
+   468→
+   469→            {/* ═══════ TAB 1: Vue d'ensemble ═══════ */}
+   470→            <TabsContent value="overview" className="space-y-4">
+   471→              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   472→                {/* Monthly Exam Trends LineChart */}
+   473→                <Card className="border-0 shadow-sm bg-white lg:col-span-2">
+   474→                  <CardHeader className="pb-2">
+   475→                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   476→                      <TrendingUp className="w-4 h-4" style={{ color: COLORS.green }} />
+   477→                      Tendances des examens mensuels
+   478→                    </CardTitle>
+   479→                  </CardHeader>
+   480→                  <CardContent className="pt-0">
+   481→                    <div className="h-72">
+   482→                      <ResponsiveContainer width="100%" height="100%">
+   483→                        <LineChart data={monthlyExamData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+   484→                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+   485→                          <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={{ stroke: '#E5E7EB' }} />
+   486→                          <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={{ stroke: '#E5E7EB' }} />
+   487→                          <Tooltip content={<CustomTooltip />} />
+   488→                          <Legend wrapperStyle={{ fontSize: 11 }} />
+   489→                          <Line type="monotone" dataKey="totalExamens" name="Total examens" stroke={COLORS.green} strokeWidth={2.5} dot={{ r: 4, fill: COLORS.green }} activeDot={{ r: 6 }} />
+   490→                          <Line type="monotone" dataKey="reussis" name="Réussis" stroke={COLORS.yellow} strokeWidth={2.5} dot={{ r: 4, fill: COLORS.yellow }} activeDot={{ r: 6 }} />
+   491→                        </LineChart>
+   492→                      </ResponsiveContainer>
+   493→                    </div>
+   494→                  </CardContent>
+   495→                </Card>
+   496→
+   497→                {/* Language Distribution PieChart */}
+   498→                <Card className="border-0 shadow-sm bg-white">
+   499→                  <CardHeader className="pb-2">
+   500→                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   501→                      <Globe className="w-4 h-4" style={{ color: COLORS.primaryDark }} />
+   502→                      Répartition linguistique
+   503→                    </CardTitle>
+   504→                  </CardHeader>
+   505→                  <CardContent className="pt-0">
+   506→                    <div className="h-56">
+   507→                      <ResponsiveContainer width="100%" height="100%">
+   508→                        <PieChart>
+   509→                          <Pie
+   510→                            data={languageDistribution}
+   511→                            cx="50%"
+   512→                            cy="50%"
+   513→                            innerRadius={55}
+   514→                            outerRadius={85}
+   515→                            paddingAngle={3}
+   516→                            dataKey="value"
+   517→                            stroke="none"
+   518→                          >
+   519→                            {languageDistribution.map((_, index) => (
+   520→                              <Cell key={`cell-${index}`} fill={LANGUAGE_PIE_COLORS[index]} />
+   521→                            ))}
+   522→                          </Pie>
+   523→                          <Tooltip formatter={(value: number) => [`${value}%`, '']} />
+   524→                        </PieChart>
+   525→                      </ResponsiveContainer>
+   526→                    </div>
+   527→                    <div className="grid grid-cols-2 gap-2 mt-2">
+   528→                      {languageDistribution.map((lang, i) => (
+   529→                        <div key={lang.name} className="flex items-center gap-2">
+   530→                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: LANGUAGE_PIE_COLORS[i] }} />
+   531→                          <span className="text-xs" style={{ color: '#6B7280' }}>{lang.name}</span>
+   532→                          <span className="text-xs font-semibold ml-auto" style={{ color: COLORS.primaryDark }}>{lang.value}%</span>
+   533→                        </div>
+   534→                      ))}
+   535→                    </div>
+   536→                  </CardContent>
+   537→                </Card>
+   538→              </div>
+   539→
+   540→              {/* Regional Stats Table */}
+   541→              <Card className="border-0 shadow-sm bg-white">
+   542→                <CardHeader className="pb-2">
+   543→                  <div className="flex items-center justify-between">
+   544→                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   545→                      <MapPin className="w-4 h-4" style={{ color: COLORS.red }} />
+   546→                      Statistiques régionales
+   547→                    </CardTitle>
+   548→                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+   549→                      <Download className="w-3 h-3" />
+   550→                      CSV
+   551→                    </Button>
+   552→                  </div>
+   553→                </CardHeader>
+   554→                <CardContent className="pt-0">
+   555→                  <div className="overflow-x-auto">
+   556→                    <table className="w-full text-sm">
+   557→                      <thead>
+   558→                        <tr className="border-b" style={{ borderColor: '#E5E7EB' }}>
+   559→                          <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Région</th>
+   560→                          <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Centres</th>
+   561→                          <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Candidats</th>
+   562→                          <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Réussis</th>
+   563→                          <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Taux</th>
+   564→                          <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Revenus</th>
+   565→                        </tr>
+   566→                      </thead>
+   567→                      <tbody>
+   568→                        {regionalStats.map((row, i) => (
+   569→                          <tr key={row.region} className={`border-b last:border-0 hover:bg-gray-50/50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{ borderColor: '#F3F4F6' }}>
+   570→                            <td className="py-3 px-4 font-medium" style={{ color: COLORS.primaryDark }}>{row.region}</td>
+   571→                            <td className="py-3 px-4 text-center">
+   572→                              <Badge variant="outline" className="text-xs font-medium" style={{ borderColor: '#E5E7EB', color: COLORS.primaryDark }}>{row.centres}</Badge>
+   573→                            </td>
+   574→                            <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{row.candidates.toLocaleString('fr-FR')}</td>
+   575→                            <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{row.examsPassed.toLocaleString('fr-FR')}</td>
+   576→                            <td className="py-3 px-4 text-center">
+   577→                              <span className="text-sm font-bold" style={{ color: getSuccessRateColor(row.successRate) }}>{row.successRate}%</span>
+   578→                            </td>
+   579→                            <td className="py-3 px-4 text-right font-mono text-xs" style={{ color: '#6B7280' }}>{formatCurrency(row.revenue)}</td>
+   580→                          </tr>
+   581→                        ))}
+   582→                      </tbody>
+   583→                    </table>
+   584→                  </div>
+   585→                </CardContent>
+   586→              </Card>
+   587→            </TabsContent>
+   588→
+   589→            {/* ═══════ TAB 2: Anti-fraude ═══════ */}
+   590→            <TabsContent value="fraud" className="space-y-4">
+   591→              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   592→                {[
+   593→                  { label: 'Alertes actives', value: '12', icon: AlertTriangle, color: COLORS.red, bg: '#CE112612' },
+   594→                  { label: 'En investigation', value: '8', icon: Search, color: COLORS.yellow, bg: '#FCD11612' },
+   595→                  { label: 'Résolues ce mois', value: '45', icon: CheckCircle, color: COLORS.green, bg: '#00946012' },
+   596→                ].map((s, i) => (
+   597→                  <Card key={i} className="border-0 shadow-sm bg-white">
+   598→                    <CardContent className="p-4 flex items-center gap-4">
+   599→                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: s.bg }}>
+   600→                        <s.icon className="w-5 h-5" style={{ color: s.color }} />
+   601→                      </div>
+   602→                      <div>
+   603→                        <p className="text-xs" style={{ color: '#9CA3AF' }}>{s.label}</p>
+   604→                        <p className="text-2xl font-bold" style={{ color: COLORS.primaryDark }}>{s.value}</p>
+   605→                      </div>
+   606→                    </CardContent>
+   607→                  </Card>
+   608→                ))}
+   609→              </div>
+   610→
+   611→              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+   612→                {/* Fraud Alert Data Table */}
+   613→                <Card className="border-0 shadow-sm bg-white lg:col-span-3">
+   614→                  <CardHeader className="pb-2">
+   615→                    <div className="flex items-center justify-between">
+   616→                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   617→                        <CircleAlert className="w-4 h-4" style={{ color: COLORS.red }} />
+   618→                        Flux d&apos;alertes en temps réel
+   619→                      </CardTitle>
+   620→                      <div className="flex items-center gap-1.5">
+   621→                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" style={{ color: '#6B7280' }}>
+   622→                          <Filter className="w-3 h-3" />
+   623→                          Filtrer
+   624→                        </Button>
+   625→                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+   626→                          <Download className="w-3 h-3" />
+   627→                          Export
+   628→                        </Button>
+   629→                      </div>
+   630→                    </div>
+   631→                  </CardHeader>
+   632→                  <CardContent className="pt-0">
+   633→                    {/* Data table style */}
+   634→                    <div className="overflow-x-auto">
+   635→                      <table className="w-full text-sm">
+   636→                        <thead>
+   637→                          <tr className="border-b" style={{ borderColor: '#E5E7EB' }}>
+   638→                            <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Type</th>
+   639→                            <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Sévérité</th>
+   640→                            <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Statut</th>
+   641→                            <th className="text-left py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Heure</th>
+   642→                            <th className="text-center py-2 px-3 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Actions</th>
+   643→                          </tr>
+   644→                        </thead>
+   645→                        <tbody>
+   646→                          {fraudAlerts.map((alert) => {
+   647→                            const sev = getSeverityConfig(alert.severity);
+   648→                            const stat = getStatusConfig(alert.status);
+   649→                            return (
+   650→                              <tr key={alert.id} className="border-b last:border-0 hover:bg-gray-50/50" style={{ borderColor: '#F3F4F6' }}>
+   651→                                <td className="py-2.5 px-3">
+   652→                                  <div>
+   653→                                    <p className="text-xs font-semibold" style={{ color: COLORS.primaryDark }}>{alert.type}</p>
+   654→                                    <p className="text-[10px] text-gray-400 truncate max-w-[200px]">{alert.description}</p>
+   655→                                  </div>
+   656→                                </td>
+   657→                                <td className="py-2.5 px-3">
+   658→                                  <Badge className="text-[10px] px-1.5 py-0 h-4 font-semibold" style={{ backgroundColor: sev.bg, color: sev.color, borderColor: sev.color, borderWidth: 1 }}>
+   659→                                    {sev.label}
+   660→                                  </Badge>
+   661→                                </td>
+   662→                                <td className="py-2.5 px-3">
+   663→                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-medium" style={{ backgroundColor: stat.bg, color: stat.color, borderColor: stat.color }}>
+   664→                                    {stat.label}
+   665→                                  </Badge>
+   666→                                </td>
+   667→                                <td className="py-2.5 px-3">
+   668→                                  <span className="text-[10px] text-gray-400">{formatTimestamp(alert.timestamp)}</span>
+   669→                                </td>
+   670→                                <td className="py-2.5 px-3 text-center">
+   671→                                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" style={{ color: COLORS.primaryDark }}>
+   672→                                    <Eye className="w-3 h-3" />
+   673→                                  </Button>
+   674→                                </td>
+   675→                              </tr>
+   676→                            );
+   677→                          })}
+   678→                        </tbody>
+   679→                      </table>
+   680→                    </div>
+   681→                  </CardContent>
+   682→                </Card>
+   683→
+   684→                <div className="lg:col-span-2 space-y-4">
+   685→                  <Card className="border-0 shadow-sm bg-white">
+   686→                    <CardHeader className="pb-2">
+   687→                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   688→                        <BarChart3 className="w-4 h-4" style={{ color: COLORS.red }} />
+   689→                        Alertes par centre
+   690→                      </CardTitle>
+   691→                    </CardHeader>
+   692→                    <CardContent className="pt-0">
+   693→                      <div className="h-52">
+   694→                        <ResponsiveContainer width="100%" height="100%">
+   695→                          <BarChart data={fraudByCenter} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+   696→                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+   697→                            <XAxis dataKey="centre" tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+   698→                            <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+   699→                            <Tooltip content={<CustomTooltip />} />
+   700→                            <Bar dataKey="alertes" name="Alertes" radius={[4, 4, 0, 0]}>
+   701→                              {fraudByCenter.map((_, index) => (
+   702→                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+   703→                              ))}
+   704→                            </Bar>
+   705→                          </BarChart>
+   706→                        </ResponsiveContainer>
+   707→                      </div>
+   708→                    </CardContent>
+   709→                  </Card>
+   710→
+   711→                  <Card className="border-0 shadow-sm bg-white">
+   712→                    <CardHeader className="pb-2">
+   713→                      <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   714→                        <Ban className="w-4 h-4" style={{ color: COLORS.red }} />
+   715→                        Liste noire
+   716→                      </CardTitle>
+   717→                    </CardHeader>
+   718→                    <CardContent className="pt-0">
+   719→                      <div className="space-y-2">
+   720→                        {blacklistedCandidates.map((c, i) => (
+   721→                          <div key={i} className="p-2.5 rounded-lg border" style={{ borderColor: '#FCA5A5', backgroundColor: '#FEF2F2' }}>
+   722→                            <div className="flex items-center justify-between">
+   723→                              <div>
+   724→                                <p className="text-xs font-semibold" style={{ color: COLORS.primaryDark }}>{c.nom}</p>
+   725→                                <p className="text-[10px] font-mono" style={{ color: '#9CA3AF' }}>{c.id}</p>
+   726→                              </div>
+   727→                              <Badge className="text-[10px] px-1.5 h-4 bg-red-100 text-red-700 hover:bg-red-100">Banni</Badge>
+   728→                            </div>
+   729→                            <p className="text-[10px] mt-1" style={{ color: '#6B7280' }}>{c.raison}</p>
+   730→                          </div>
+   731→                        ))}
+   732→                      </div>
+   733→                    </CardContent>
+   734→                  </Card>
+   735→                </div>
+   736→              </div>
+   737→            </TabsContent>
+   738→
+   739→            {/* ═══════ TAB 3: Centres ═══════ */}
+   740→            <TabsContent value="centers" className="space-y-4">
+   741→              <Card className="border-0 shadow-sm bg-white">
+   742→                <CardHeader className="pb-2">
+   743→                  <div className="flex items-center justify-between">
+   744→                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   745→                      <Building2 className="w-4 h-4" style={{ color: COLORS.yellow }} />
+   746→                      Gestion des centres agréés
+   747→                    </CardTitle>
+   748→                    <div className="flex items-center gap-2">
+   749→                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+   750→                        <Download className="w-3 h-3" />
+   751→                        Export
+   752→                      </Button>
+   753→                    </div>
+   754→                  </div>
+   755→                </CardHeader>
+   756→                <CardContent className="pt-0">
+   757→                  <div className="overflow-x-auto">
+   758→                    <table className="w-full text-sm">
+   759→                      <thead>
+   760→                        <tr className="border-b" style={{ borderColor: '#E5E7EB' }}>
+   761→                          <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Centre</th>
+   762→                          <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Région</th>
+   763→                          <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Capacité</th>
+   764→                          <th className="text-left py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Qualité</th>
+   765→                          <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Accréditation</th>
+   766→                          <th className="text-center py-3 px-3 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Statut</th>
+   767→                        </tr>
+   768→                      </thead>
+   769→                      <tbody>
+   770→                        {centres.map((centre, i) => {
+   771→                          const accred = centre.accreditation;
+   772→                          const accredBadge = accred ? getAccreditationBadge(accred.statut) : null;
+   773→                          const qualityColor = accred ? getQualityColor(accred.scoreQualite) : '#6B7280';
+   774→                          return (
+   775→                            <tr key={centre.id} className={`border-b last:border-0 hover:bg-gray-50/50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`} style={{ borderColor: '#F3F4F6' }}>
+   776→                              <td className="py-3 px-3">
+   777→                                <div>
+   778→                                  <p className="font-medium text-sm" style={{ color: COLORS.primaryDark }}>{centre.nom}</p>
+   779→                                  <p className="text-[10px] flex items-center gap-1 mt-0.5" style={{ color: '#9CA3AF' }}>
+   780→                                    <MapPin className="w-3 h-3" />{centre.adresse}
+   781→                                  </p>
+   782→                                </div>
+   783→                              </td>
+   784→                              <td className="py-3 px-3 text-xs" style={{ color: '#6B7280' }}>{centre.region}</td>
+   785→                              <td className="py-3 px-3 text-center text-xs font-medium" style={{ color: COLORS.primaryDark }}>{centre.capacite}</td>
+   786→                              <td className="py-3 px-3">
+   787→                                {accred ? (
+   788→                                  <div className="flex items-center gap-2">
+   789→                                    <Progress value={accred.scoreQualite} className="h-2 flex-1" />
+   790→                                    <span className="text-xs font-bold w-8 text-right" style={{ color: qualityColor }}>{accred.scoreQualite}</span>
+   791→                                  </div>
+   792→                                ) : <span className="text-xs" style={{ color: '#9CA3AF' }}>N/A</span>}
+   793→                              </td>
+   794→                              <td className="py-3 px-3 text-center">
+   795→                                {accredBadge ? (
+   796→                                  <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold" style={{ backgroundColor: accredBadge.bg, color: accredBadge.color }}>
+   797→                                    {accredBadge.label}
+   798→                                  </Badge>
+   799→                                ) : <span className="text-xs" style={{ color: '#9CA3AF' }}>N/A</span>}
+   800→                              </td>
+   801→                              <td className="py-3 px-3 text-center">
+   802→                                {centre.actif ? (
+   803→                                  <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold bg-green-50 text-green-700 hover:bg-green-50">
+   804→                                    <CheckCircle className="w-3 h-3 mr-0.5" />Actif
+   805→                                  </Badge>
+   806→                                ) : (
+   807→                                  <Badge className="text-[10px] px-1.5 py-0 h-5 font-semibold bg-red-50 text-red-700 hover:bg-red-50">
+   808→                                    <XCircle className="w-3 h-3 mr-0.5" />Inactif
+   809→                                  </Badge>
+   810→                                )}
+   811→                              </td>
+   812→                            </tr>
+   813→                          );
+   814→                        })}
+   815→                      </tbody>
+   816→                    </table>
+   817→                  </div>
+   818→                </CardContent>
+   819→              </Card>
+   820→            </TabsContent>
+   821→
+   822→            {/* ═══════ TAB 4: Analyses ═══════ */}
+   823→            <TabsContent value="analytics" className="space-y-4">
+   824→              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   825→                <Card className="border-0 shadow-sm bg-white">
+   826→                  <CardHeader className="pb-2">
+   827→                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   828→                      <Activity className="w-4 h-4" style={{ color: COLORS.green }} />
+   829→                      Volume d&apos;examens (30 jours)
+   830→                    </CardTitle>
+   831→                  </CardHeader>
+   832→                  <CardContent className="pt-0">
+   833→                    <div className="h-64">
+   834→                      <ResponsiveContainer width="100%" height="100%">
+   835→                        <AreaChart data={dailyExamVolume} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+   836→                          <defs>
+   837→                            <linearGradient id="colorExamens" x1="0" y1="0" x2="0" y2="1">
+   838→                              <stop offset="5%" stopColor={COLORS.green} stopOpacity={0.3} />
+   839→                              <stop offset="95%" stopColor={COLORS.green} stopOpacity={0} />
+   840→                            </linearGradient>
+   841→                            <linearGradient id="colorReussis" x1="0" y1="0" x2="0" y2="1">
+   842→                              <stop offset="5%" stopColor={COLORS.yellow} stopOpacity={0.3} />
+   843→                              <stop offset="95%" stopColor={COLORS.yellow} stopOpacity={0} />
+   844→                            </linearGradient>
+   845→                          </defs>
+   846→                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+   847→                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9CA3AF' }} interval={4} />
+   848→                          <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+   849→                          <Tooltip content={<CustomTooltip />} />
+   850→                          <Legend wrapperStyle={{ fontSize: 11 }} />
+   851→                          <Area type="monotone" dataKey="examens" name="Examens" stroke={COLORS.green} strokeWidth={2} fillOpacity={1} fill="url(#colorExamens)" />
+   852→                          <Area type="monotone" dataKey="reussis" name="Réussis" stroke={COLORS.yellow} strokeWidth={2} fillOpacity={1} fill="url(#colorReussis)" />
+   853→                        </AreaChart>
+   854→                      </ResponsiveContainer>
+   855→                    </div>
+   856→                  </CardContent>
+   857→                </Card>
+   858→
+   859→                <Card className="border-0 shadow-sm bg-white">
+   860→                  <CardHeader className="pb-2">
+   861→                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   862→                      <Globe className="w-4 h-4" style={{ color: COLORS.primaryDark }} />
+   863→                      Taux de réussite par langue
+   864→                    </CardTitle>
+   865→                  </CardHeader>
+   866→                  <CardContent className="pt-0">
+   867→                    <div className="h-64">
+   868→                      <ResponsiveContainer width="100%" height="100%">
+   869→                        <BarChart data={successByLanguage} margin={{ top: 5, right: 10, left: -10, bottom: 5 }} layout="vertical">
+   870→                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+   871→                          <XAxis type="number" tick={{ fontSize: 10, fill: '#9CA3AF' }} domain={[0, 100]} unit="%" />
+   872→                          <YAxis type="category" dataKey="langue" tick={{ fontSize: 11, fill: '#6B7280' }} width={80} />
+   873→                          <Tooltip content={<CustomTooltip />} />
+   874→                          <Bar dataKey="taux" name="Taux de réussite" radius={[0, 4, 4, 0]} barSize={24}>
+   875→                            {successByLanguage.map((_, index) => (
+   876→                              <Cell key={`cell-${index}`} fill={LANGUAGE_PIE_COLORS[index]} />
+   877→                            ))}
+   878→                          </Bar>
+   879→                        </BarChart>
+   880→                      </ResponsiveContainer>
+   881→                    </div>
+   882→                  </CardContent>
+   883→                </Card>
+   884→              </div>
+   885→
+   886→              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   887→                <Card className="border-0 shadow-sm bg-white">
+   888→                  <CardHeader className="pb-2">
+   889→                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   890→                      <FileCheck className="w-4 h-4" style={{ color: COLORS.green }} />
+   891→                      Score moyen par catégorie
+   892→                    </CardTitle>
+   893→                  </CardHeader>
+   894→                  <CardContent className="pt-0">
+   895→                    <div className="space-y-3">
+   896→                      {categoryScores.map((cat) => {
+   897→                        const scoreColor = cat.score >= 80 ? COLORS.green : cat.score >= 70 ? COLORS.yellow : COLORS.red;
+   898→                        return (
+   899→                          <div key={cat.categorie} className="flex items-center gap-3">
+   900→                            <span className="text-xs w-28 flex-shrink-0 font-medium" style={{ color: COLORS.primaryDark }}>{cat.categorie}</span>
+   901→                            <div className="flex-1"><Progress value={cat.score} className="h-2.5" /></div>
+   902→                            <span className="text-xs font-bold w-10 text-right" style={{ color: scoreColor }}>{cat.score}%</span>
+   903→                          </div>
+   904→                        );
+   905→                      })}
+   906→                    </div>
+   907→                  </CardContent>
+   908→                </Card>
+   909→
+   910→                <Card className="border-0 shadow-sm bg-white">
+   911→                  <CardHeader className="pb-2">
+   912→                    <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+   913→                      <TrendingUp className="w-4 h-4" style={{ color: COLORS.yellow }} />
+   914→                      Top centres
+   915→                    </CardTitle>
+   916→                  </CardHeader>
+   917→                  <CardContent className="pt-0">
+   918→                    <div className="space-y-2">
+   919→                      {topCentres.map((c, i) => (
+   920→                        <div key={c.nom} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50/50 transition-colors">
+   921→                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i === 0 ? 'text-white' : ''}`} style={{
+   922→                            backgroundColor: i === 0 ? COLORS.yellow : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#E5E7EB',
+   923→                            color: i === 0 ? COLORS.primaryDark : i < 3 ? '#FFFFFF' : '#6B7280'
+   924→                          }}>
+   925→                            {i + 1}
+   926→                          </div>
+   927→                          <div className="flex-1 min-w-0">
+   928→                            <p className="text-xs font-semibold truncate" style={{ color: COLORS.primaryDark }}>{c.nom}</p>
+   929→                            <p className="text-[10px]" style={{ color: '#9CA3AF' }}>{c.region} — Score: {c.score}/100</p>
+   930→                          </div>
+   931→                          <div className="text-right flex-shrink-0">
+   932→                            <p className="text-sm font-bold" style={{ color: getSuccessRateColor(c.taux) }}>{c.taux}%</p>
+   933→                          </div>
+   934→                        </div>
+   935→                      ))}
+   936→                    </div>
+   937→                  </CardContent>
+   938→                </Card>
+   939→              </div>
+   940→            </TabsContent>
+   941→
+   942→            {/* ═══════ TAB 5: Settings ═══════ */}
+   943→            <TabsContent value="settings" className="space-y-4">
+   944→              <Card className="border-0 shadow-sm bg-white">
+   945→                <CardHeader>
+   946→                  <CardTitle className="text-lg font-semibold" style={{ color: COLORS.primaryDark }}>Paramètres du système</CardTitle>
+   947→                </CardHeader>
+   948→                <CardContent>
+   949→                  <div className="space-y-6">
+   950→                    <div>
+   951→                      <h3 className="text-sm font-semibold mb-2" style={{ color: COLORS.primaryDark }}>Paramètres généraux</h3>
+   952→                      <Separator className="mb-4" />
+   953→                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   954→                        <div>
+   955→                          <p className="text-xs text-gray-500 mb-1">Nom de l&apos;organisation</p>
+   956→                          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>CodeRoute Guinée</p>
+   957→                        </div>
+   958→                        <div>
+   959→                          <p className="text-xs text-gray-500 mb-1">Ministère de tutelle</p>
+   960→                          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>Ministère des Transports</p>
+   961→                        </div>
+   962→                        <div>
+   963→                          <p className="text-xs text-gray-500 mb-1">Durée de l&apos;examen</p>
+   964→                          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>30 minutes</p>
+   965→                        </div>
+   966→                        <div>
+   967→                          <p className="text-xs text-gray-500 mb-1">Score de réussite</p>
+   968→                          <p className="text-sm font-medium" style={{ color: COLORS.primaryDark }}>35/40 (87.5%)</p>
+   969→                        </div>
+   970→                      </div>
+   971→                    </div>
+   972→                    <div>
+   973→                      <h3 className="text-sm font-semibold mb-2" style={{ color: COLORS.primaryDark }}>Langues supportées</h3>
+   974→                      <Separator className="mb-4" />
+   975→                      <div className="flex flex-wrap gap-2">
+   976→                        {languages.map(lang => (
+   977→                          <Badge key={lang.code} variant="outline" className="text-xs px-3 py-1" style={{ borderColor: COLORS.green, color: COLORS.green }}>
+   978→                            {lang.name} ({lang.nativeName})
+   979→                          </Badge>
+   980→                        ))}
+   981→                      </div>
+   982→                    </div>
+   983→                  </div>
+   984→                </CardContent>
+   985→              </Card>
+   986→            </TabsContent>
+   987→          </Tabs>
+   988→        </div>
+   989→      </main>
+   990→    </div>
+   991→  );
+   992→}
+   993→

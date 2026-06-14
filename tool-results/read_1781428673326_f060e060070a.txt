@@ -1,0 +1,569 @@
+     1→'use client';
+     2→
+     3→import React, { useEffect, useState, useRef } from 'react';
+     4→import { Button } from '@/components/ui/button';
+     5→import { Card, CardContent } from '@/components/ui/card';
+     6→import {
+     7→  Car,
+     8→  UserPlus,
+     9→  CalendarCheck,
+    10→  FileCheck,
+    11→  Award,
+    12→  Users,
+    13→  Building2,
+    14→  ThumbsUp,
+    15→  ChevronRight,
+    16→  Shield,
+    17→  Clock,
+    18→  Smartphone,
+    19→  Globe,
+    20→  Volume2,
+    21→  Eye,
+    22→  BookOpen,
+    23→  CheckCircle,
+    24→  BarChart3,
+    25→  ArrowRight,
+    26→  Play,
+    27→  Image as ImageIcon,
+    28→  AlertTriangle,
+    29→  Flag,
+    30→  Waves,
+    31→  Mountain,
+    32→  TreePine,
+    33→  Languages,
+    34→  LucideIcon,
+    35→} from 'lucide-react';
+    36→
+    37→interface LandingPageProps {
+    38→  onLogin: () => void;
+    39→  onRegister: () => void;
+    40→}
+    41→
+    42→/* ───────────────────── Animated Counter ───────────────────── */
+    43→function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+    44→  const [count, setCount] = useState(0);
+    45→  const [hasAnimated, setHasAnimated] = useState(false);
+    46→  const ref = useRef<HTMLDivElement>(null);
+    47→
+    48→  useEffect(() => {
+    49→    const observer = new IntersectionObserver(
+    50→      ([entry]) => {
+    51→        if (entry.isIntersecting && !hasAnimated) {
+    52→          setHasAnimated(true);
+    53→          let start = 0;
+    54→          const duration = 2000;
+    55→          const increment = target / (duration / 16);
+    56→          const timer = setInterval(() => {
+    57→            start += increment;
+    58→            if (start >= target) {
+    59→              setCount(target);
+    60→              clearInterval(timer);
+    61→            } else {
+    62→              setCount(Math.floor(start));
+    63→            }
+    64→          }, 16);
+    65→        }
+    66→      },
+    67→      { threshold: 0.3 }
+    68→    );
+    69→    if (ref.current) observer.observe(ref.current);
+    70→    return () => observer.disconnect();
+    71→  }, [target, hasAnimated]);
+    72→
+    73→  return (
+    74→    <span ref={ref}>
+    75→      {count.toLocaleString('fr-FR')}{suffix}
+    76→    </span>
+    77→  );
+    78→}
+    79→
+    80→/* ───────────────────── Waveform Icon ───────────────────── */
+    81→function WaveformIcon() {
+    82→  return (
+    83→    <svg width="32" height="16" viewBox="0 0 32 16" fill="none" className="opacity-40">
+    84→      <rect x="0" y="6" width="2" height="4" rx="1" fill="currentColor" />
+    85→      <rect x="4" y="4" width="2" height="8" rx="1" fill="currentColor" />
+    86→      <rect x="8" y="2" width="2" height="12" rx="1" fill="currentColor" />
+    87→      <rect x="12" y="5" width="2" height="6" rx="1" fill="currentColor" />
+    88→      <rect x="16" y="3" width="2" height="10" rx="1" fill="currentColor" />
+    89→      <rect x="20" y="4" width="2" height="8" rx="1" fill="currentColor" />
+    90→      <rect x="24" y="6" width="2" height="4" rx="1" fill="currentColor" />
+    91→      <rect x="28" y="5" width="2" height="6" rx="1" fill="currentColor" />
+    92→    </svg>
+    93→  );
+    94→}
+    95→
+    96→/* ───────────────────── Main Component ───────────────────── */
+    97→export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
+    98→
+    99→  /* ── 5 Steps ── */
+   100→  const steps = [
+   101→    { icon: UserPlus, title: 'Inscription', desc: 'Créez votre compte avec votre pièce d\'identité et choisissez votre langue maternelle', color: '#009460' },
+   102→    { icon: CalendarCheck, title: 'Réservation', desc: 'Choisissez votre centre, date et créneau horaire. Paiement Mobile Money sécurisé', color: '#FCD116' },
+   103→    { icon: BookOpen, title: 'Préparation', desc: 'Étudiez avec des panneaux visuels, vidéos et cours avec lecture audio', color: '#0EA5E9' },
+   104→    { icon: FileCheck, title: 'Examen', desc: 'Passez votre examen en toute sécurité avec surveillance anti-fraude biométrique', color: '#CE1126' },
+   105→    { icon: Award, title: 'Permis', desc: 'Recevez votre certificat avec QR code vérifiable, transmis directement à l\'administration', color: '#7C3AED' },
+   106→  ];
+   107→
+   108→  /* ── Nouveautes ── */
+   109→  const nouveautes = [
+   110→    {
+   111→      icon: ImageIcon,
+   112→      title: 'Panneaux et scénarios visuels',
+   113→      desc: 'Chaque question affiche le panneau routier réel ou une photo de situation de conduite pour une compréhension immédiate, même sans savoir lire',
+   114→      accent: '#1A2332'
+   115→    },
+   116→    {
+   117→      icon: Volume2,
+   118→      title: 'Lecture audio en français',
+   119→      desc: 'Écoutez les questions lues à voix haute. Idéal pour une meilleure compréhension, même sans savoir lire',
+   120→      accent: '#009460'
+   121→    },
+   122→    {
+   123→      icon: BookOpen,
+   124→      title: 'Formation interactive',
+   125→      desc: 'Des cours structurés par catégorie avec exercices pratiques, vidéos explicatives et suivi de progression',
+   126→      accent: '#E97316'
+   127→    }
+   128→  ];
+   129→
+   130→  /* ── Languages ── */
+   131→  const languages: { icon: LucideIcon; name: string; native: string; regions: string; population: string; accentColor: string }[] = [
+   132→    {
+   133→      icon: Flag,
+   134→      name: 'Français',
+   135→      native: 'Langue officielle',
+   136→      regions: 'Toutes les régions',
+   137→      population: '',
+   138→      accentColor: '#3b5998'
+   139→    },
+   140→  ];
+   141→
+   142→  /* ── Comparison data ── */
+   143→  const comparisons = [
+   144→    { feature: 'Lecture audio', us: true, other: false },
+   145→    { feature: 'Panneaux visuels', us: true, other: 'partial' },
+   146→    { feature: 'Scénarios photo', us: true, other: false },
+   147→    { feature: 'Lecture audio', us: true, other: false },
+   148→    { feature: 'Anti-fraude biométrique', us: true, other: 'partial' },
+   149→    { feature: 'Certification QR code', us: true, other: false }
+   150→  ];
+   151→
+   152→  /* ── Stats ── */
+   153→  const stats = [
+   154→    { icon: Users, value: 50000, suffix: '+', label: 'Candidats inscrits', color: '#FCD116' },
+   155→    { icon: Building2, value: 15, suffix: '+', label: 'Centres agréés', color: '#FCD116' },
+   156→    { icon: Globe, value: 1, suffix: '', label: 'Langue disponible', color: '#FCD116' },
+   157→    { icon: ThumbsUp, value: 98, suffix: '%', label: 'Taux de satisfaction', color: '#FCD116' }
+   158→  ];
+   159→
+   160→  return (
+   161→    <div className="min-h-screen flex flex-col">
+   162→      {/* ═══════════════════════════════════════════════════════
+   163→          1. HERO SECTION
+   164→          ═══════════════════════════════════════════════════════ */}
+   165→      <section className="relative overflow-hidden">
+   166→        {/* Dark gradient background */}
+   167→        <div className="absolute inset-0 bg-gradient-to-br from-[#1A2332] via-[#0d1a2d] to-[#1A2332]" />
+   168→
+   169→        {/* Guinea flag stripe at very top */}
+   170→        <div className="absolute top-0 left-0 w-full h-2 flex z-10">
+   171→          <div className="flex-1" style={{ backgroundColor: '#CE1126' }} />
+   172→          <div className="flex-1" style={{ backgroundColor: '#FCD116' }} />
+   173→          <div className="flex-1" style={{ backgroundColor: '#009460' }} />
+   174→        </div>
+   175→
+   176→        {/* Decorative geometric patterns */}
+   177→        <div className="absolute top-20 right-10 w-80 h-80 rounded-full opacity-[0.06]" style={{ backgroundColor: '#009460' }} />
+   178→        <div className="absolute bottom-10 left-10 w-64 h-64 rounded-full opacity-[0.06]" style={{ backgroundColor: '#FCD116' }} />
+   179→        <div className="absolute top-40 left-1/4 w-96 h-96 rounded-full opacity-[0.03]" style={{ backgroundColor: '#CE1126' }} />
+   180→
+   181→        {/* Subtle grid pattern */}
+   182→        <div
+   183→          className="absolute inset-0 opacity-[0.03]"
+   184→          style={{
+   185→            backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
+   186→            backgroundSize: '60px 60px'
+   187→          }}
+   188→        />
+   189→
+   190→        {/* Floating sign icons */}
+   191→        <div className="absolute top-32 left-[8%] opacity-10 text-white animate-pulse" style={{ animationDuration: '4s' }}>
+   192→          <Shield className="w-10 h-10" />
+   193→        </div>
+   194→        <div className="absolute top-48 right-[12%] opacity-10 text-white animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }}>
+   195→          <Car className="w-12 h-12" />
+   196→        </div>
+   197→        <div className="absolute bottom-32 left-[15%] opacity-10 text-white animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }}>
+   198→          <Volume2 className="w-8 h-8" />
+   199→        </div>
+   200→        <div className="absolute bottom-24 right-[8%] opacity-10 text-white animate-pulse" style={{ animationDuration: '4.5s', animationDelay: '0.5s' }}>
+   201→          <Eye className="w-10 h-10" />
+   202→        </div>
+   203→
+   204→        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 sm:pt-20 sm:pb-28 lg:pt-28 lg:pb-36">
+   205→          <div className="text-center">
+   206→            {/* Republic mention badge */}
+   207→            <div className="inline-flex items-center gap-2 mb-8 px-5 py-2.5 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.1]">
+   208→              <Flag className="w-4 h-4" style={{ color: '#FCD116' }} />
+   209→              <span className="font-medium text-white/90 text-sm">République de Guinée</span>
+   210→              <span className="text-white/30">|</span>
+   211→              <span className="text-white/70 text-sm">Ministère des Transports</span>
+   212→            </div>
+   213→
+   214→            {/* Title */}
+   215→            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight">
+   216→              CodeRoute{' '}
+   217→              <span className="relative inline-block">
+   218→                <span style={{ color: '#FCD116' }}>Guinée</span>
+   219→                <span className="absolute -bottom-1 left-0 w-full h-1 rounded-full" style={{ backgroundColor: '#FCD116', opacity: 0.4 }} />
+   220→              </span>
+   221→            </h1>
+   222→
+   223→            {/* Subtitle */}
+   224→            <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-3 leading-relaxed">
+   225→              Plateforme nationale digitale pour l&apos;examen théorique du permis de conduire
+   226→            </p>
+   227→
+   228→            {/* New tagline */}
+   229→            <p className="text-base sm:text-lg font-medium max-w-xl mx-auto mb-8" style={{ color: '#FCD116' }}>
+   230→              Avec panneaux, vidéos et lecture en langues nationales
+   231→            </p>
+   232→
+   233→            {/* Feature pills */}
+   234→            <div className="flex flex-wrap justify-center gap-3 mb-10">
+   235→              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
+   236→                <ImageIcon className="w-4 h-4" /> Panneaux routiers
+   237→              </span>
+   238→              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
+   239→                <Eye className="w-4 h-4" /> Scénarios visuels
+   240→              </span>
+   241→              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-white/[0.07] border border-white/[0.12] text-white/90 backdrop-blur-sm">
+   242→                <Volume2 className="w-4 h-4" /> 4 langues nationales
+   243→              </span>
+   244→            </div>
+   245→
+   246→            {/* CTA buttons */}
+   247→            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+   248→              <Button
+   249→                size="lg"
+   250→                className="text-white font-semibold px-8 py-6 text-lg rounded-xl shadow-lg shadow-[#009460]/30 hover:shadow-xl hover:shadow-[#009460]/40 transition-all duration-300 hover:scale-[1.02]"
+   251→                style={{ backgroundColor: '#009460' }}
+   252→                onClick={onRegister}
+   253→              >
+   254→                <UserPlus className="w-5 h-5 mr-2" />
+   255→                S&apos;inscrire
+   256→                <ChevronRight className="w-5 h-5 ml-1" />
+   257→              </Button>
+   258→              <Button
+   259→                size="lg"
+   260→                variant="outline"
+   261→                className="font-semibold px-8 py-6 text-lg border-white/25 text-white hover:bg-white/10 rounded-xl transition-all duration-300 hover:scale-[1.02]"
+   262→                onClick={onLogin}
+   263→              >
+   264→                Se connecter
+   265→              </Button>
+   266→            </div>
+   267→          </div>
+   268→        </div>
+   269→      </section>
+   270→
+   271→      {/* ═══════════════════════════════════════════════════════
+   272→          2. COMMENT ÇA MARCHE (5 steps)
+   273→          ═══════════════════════════════════════════════════════ */}
+   274→      <section className="py-16 sm:py-24 bg-gray-50">
+   275→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   276→          <div className="text-center mb-14">
+   277→            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
+   278→              Comment ça marche
+   279→            </h2>
+   280→            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+   281→              Un processus simple et sécurisé en 5 étapes
+   282→            </p>
+   283→          </div>
+   284→
+   285→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 relative">
+   286→            {steps.map((step, index) => (
+   287→              <React.Fragment key={index}>
+   288→                <Card className="relative border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+   289→                  <CardContent className="p-6 text-center">
+   290→                    {/* Step number badge */}
+   291→                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md" style={{ backgroundColor: step.color }}>
+   292→                      {index + 1}
+   293→                    </div>
+   294→                    <div className="w-14 h-14 rounded-xl mx-auto mt-4 mb-4 flex items-center justify-center" style={{ backgroundColor: `${step.color}15` }}>
+   295→                      <step.icon className="w-7 h-7" style={{ color: step.color }} />
+   296→                    </div>
+   297→                    <h3 className="font-bold text-lg mb-2" style={{ color: '#1A2332' }}>{step.title}</h3>
+   298→                    <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
+   299→                  </CardContent>
+   300→                </Card>
+   301→                {/* Arrow between cards */}
+   302→                {index < steps.length - 1 && (
+   303→                  <ChevronRight className="hidden lg:block absolute top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 z-10" style={{ left: `calc(${((index) * 20) + 19}% )` }} />
+   304→                )}
+   305→              </React.Fragment>
+   306→            ))}
+   307→          </div>
+   308→        </div>
+   309→      </section>
+   310→
+   311→      {/* ═══════════════════════════════════════════════════════
+   312→          3. CE QUI NOUS DISTINGUE (Nouveautés)
+   313→          ═══════════════════════════════════════════════════════ */}
+   314→      <section className="py-16 sm:py-24 bg-white">
+   315→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   316→          <div className="text-center mb-14">
+   317→            <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#CE1126' }}>Nouveautés</p>
+   318→            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
+   319→              Ce qui nous distingue
+   320→            </h2>
+   321→            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+   322→              Des innovations uniques pour un examen accessible à tous les Guinéens
+   323→            </p>
+   324→          </div>
+   325→
+   326→          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+   327→            {nouveautes.map((item, index) => (
+   328→              <Card key={index} className="group border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+   329→                <CardContent className="p-8">
+   330→                  {/* Accent top border */}
+   331→                  <div className="h-1 w-16 rounded-full mb-6 transition-all duration-300 group-hover:w-24" style={{ backgroundColor: item.accent }} />
+   332→                  <div className="w-14 h-14 rounded-2xl mb-5 flex items-center justify-center" style={{ backgroundColor: `${item.accent}12` }}>
+   333→                    <item.icon className="w-7 h-7" style={{ color: item.accent }} />
+   334→                  </div>
+   335→                  <h3 className="font-bold text-xl mb-3" style={{ color: '#1A2332' }}>{item.title}</h3>
+   336→                  <p className="text-gray-500 leading-relaxed">{item.desc}</p>
+   337→                </CardContent>
+   338→              </Card>
+   339→            ))}
+   340→          </div>
+   341→        </div>
+   342→      </section>
+   343→
+   344→      {/* ═══════════════════════════════════════════════════════
+   345→          4. 4 LANGUES NATIONALES
+   346→          ═══════════════════════════════════════════════════════ */}
+   347→      <section className="py-16 sm:py-24" style={{ backgroundColor: '#1A2332' }}>
+   348→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   349→          <div className="text-center mb-14">
+   350→            <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#FCD116' }}>Accessibilité</p>
+   351→            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+   352→              L&apos;examen dans votre langue
+   353→            </h2>
+   354→            <p className="text-gray-400 text-lg max-w-xl mx-auto">
+   355→              Passez votre examen dans la langue que vous maîtrisez le mieux
+   356→            </p>
+   357→          </div>
+   358→
+   359→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+   360→            {languages.map((lang, index) => {
+   361→              const IconComp = lang.icon;
+   362→              return (
+   363→                <Card key={index} className="group border-0 bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] hover:bg-white/[0.10] transition-all duration-300 hover:-translate-y-1" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+   364→                  <CardContent className="p-6 text-center">
+   365→                    <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: `${lang.accentColor}20` }}>
+   366→                      <IconComp className="w-7 h-7" style={{ color: lang.accentColor }} />
+   367→                    </div>
+   368→                    <h3 className="text-xl font-bold text-white mb-1">{lang.name}</h3>
+   369→                    <p className="text-sm font-medium mb-2" style={{ color: '#FCD116' }}>{lang.native}</p>
+   370→                    <p className="text-gray-400 text-sm mb-3">{lang.regions}</p>
+   371→                    {lang.population && (
+   372→                      <p className="text-gray-500 text-xs mb-3">{lang.population} locuteurs</p>
+   373→                    )}
+   374→                    {/* Waveform audio indicator */}
+   375→                    <div className="flex items-center justify-center gap-2 text-white/40">
+   376→                      <Volume2 className="w-4 h-4" />
+   377→                      <WaveformIcon />
+   378→                    </div>
+   379→                  </CardContent>
+   380→                </Card>
+   381→              );
+   382→            })}
+   383→          </div>
+   384→
+   385→          <div className="text-center mt-10">
+   386→            <Button
+   387→              size="lg"
+   388→              className="font-semibold px-8 py-5 rounded-xl text-[#1A2332] shadow-lg transition-all duration-300 hover:scale-[1.02]"
+   389→              style={{ backgroundColor: '#FCD116' }}
+   390→              onClick={onRegister}
+   391→            >
+   392→              <Globe className="w-5 h-5 mr-2" />
+   393→              Choisir ma langue lors de l&apos;inscription
+   394→              <ArrowRight className="w-4 h-4 ml-2" />
+   395→            </Button>
+   396→          </div>
+   397→        </div>
+   398→      </section>
+   399→
+   400→      {/* ═══════════════════════════════════════════════════════
+   401→          5. STATISTICS
+   402→          ═══════════════════════════════════════════════════════ */}
+   403→      <section className="py-16 sm:py-24 bg-gradient-to-br from-[#1A2332] via-[#1e2d42] to-[#1A2332]">
+   404→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   405→          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+   406→            {stats.map((stat, index) => (
+   407→              <div key={index} className="group">
+   408→                <div className="flex items-center justify-center gap-2 mb-3">
+   409→                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.08] group-hover:bg-white/[0.12] transition-colors">
+   410→                    <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+   411→                  </div>
+   412→                </div>
+   413→                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+   414→                  <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+   415→                </div>
+   416→                <p className="text-gray-400 text-sm sm:text-base">{stat.label}</p>
+   417→              </div>
+   418→            ))}
+   419→          </div>
+   420→        </div>
+   421→      </section>
+   422→
+   423→      {/* ═══════════════════════════════════════════════════════
+   424→          6. COMPARAISON INTERNATIONALE
+   425→          ═══════════════════════════════════════════════════════ */}
+   426→      <section className="py-16 sm:py-24 bg-white">
+   427→        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+   428→          <div className="text-center mb-14">
+   429→            <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#009460' }}>Benchmark</p>
+   430→            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
+   431→              En avance sur les standards mondiaux
+   432→            </h2>
+   433→            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+   434→              CodeRoute Guinée dépasse les plateformes internationales
+   435→            </p>
+   436→          </div>
+   437→
+   438→          <Card className="border-0 shadow-xl overflow-hidden">
+   439→            <CardContent className="p-0">
+   440→              {/* Table header */}
+   441→              <div className="grid grid-cols-3 bg-gray-50 border-b border-gray-100">
+   442→                <div className="p-4 sm:p-5 font-semibold text-gray-600 text-sm sm:text-base">Fonctionnalité</div>
+   443→                <div className="p-4 sm:p-5 font-semibold text-center text-sm sm:text-base" style={{ color: '#009460' }}>
+   444→                  <div className="flex items-center justify-center gap-1.5">
+   445→                    <Car className="w-4 h-4" />
+   446→                    CodeRoute Guinée
+   447→                  </div>
+   448→                </div>
+   449→                <div className="p-4 sm:p-5 font-semibold text-center text-gray-400 text-sm sm:text-base">Autres plateformes</div>
+   450→              </div>
+   451→
+   452→              {/* Table rows */}
+   453→              {comparisons.map((row, index) => (
+   454→                <div
+   455→                  key={index}
+   456→                  className={`grid grid-cols-3 items-center ${index !== comparisons.length - 1 ? 'border-b border-gray-50' : ''} hover:bg-gray-50/50 transition-colors`}
+   457→                >
+   458→                  <div className="p-4 sm:p-5 text-sm sm:text-base font-medium" style={{ color: '#1A2332' }}>
+   459→                    {row.feature}
+   460→                  </div>
+   461→                  <div className="p-4 sm:p-5 text-center">
+   462→                    {row.us === true ? (
+   463→                      <CheckCircle className="w-6 h-6 mx-auto" style={{ color: '#009460' }} />
+   464→                    ) : (
+   465→                      <span className="text-gray-300">—</span>
+   466→                    )}
+   467→                  </div>
+   468→                  <div className="p-4 sm:p-5 text-center">
+   469→                    {row.other === true ? (
+   470→                      <CheckCircle className="w-6 h-6 mx-auto text-green-500" />
+   471→                    ) : row.other === 'partial' ? (
+   472→                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-500 mx-auto">
+   473→                        <AlertTriangle className="w-3.5 h-3.5" />
+   474→                      </span>
+   475→                    ) : (
+   476→                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-50 text-red-400 text-lg mx-auto">×</span>
+   477→                    )}
+   478→                  </div>
+   479→                </div>
+   480→              ))}
+   481→            </CardContent>
+   482→          </Card>
+   483→        </div>
+   484→      </section>
+   485→
+   486→      {/* ═══════════════════════════════════════════════════════
+   487→          7. CTA SECTION
+   488→          ═══════════════════════════════════════════════════════ */}
+   489→      <section className="py-16 sm:py-20 relative overflow-hidden" style={{ backgroundColor: '#009460' }}>
+   490→        {/* Decorative elements */}
+   491→        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10 bg-white -translate-y-1/2 translate-x-1/2" />
+   492→        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-10 bg-white translate-y-1/2 -translate-x-1/2" />
+   493→
+   494→        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+   495→          <Car className="w-12 h-12 text-white/60 mx-auto mb-6" />
+   496→          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+   497→            Prêt à passer votre code ?
+   498→          </h2>
+   499→          <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
+   500→            Inscrivez-vous et choisissez votre langue maternelle
+   501→          </p>
+   502→          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+   503→            <Button
+   504→              size="lg"
+   505→              className="font-semibold px-8 py-6 text-lg rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.02]"
+   506→              style={{ backgroundColor: '#FCD116', color: '#1A2332' }}
+   507→              onClick={onRegister}
+   508→            >
+   509→              <UserPlus className="w-5 h-5 mr-2" />
+   510→              Créer un compte
+   511→            </Button>
+   512→            <Button
+   513→              size="lg"
+   514→              variant="outline"
+   515→              className="font-semibold px-8 py-6 text-lg border-white/40 text-white hover:bg-white/10 rounded-xl transition-all duration-300 hover:scale-[1.02]"
+   516→              onClick={onLogin}
+   517→            >
+   518→              J&apos;ai déjà un compte
+   519→            </Button>
+   520→          </div>
+   521→        </div>
+   522→      </section>
+   523→
+   524→      {/* ═══════════════════════════════════════════════════════
+   525→          8. FOOTER
+   526→          ═══════════════════════════════════════════════════════ */}
+   527→      <footer className="py-10" style={{ backgroundColor: '#1A2332' }}>
+   528→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   529→          <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+   530→            {/* Logo */}
+   531→            <div className="flex items-center gap-3">
+   532→              <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#009460' }}>
+   533→                <Car className="w-5 h-5 text-white" />
+   534→              </div>
+   535→              <span className="font-bold text-white text-lg">
+   536→                CodeRoute <span style={{ color: '#FCD116' }}>Guinée</span>
+   537→              </span>
+   538→            </div>
+   539→
+   540→            {/* Links */}
+   541→            <div className="flex items-center gap-6 text-sm text-gray-400">
+   542→              <a href="#" className="hover:text-white transition-colors">À propos</a>
+   543→              <a href="#" className="hover:text-white transition-colors">Centres</a>
+   544→              <a href="#" className="hover:text-white transition-colors">Aide</a>
+   545→              <a href="#" className="hover:text-white transition-colors">Contact</a>
+   546→            </div>
+   547→
+   548→            {/* Republic branding */}
+   549→            <div className="text-center sm:text-right">
+   550→              <div className="flex items-center gap-1.5 justify-center sm:justify-end">
+   551→                <Flag className="w-4 h-4" style={{ color: '#FCD116' }} />
+   552→                <span className="text-gray-400 text-sm">République de Guinée — Ministère des Transports</span>
+   553→              </div>
+   554→              <p className="text-gray-500 text-xs mt-1">© 2026 CodeRoute Guinée. Tous droits réservés.</p>
+   555→            </div>
+   556→          </div>
+   557→
+   558→          {/* Flag stripe at bottom */}
+   559→          <div className="mt-8 flex gap-0.5 rounded-full overflow-hidden">
+   560→            <div className="h-1.5 flex-1" style={{ backgroundColor: '#CE1126' }} />
+   561→            <div className="h-1.5 flex-1" style={{ backgroundColor: '#FCD116' }} />
+   562→            <div className="h-1.5 flex-1" style={{ backgroundColor: '#009460' }} />
+   563→          </div>
+   564→        </div>
+   565→      </footer>
+   566→    </div>
+   567→  );
+   568→}
+   569→

@@ -1,0 +1,883 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback } from 'react';
+     4→import { Button } from '@/components/ui/button';
+     5→import { Card, CardContent } from '@/components/ui/card';
+     6→import { Progress } from '@/components/ui/progress';
+     7→import { Badge } from '@/components/ui/badge';
+     8→import {
+     9→  AlertDialog,
+    10→  AlertDialogAction,
+    11→  AlertDialogCancel,
+    12→  AlertDialogContent,
+    13→  AlertDialogDescription,
+    14→  AlertDialogFooter,
+    15→  AlertDialogHeader,
+    16→  AlertDialogTitle,
+    17→} from '@/components/ui/alert-dialog';
+    18→import { Question, ViewType, ExamResult, CategoryResult, NationalLanguage } from '@/lib/types';
+    19→import { getRandomQuestions } from '@/lib/mock-data';
+    20→import { useAuth } from '@/lib/auth-context';
+    21→import { RoadSignDisplay } from '@/components/code-route/road-signs';
+    22→import TTSPlayer from '@/components/code-route/tts-player';
+    23→import {
+    24→  Clock,
+    25→  ChevronLeft,
+    26→  ChevronRight,
+    27→  Flag,
+    28→  AlertTriangle,
+    29→  CheckCircle,
+    30→  XCircle,
+    31→  Shield,
+    32→  Volume2,
+    33→  Image as ImageIcon,
+    34→  Play,
+    35→  Eye,
+    36→  Globe,
+    37→  Maximize2,
+    38→  Pause,
+    39→  X,
+    40→  Video,
+    41→  Film,
+    42→} from 'lucide-react';
+    43→
+    44→interface ExamTakingProps {
+    45→  isPractice?: boolean;
+    46→  onViewChange: (view: ViewType) => void;
+    47→  onExamComplete: (result: ExamResult) => void;
+    48→  preselectedLanguage?: NationalLanguage;
+    49→}
+    50→
+    51→// ─── Mock Video Player Component ──────────────────────────────
+    52→function MockVideoPlayer({
+    53→  thumbnailUrl,
+    54→  title,
+    55→}: {
+    56→  thumbnailUrl?: string;
+    57→  title?: string;
+    58→}) {
+    59→  const [isPlaying, setIsPlaying] = useState(false);
+    60→  const [progress, setProgress] = useState(0);
+    61→
+    62→  useEffect(() => {
+    63→    if (!isPlaying) return;
+    64→    const timer = setInterval(() => {
+    65→      setProgress(prev => {
+    66→        if (prev >= 100) {
+    67→          setIsPlaying(false);
+    68→          return 100;
+    69→        }
+    70→        return prev + 0.5;
+    71→      });
+    72→    }, 100);
+    73→    return () => clearInterval(timer);
+    74→  }, [isPlaying]);
+    75→
+    76→  return (
+    77→    <div className="relative rounded-xl overflow-hidden border-2 border-white/10 shadow-lg bg-gray-900">
+    78→      {/* Player area */}
+    79→      <div className="relative aspect-video max-h-56 flex items-center justify-center">
+    80→        {/* Scenario thumbnail or placeholder */}
+    81→        {thumbnailUrl ? (
+    82→          <img
+    83→            src={thumbnailUrl}
+    84→            alt={title || 'Scenario video'}
+    85→            className={`w-full h-full object-cover transition-opacity ${isPlaying ? 'opacity-60' : 'opacity-80'}`}
+    86→          />
+    87→        ) : (
+    88→          <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1A2332 0%, #2A3A52 100%)' }}>
+    89→            <Film className="w-16 h-16 text-white/20" />
+    90→          </div>
+    91→        )}
+    92→
+    93→        {/* Play button overlay */}
+    94→        {!isPlaying && (
+    95→          <button
+    96→            className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors cursor-pointer"
+    97→            onClick={() => setIsPlaying(true)}
+    98→          >
+    99→            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm border-2 border-white/40 hover:bg-white/30 hover:scale-110 transition-all">
+   100→              <Play className="w-8 h-8 text-white ml-1" />
+   101→            </div>
+   102→          </button>
+   103→        )}
+   104→
+   105→        {/* Pause overlay when playing */}
+   106→        {isPlaying && (
+   107→          <button
+   108→            className="absolute inset-0 flex items-center justify-center cursor-pointer"
+   109→            onClick={() => setIsPlaying(false)}
+   110→          >
+   111→            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity">
+   112→              <Pause className="w-6 h-6 text-white" />
+   113→            </div>
+   114→          </button>
+   115→        )}
+   116→
+   117→        {/* Video label */}
+   118→        <div className="absolute top-3 left-3 flex items-center gap-2">
+   119→          <Badge className="text-[10px] px-2 py-0.5 bg-red-600 text-white border-0">
+   120→            <Video className="w-3 h-3 mr-1" />
+   121→            VIDEO
+   122→          </Badge>
+   123→        </div>
+   124→
+   125→        {/* Time indicator */}
+   126→        {isPlaying && (
+   127→          <div className="absolute top-3 right-3 bg-black/60 rounded-md px-2 py-0.5 text-white text-xs font-mono">
+   128→            {Math.floor(progress * 0.3).toString().padStart(1, '0')}:{(Math.floor((progress * 0.3) % 1 * 60)).toString().padStart(2, '0')} / 0:30
+   129→          </div>
+   130→        )}
+   131→      </div>
+   132→
+   133→      {/* Progress bar */}
+   134→      <div className="h-1 bg-gray-700">
+   135→        <div
+   136→          className="h-full transition-all duration-100"
+   137→          style={{
+   138→            width: `${progress}%`,
+   139→            backgroundColor: progress >= 100 ? '#009460' : '#CE1126',
+   140→          }}
+   141→        />
+   142→      </div>
+   143→
+   144→      {/* Controls bar */}
+   145→      <div className="flex items-center gap-3 px-4 py-2 bg-gray-800">
+   146→        <button
+   147→          className="text-white hover:text-green-400 transition-colors"
+   148→          onClick={() => {
+   149→            if (isPlaying) setIsPlaying(false);
+   150→            else {
+   151→              setProgress(0);
+   152→              setIsPlaying(true);
+   153→            }
+   154→          }}
+   155→        >
+   156→          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+   157→        </button>
+   158→        <div className="flex-1">
+   159→          <div className="text-xs text-gray-400">{title || 'Scénario vidéo'}</div>
+   160→        </div>
+   161→        <span className="text-xs text-gray-500 font-mono">
+   162→          {Math.floor(progress * 0.3)}s
+   163→        </span>
+   164→      </div>
+   165→    </div>
+   166→  );
+   167→}
+   168→
+   169→export default function ExamTaking({ isPractice = false, onViewChange, onExamComplete, preselectedLanguage }: ExamTakingProps) {
+   170→  const { user } = useAuth();
+   171→  const totalQuestions = isPractice ? 20 : 40;
+   172→  const timeMinutes = isPractice ? 15 : 30;
+   173→  const passingScore = isPractice ? 14 : 35;
+   174→
+   175→  // Language always French for now — local languages temporarily disabled
+   176→  const examLanguage: NationalLanguage = 'fr';
+   177→  const [examQuestions, setExamQuestions] = useState<Question[]>([]);
+   178→  const [currentQuestion, setCurrentQuestion] = useState(0);
+   179→  const [answers, setAnswers] = useState<(number | null)[]>([]);
+   180→  const [flagged, setFlagged] = useState<boolean[]>([]);
+   181→  const [timeLeft, setTimeLeft] = useState(timeMinutes * 60);
+   182→  const [showConfirm, setShowConfirm] = useState(false);
+   183→  const [examStarted, setExamStarted] = useState(false);
+   184→  const [examFinished, setExamFinished] = useState(false);
+   185→  const [result, setResult] = useState<ExamResult | null>(null);
+   186→  const [isSpeaking, setIsSpeaking] = useState(false);
+   187→  const [showSignModal, setShowSignModal] = useState(false);
+   188→  const [showScenarioModal, setShowScenarioModal] = useState(false);
+   189→
+   190→  const autoSubmitRef = useRef(false);
+   191→  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+   192→
+   193→  // Initialize exam
+   194→  useEffect(() => {
+   195→    const count = isPractice ? 20 : 40;
+   196→    const selected = getRandomQuestions(count);
+   197→    setExamQuestions(selected);
+   198→    setAnswers(new Array(count).fill(null));
+   199→    setFlagged(new Array(count).fill(false));
+   200→  }, [isPractice]);
+   201→
+   202→  // Timer
+   203→  useEffect(() => {
+   204→    if (!examStarted || examFinished) return;
+   205→    const timer = setInterval(() => {
+   206→      setTimeLeft(prev => {
+   207→        if (prev <= 1) {
+   208→          clearInterval(timer);
+   209→          autoSubmitRef.current = true;
+   210→          return 0;
+   211→        }
+   212→        return prev - 1;
+   213→      });
+   214→    }, 1000);
+   215→    return () => clearInterval(timer);
+   216→  }, [examStarted, examFinished]);
+   217→
+   218→  // Auto-submit
+   219→  useEffect(() => {
+   220→    if (autoSubmitRef.current && !examFinished) {
+   221→      autoSubmitRef.current = false;
+   222→      submitExam();
+   223→    }
+   224→  });
+   225→
+   226→  const formatTime = (seconds: number) => {
+   227→    const m = Math.floor(seconds / 60);
+   228→    const s = seconds % 60;
+   229→    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+   230→  };
+   231→
+   232→  const handleAnswer = (questionIndex: number, answerIndex: number) => {
+   233→    const newAnswers = [...answers];
+   234→    newAnswers[questionIndex] = answerIndex;
+   235→    setAnswers(newAnswers);
+   236→  };
+   237→
+   238→  const toggleFlag = (questionIndex: number) => {
+   239→    const newFlagged = [...flagged];
+   240→    newFlagged[questionIndex] = !newFlagged[questionIndex];
+   241→    setFlagged(newFlagged);
+   242→  };
+   243→
+   244→  // Text-to-Speech
+   245→  const speakText = useCallback((text: string) => {
+   246→    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+   247→
+   248→    if (isSpeaking) {
+   249→      window.speechSynthesis.cancel();
+   250→      setIsSpeaking(false);
+   251→      return;
+   252→    }
+   253→
+   254→    const utterance = new SpeechSynthesisUtterance(text);
+   255→    utterance.lang = 'fr-FR';
+   256→    utterance.rate = 0.9;
+   257→    utterance.pitch = 1;
+   258→
+   259→    const voices = window.speechSynthesis.getVoices();
+   260→    const frenchVoice = voices.find(v => v.lang.startsWith('fr'));
+   261→    if (frenchVoice) utterance.voice = frenchVoice;
+   262→
+   263→    utterance.onend = () => setIsSpeaking(false);
+   264→    utterance.onerror = () => setIsSpeaking(false);
+   265→
+   266→    speechRef.current = utterance;
+   267→    window.speechSynthesis.speak(utterance);
+   268→    setIsSpeaking(true);
+   269→  }, [isSpeaking]);
+   270→
+   271→  const speakCurrentQuestion = useCallback(() => {
+   272→    const q = examQuestions[currentQuestion];
+   273→    if (!q) return;
+   274→    const fullText = `${q.texte}. ${q.options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`;
+   275→    speakText(fullText);
+   276→  }, [examQuestions, currentQuestion, speakText]);
+   277→
+   278→  // Cleanup speech on unmount
+   279→  useEffect(() => {
+   280→    return () => {
+   281→      if (typeof window !== 'undefined' && window.speechSynthesis) {
+   282→        window.speechSynthesis.cancel();
+   283→      }
+   284→    };
+   285→  }, []);
+   286→
+   287→  const submitExam = () => {
+   288→    if (typeof window !== 'undefined' && window.speechSynthesis) {
+   289→      window.speechSynthesis.cancel();
+   290→    }
+   291→    setIsSpeaking(false);
+   292→
+   293→    let correct = 0;
+   294→    const categoryMap: Record<string, { total: number; correct: number }> = {};
+   295→
+   296→    examQuestions.forEach((q, i) => {
+   297→      if (!categoryMap[q.categorie]) {
+   298→        categoryMap[q.categorie] = { total: 0, correct: 0 };
+   299→      }
+   300→      categoryMap[q.categorie].total++;
+   301→      if (answers[i] === q.bonneReponse) {
+   302→        correct++;
+   303→        categoryMap[q.categorie].correct++;
+   304→      }
+   305→    });
+   306→
+   307→    const details: CategoryResult[] = Object.entries(categoryMap).map(([categorie, data]) => ({
+   308→      categorie,
+   309→      total: data.total,
+   310→      correct: data.correct,
+   311→    }));
+   312→
+   313→    const examResult: ExamResult = {
+   314→      id: `RES-${Date.now()}`,
+   315→      session: {
+   316→        id: `SES-${Date.now()}`,
+   317→        candidatId: user?.id || '',
+   318→        centreId: isPractice ? 'PRACTICE' : 'CTR-001',
+   319→        centreNom: isPractice ? 'Entraînement' : 'Centre RouteSafe Kaloum',
+   320→        date: new Date().toISOString().split('T')[0],
+   321→        heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+   322→        langue: examLanguage,
+   323→        statut: correct >= passingScore ? 'reussi' : 'echoue',
+   324→        score: correct,
+   325→        totalQuestions,
+   326→        reponses: answers as number[],
+   327→        dateInscription: new Date().toISOString().split('T')[0]
+   328→      },
+   329→      score: correct,
+   330→      totalQuestions,
+   331→      reussi: correct >= passingScore,
+   332→      details,
+   333→      datePassage: new Date().toISOString().split('T')[0]
+   334→    };
+   335→
+   336→    setResult(examResult);
+   337→    setExamFinished(true);
+   338→    onExamComplete(examResult);
+   339→  };
+   340→
+   341→  const answeredCount = answers.filter(a => a !== null).length;
+   342→  const progressPercent = (answeredCount / totalQuestions) * 100;
+   343→
+   344→  // Pre-exam screen with language selection
+   345→  if (!examStarted) {
+   346→    return (
+   347→      <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #1A2332 0%, #0d1a2d 100%)' }}>
+   348→        {/* Guinea stripe */}
+   349→        <div className="flex h-1.5">
+   350→          <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
+   351→          <div className="flex-1" style={{ backgroundColor: '#FCD116' }}></div>
+   352→          <div className="flex-1" style={{ backgroundColor: '#009460' }}></div>
+   353→        </div>
+   354→
+   355→        <div className="max-w-3xl mx-auto px-4 py-12">
+   356→          <Card className="border-0 shadow-2xl overflow-hidden">
+   357→            <div className="h-1.5 flex">
+   358→              <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
+   359→              <div className="flex-1" style={{ backgroundColor: '#FCD116' }}></div>
+   360→              <div className="flex-1" style={{ backgroundColor: '#009460' }}></div>
+   361→            </div>
+   362→            <CardContent className="p-8">
+   363→              <div className="text-center">
+   364→                <div className="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#1A233215' }}>
+   365→                  <Shield className="w-10 h-10" style={{ color: '#1A2332' }} />
+   366→                </div>
+   367→                <h1 className="text-2xl font-bold mb-2" style={{ color: '#1A2332' }}>
+   368→                  {isPractice ? "Test d'entraînement" : 'Examen du code de la route'}
+   369→                </h1>
+   370→                <p className="text-gray-500 mb-8">
+   371→                  {isPractice
+   372→                    ? 'Entraînez-vous avec des questions similaires à l\'examen officiel'
+   373→                    : 'Examen officiel du permis de conduire — République de Guinée'}
+   374→                </p>
+   375→
+   376→                {/* Language — French only for now */}
+   377→                <div className="mb-8">
+   378→                  <div className="flex items-center justify-center gap-2 mb-3">
+   379→                    <Globe className="w-5 h-5" style={{ color: '#009460' }} />
+   380→                    <span className="font-semibold" style={{ color: '#1A2332' }}>Langue : Français</span>
+   381→                  </div>
+   382→                  <p className="text-xs text-gray-400 text-center">Les langues nationales (Soussou, Poular, Malinké) seront bientôt disponibles</p>
+   383→                </div>
+   384→
+   385→                {/* Exam Info Grid */}
+   386→                <div className="grid grid-cols-2 gap-4 mb-8">
+   387→                  <div className="p-4 bg-gray-50 rounded-xl text-center">
+   388→                    <p className="text-2xl font-bold" style={{ color: '#009460' }}>{totalQuestions}</p>
+   389→                    <p className="text-sm text-gray-500">Questions</p>
+   390→                  </div>
+   391→                  <div className="p-4 bg-gray-50 rounded-xl text-center">
+   392→                    <p className="text-2xl font-bold" style={{ color: '#FCD116' }}>{timeMinutes} min</p>
+   393→                    <p className="text-sm text-gray-500">Durée</p>
+   394→                  </div>
+   395→                  <div className="p-4 bg-gray-50 rounded-xl text-center">
+   396→                    <p className="text-2xl font-bold" style={{ color: '#CE1126' }}>{passingScore}/{totalQuestions}</p>
+   397→                    <p className="text-sm text-gray-500">Score requis</p>
+   398→                  </div>
+   399→                  <div className="p-4 bg-gray-50 rounded-xl text-center">
+   400→                    <p className="text-2xl font-bold flex items-center justify-center gap-1" style={{ color: '#1A2332' }}>
+   401→                      <Volume2 className="w-5 h-5" />
+   402→                      <span className="text-sm">Français</span>
+   403→                    </p>
+   404→                    <p className="text-sm text-gray-500">Lecture audio</p>
+   405→                  </div>
+   406→                </div>
+   407→
+   408→                {/* Feature highlights */}
+   409→                <div className="grid grid-cols-3 gap-3 mb-6">
+   410→                  <div className="p-3 bg-blue-50 rounded-lg text-center">
+   411→                    <ImageIcon className="w-5 h-5 mx-auto mb-1 text-blue-600" />
+   412→                    <p className="text-xs text-blue-700 font-medium">Panneaux routiers</p>
+   413→                  </div>
+   414→                  <div className="p-3 bg-purple-50 rounded-lg text-center">
+   415→                    <Eye className="w-5 h-5 mx-auto mb-1 text-purple-600" />
+   416→                    <p className="text-xs text-purple-700 font-medium">Scénarios visuels</p>
+   417→                  </div>
+   418→                  <div className="p-3 bg-orange-50 rounded-lg text-center">
+   419→                    <Volume2 className="w-5 h-5 mx-auto mb-1 text-orange-600" />
+   420→                    <p className="text-xs text-orange-700 font-medium">Lecture vocale</p>
+   421→                  </div>
+   422→                </div>
+   423→
+   424→                {!isPractice && (
+   425→                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-left">
+   426→                    <div className="flex items-start gap-2">
+   427→                      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+   428→                      <div>
+   429→                        <p className="font-semibold text-red-700 text-sm">Anti-fraude</p>
+   430→                        <p className="text-sm text-red-600 mt-1">
+   431→                          Cet examen est surveillé. Toute tentative de triche entraînera l&apos;annulation immédiate de l&apos;examen et une interdiction de 6 mois.
+   432→                        </p>
+   433→                      </div>
+   434→                    </div>
+   435→                  </div>
+   436→                )}
+   437→
+   438→                <div className="flex gap-3 justify-center">
+   439→                  <Button
+   440→                    className="text-white font-semibold px-8 py-6 text-lg"
+   441→                    style={{ backgroundColor: '#009460' }}
+   442→                    onClick={() => {
+   443→                      setExamStarted(true);
+   444→                    }}
+   445→                  >
+   446→                    Commencer l&apos;examen
+   447→                  </Button>
+   448→                  <Button variant="outline" className="py-6" onClick={() => onViewChange('candidate-dashboard')}>
+   449→                    Annuler
+   450→                  </Button>
+   451→                </div>
+   452→              </div>
+   453→            </CardContent>
+   454→          </Card>
+   455→        </div>
+   456→      </div>
+   457→    );
+   458→  }
+   459→
+   460→  // Results screen
+   461→  if (examFinished && result) {
+   462→    return (
+   463→      <div className="min-h-screen bg-gray-50">
+   464→        <div className="max-w-2xl mx-auto px-4 py-12">
+   465→          <Card className="border-0 shadow-xl overflow-hidden">
+   466→            <div className="h-2 flex">
+   467→              <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
+   468→              <div className="flex-1" style={{ backgroundColor: '#FCD116' }}></div>
+   469→              <div className="flex-1" style={{ backgroundColor: '#009460' }}></div>
+   470→            </div>
+   471→            <CardContent className="p-8 text-center">
+   472→              {result.reussi ? (
+   473→                <>
+   474→                  <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#00946015' }}>
+   475→                    <CheckCircle className="w-14 h-14" style={{ color: '#009460' }} />
+   476→                  </div>
+   477→                  <h2 className="text-3xl font-bold mb-2" style={{ color: '#009460' }}>Félicitations !</h2>
+   478→                  <p className="text-gray-500 text-lg mb-6">Vous avez réussi l&apos;examen du code de la route</p>
+   479→                </>
+   480→              ) : (
+   481→                <>
+   482→                  <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#CE112615' }}>
+   483→                    <XCircle className="w-14 h-14" style={{ color: '#CE1126' }} />
+   484→                  </div>
+   485→                  <h2 className="text-3xl font-bold mb-2" style={{ color: '#CE1126' }}>Non réussi</h2>
+   486→                  <p className="text-gray-500 text-lg mb-6">Vous n&apos;avez pas atteint le score requis cette fois-ci</p>
+   487→                </>
+   488→              )}
+   489→
+   490→              <div className="bg-gray-50 rounded-xl p-6 mb-6">
+   491→                <div className="text-5xl font-bold mb-2" style={{ color: result.reussi ? '#009460' : '#CE1126' }}>
+   492→                  {result.score}/{result.totalQuestions}
+   493→                </div>
+   494→                <p className="text-gray-500">Score minimum requis : {passingScore}/{totalQuestions}</p>
+   495→                <Progress value={(result.score / result.totalQuestions) * 100} className="h-3 mt-4" />
+   496→                <div className="mt-3 flex items-center justify-center gap-2">
+   497→                  <Globe className="w-4 h-4 text-gray-400" />
+   498→                  <span className="text-sm text-gray-500">
+   499→                    Langue : Français
+   500→                  </span>
+   501→                </div>
+   502→              </div>
+   503→
+   504→              <div className="text-left mb-6">
+   505→                <h3 className="font-semibold mb-3" style={{ color: '#1A2332' }}>Résultats par catégorie</h3>
+   506→                <div className="space-y-2">
+   507→                  {result.details.map((d, i) => (
+   508→                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+   509→                      <span className="text-sm font-medium">{d.categorie}</span>
+   510→                      <div className="flex items-center gap-2">
+   511→                        <span className="text-sm font-bold" style={{ color: d.correct >= d.total * 0.75 ? '#009460' : '#CE1126' }}>
+   512→                          {d.correct}/{d.total}
+   513→                        </span>
+   514→                        <Progress value={(d.correct / d.total) * 100} className="w-20 h-2" />
+   515→                      </div>
+   516→                    </div>
+   517→                  ))}
+   518→                </div>
+   519→              </div>
+   520→
+   521→              <div className="flex gap-3 justify-center">
+   522→                <Button
+   523→                  className="text-white font-semibold"
+   524→                  style={{ backgroundColor: '#009460' }}
+   525→                  onClick={() => onViewChange('results')}
+   526→                >
+   527→                  Voir les détails
+   528→                </Button>
+   529→                <Button variant="outline" onClick={() => onViewChange('candidate-dashboard')}>
+   530→                  Retour au tableau de bord
+   531→                </Button>
+   532→              </div>
+   533→            </CardContent>
+   534→          </Card>
+   535→        </div>
+   536→      </div>
+   537→    );
+   538→  }
+   539→
+   540→  const q = examQuestions[currentQuestion];
+   541→  if (!q) return null;
+   542→
+   543→  // Language always French — use q directly
+   544→
+   545→  return (
+   546→    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#1A2332' }}>
+   547→      {/* Top Bar */}
+   548→      <div className="bg-white shadow-md px-4 py-3">
+   549→        <div className="max-w-5xl mx-auto flex items-center justify-between">
+   550→          <div className="flex items-center gap-3">
+   551→            <Badge variant="outline" className="font-mono text-xs" style={{ borderColor: '#009460', color: '#009460' }}>
+   552→              {isPractice ? 'ENTRAINEMENT' : 'EXAMEN OFFICIEL'}
+   553→            </Badge>
+   554→            <Badge variant="outline" className="text-xs">
+   555→              {user?.numeroUnique}
+   556→            </Badge>
+   557→            <Badge variant="outline" className="text-xs flex items-center gap-1" style={{ borderColor: '#FCD116', color: '#1A2332' }}>
+   558→              <Globe className="w-3 h-3" />
+   559→              Français
+   560→            </Badge>
+   561→          </div>
+   562→          <div className="flex items-center gap-4">
+   563→            <div className="flex items-center gap-2">
+   564→              <Progress value={progressPercent} className="w-24 h-2" />
+   565→              <span className="text-xs text-gray-500">{answeredCount}/{totalQuestions}</span>
+   566→            </div>
+   567→            <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-mono font-bold ${
+   568→              timeLeft <= 300 ? 'bg-red-100 text-red-700 animate-pulse' : timeLeft <= 600 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100'
+   569→            }`}>
+   570→              <Clock className="w-4 h-4" />
+   571→              {formatTime(timeLeft)}
+   572→            </div>
+   573→          </div>
+   574→        </div>
+   575→      </div>
+   576→
+   577→      {/* Question Area */}
+   578→      <div className="flex-1 flex flex-col overflow-hidden">
+   579→        <div className="flex-1 overflow-y-auto pt-6 pb-4 px-4">
+   580→          <div className="w-full max-w-4xl mx-auto">
+   581→            {/* Question Header */}
+   582→            <div className="flex items-center justify-between mb-4">
+   583→              <div className="flex items-center gap-2">
+   584→                <Badge className="text-white" style={{ backgroundColor: '#009460' }}>
+   585→                  Question {currentQuestion + 1}/{totalQuestions}
+   586→                </Badge>
+   587→                <Badge variant="outline" className="text-xs">{q.categorie}</Badge>
+   588→                <Badge variant="outline" className="text-xs" style={{
+   589→                  borderColor: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#FCD116' : '#CE1126',
+   590→                  color: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#B8960F' : '#CE1126'
+   591→                }}>
+   592→                  {q.difficulte}
+   593→                </Badge>
+   594→              </div>
+   595→              <div className="flex items-center gap-2">
+   596→                {/* TTS compact player for question */}
+   597→                <TTSPlayer
+   598→                  text={`${q.texte}. ${q.options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`}
+   599→                  language={'fr'}
+   600→                  compact
+   601→                  showLanguageBadge={false}
+   602→                />
+   603→                <Button
+   604→                  variant="ghost"
+   605→                  size="sm"
+   606→                  className={flagged[currentQuestion] ? 'text-yellow-500' : 'text-gray-400'}
+   607→                  onClick={() => toggleFlag(currentQuestion)}
+   608→                >
+   609→                  <Flag className="w-4 h-4" />
+   610→                </Button>
+   611→              </div>
+   612→            </div>
+   613→
+   614→            {/* Media Section - Road Sign SVG */}
+   615→            {(q.mediaType === 'sign' || q.mediaType === 'sign+scenario') && q.signImage && (
+   616→              <div className="mb-6">
+   617→                <Card className="border-0 shadow-lg bg-white overflow-hidden">
+   618→                  <CardContent className="p-6">
+   619→                    <div className="flex items-center gap-2 mb-4">
+   620→                      <ImageIcon className="w-4 h-4" style={{ color: '#009460' }} />
+   621→                      <span className="text-sm font-semibold" style={{ color: '#1A2332' }}>Panneau de signalisation</span>
+   622→                    </div>
+   623→                    <div className="flex flex-col sm:flex-row items-center gap-6">
+   624→                      {/* SVG Road Sign */}
+   625→                      <div
+   626→                        className="relative cursor-pointer group"
+   627→                        onClick={() => setShowSignModal(true)}
+   628→                      >
+   629→                        <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-2xl flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-100 shadow-inner transition-transform group-hover:scale-105">
+   630→                          <RoadSignDisplay signImage={q.signImage} size="xl" />
+   631→                        </div>
+   632→                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white/90 rounded-full px-2.5 py-0.5 flex items-center gap-1 shadow-sm border">
+   633→                          <Maximize2 className="w-3 h-3 text-gray-500" />
+   634→                          <span className="text-[10px] text-gray-500">Agrandir</span>
+   635→                        </div>
+   636→                      </div>
+   637→                      {/* Question context next to sign */}
+   638→                      <div className="flex-1 text-center sm:text-left">
+   639→                        <p className="text-sm text-gray-500 italic">Observez ce panneau et répondez à la question ci-dessous</p>
+   640→                        <div className="mt-3 flex items-center gap-2 justify-center sm:justify-start">
+   641→                          <Badge variant="outline" className="text-xs" style={{ borderColor: '#009460', color: '#009460' }}>
+   642→                            {q.categorie}
+   643→                          </Badge>
+   644→                          <Badge variant="outline" className="text-xs" style={{
+   645→                            borderColor: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#FCD116' : '#CE1126',
+   646→                            color: q.difficulte === 'facile' ? '#009460' : q.difficulte === 'moyen' ? '#B8960F' : '#CE1126'
+   647→                          }}>
+   648→                            {q.difficulte}
+   649→                          </Badge>
+   650→                        </div>
+   651→                      </div>
+   652→                    </div>
+   653→                  </CardContent>
+   654→                </Card>
+   655→              </div>
+   656→            )}
+   657→
+   658→            {/* Media Section - Scenario Image */}
+   659→            {(q.mediaType === 'scenario' || q.mediaType === 'sign+scenario') && q.scenarioImage && (
+   660→              <div className="mb-6">
+   661→                <div className="relative group">
+   662→                  <div className="rounded-xl overflow-hidden border-2 border-white/20 shadow-lg cursor-pointer"
+   663→                    onClick={() => setShowScenarioModal(true)}>
+   664→                    <img
+   665→                      src={q.scenarioImage}
+   666→                      alt="Scénario routier"
+   667→                      className="w-full h-48 object-cover"
+   668→                    />
+   669→                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
+   670→                      <span className="text-white text-sm font-medium flex items-center gap-1">
+   671→                        <Eye className="w-4 h-4" /> Voir en grand
+   672→                      </span>
+   673→                    </div>
+   674→                  </div>
+   675→                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#7C3AED' }}>
+   676→                    <Eye className="w-3 h-3 text-white" />
+   677→                  </div>
+   678→                </div>
+   679→              </div>
+   680→            )}
+   681→
+   682→            {/* Video Player */}
+   683→            {q.mediaType === 'video' && (
+   684→              <div className="mb-6">
+   685→                <MockVideoPlayer
+   686→                  thumbnailUrl={q.videoThumbnail || q.scenarioImage}
+   687→                  title="Scénario vidéo — Code de la route"
+   688→                />
+   689→              </div>
+   690→            )}
+   691→
+   692→            {/* TTS Player — French only for now */}
+   693→
+   694→            {/* Question Text */}
+   695→            <Card className="border-0 shadow-lg mb-6">
+   696→              <CardContent className="p-6">
+   697→                <div className="flex items-start gap-3">
+   698→                  <div className="flex-1">
+   699→                    <h2 className="text-lg font-semibold" style={{ color: '#1A2332' }}>
+   700→                      {q.texte}
+   701→                    </h2>
+   702→                  </div>
+   703→                </div>
+   704→              </CardContent>
+   705→            </Card>
+   706→
+   707→            {/* Options */}
+   708→            <div className="grid gap-3">
+   709→              {q.options.map((option, optIndex) => (
+   710→                <button
+   711→                  key={optIndex}
+   712→                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+   713→                    answers[currentQuestion] === optIndex
+   714→                      ? 'border-green-500 bg-green-50 shadow-md'
+   715→                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+   716→                  }`}
+   717→                  onClick={() => handleAnswer(currentQuestion, optIndex)}
+   718→                >
+   719→                  <div className="flex items-center gap-3">
+   720→                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+   721→                      answers[currentQuestion] === optIndex
+   722→                        ? 'bg-green-500 text-white'
+   723→                        : 'bg-gray-100 text-gray-600'
+   724→                    }`}>
+   725→                      {String.fromCharCode(65 + optIndex)}
+   726→                    </div>
+   727→                    <span className={`font-medium flex-1 ${answers[currentQuestion] === optIndex ? 'text-green-700' : ''}`} style={answers[currentQuestion] !== optIndex ? { color: '#1A2332' } : {}}>
+   728→                      {option}
+   729→                    </span>
+   730→                    <Button
+   731→                      variant="ghost"
+   732→                      size="sm"
+   733→                      className="opacity-50 hover:opacity-100"
+   734→                      onClick={(e) => {
+   735→                        e.stopPropagation();
+   736→                        speakText(option);
+   737→                      }}
+   738→                    >
+   739→                      <Volume2 className="w-3.5 h-3.5" />
+   740→                    </Button>
+   741→                  </div>
+   742→                </button>
+   743→              ))}
+   744→            </div>
+   745→          </div>
+   746→        </div>
+   747→
+   748→        {/* Question Navigator */}
+   749→        <div className="bg-white border-t px-4 py-3">
+   750→          <div className="max-w-4xl mx-auto">
+   751→            <div className="flex items-center gap-1 overflow-x-auto pb-1">
+   752→              {Array.from({ length: totalQuestions }, (_, i) => (
+   753→                <button
+   754→                  key={i}
+   755→                  className={`w-8 h-8 rounded-md text-xs font-medium flex-shrink-0 transition-all ${
+   756→                    i === currentQuestion
+   757→                      ? 'ring-2 ring-green-500 text-white'
+   758→                      : flagged[i]
+   759→                      ? 'bg-yellow-100 text-yellow-700'
+   760→                      : answers[i] !== null
+   761→                      ? 'bg-green-100 text-green-700'
+   762→                      : examQuestions[i]?.mediaType === 'sign' || examQuestions[i]?.mediaType === 'scenario' || examQuestions[i]?.mediaType === 'video'
+   763→                      ? 'bg-blue-50 text-blue-600'
+   764→                      : 'bg-gray-100 text-gray-500'
+   765→                  }`}
+   766→                  style={i === currentQuestion ? { backgroundColor: '#009460' } : {}}
+   767→                  onClick={() => setCurrentQuestion(i)}
+   768→                  title={examQuestions[i]?.mediaType !== 'text' ? `Question ${i+1} (avec image)` : `Question ${i+1}`}
+   769→                >
+   770→                  {examQuestions[i]?.mediaType === 'sign' ? <ImageIcon className="w-3.5 h-3.5" /> : examQuestions[i]?.mediaType === 'scenario' ? <Eye className="w-3.5 h-3.5" /> : examQuestions[i]?.mediaType === 'video' ? <Play className="w-3.5 h-3.5" /> : i + 1}
+   771→                </button>
+   772→              ))}
+   773→            </div>
+   774→            <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+   775→              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-green-100"></div> Répondu</span>
+   776→              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-yellow-100"></div> Marqué</span>
+   777→              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-blue-50"></div> Avec média</span>
+   778→            </div>
+   779→          </div>
+   780→        </div>
+   781→
+   782→        {/* Bottom Navigation */}
+   783→        <div className="bg-white border-t px-4 py-4">
+   784→          <div className="max-w-4xl mx-auto flex justify-between items-center">
+   785→            <Button
+   786→              variant="outline"
+   787→              onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
+   788→              disabled={currentQuestion === 0}
+   789→            >
+   790→              <ChevronLeft className="w-4 h-4 mr-1" />
+   791→              Précédent
+   792→            </Button>
+   793→
+   794→            <div className="flex items-center gap-2">
+   795→              <Button
+   796→                variant="ghost"
+   797→                size="sm"
+   798→                className={isSpeaking ? 'text-orange-500' : 'text-gray-400'}
+   799→                onClick={speakCurrentQuestion}
+   800→              >
+   801→                {isSpeaking ? <Pause className="w-4 h-4 mr-1" /> : <Volume2 className="w-4 h-4 mr-1" />}
+   802→                {isSpeaking ? 'Arrêter' : 'Lire'}
+   803→              </Button>
+   804→              <Button
+   805→                className="text-white font-semibold"
+   806→                style={{ backgroundColor: '#CE1126' }}
+   807→                onClick={() => setShowConfirm(true)}
+   808→              >
+   809→                Terminer l&apos;examen
+   810→              </Button>
+   811→            </div>
+   812→
+   813→            <Button
+   814→              variant="outline"
+   815→              onClick={() => setCurrentQuestion(Math.min(totalQuestions - 1, currentQuestion + 1))}
+   816→              disabled={currentQuestion === totalQuestions - 1}
+   817→            >
+   818→              Suivant
+   819→              <ChevronRight className="w-4 h-4 ml-1" />
+   820→            </Button>
+   821→          </div>
+   822→        </div>
+   823→      </div>
+   824→
+   825→      {/* Sign Modal */}
+   826→      {showSignModal && q.signImage && (
+   827→        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowSignModal(false)}>
+   828→          <div className="max-w-lg w-full bg-white rounded-2xl p-6 relative" onClick={e => e.stopPropagation()}>
+   829→            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" onClick={() => setShowSignModal(false)}>
+   830→              <X className="w-5 h-5" />
+   831→            </button>
+   832→            <h3 className="font-semibold mb-4" style={{ color: '#1A2332' }}>Panneau de signalisation</h3>
+   833→            <div className="flex items-center justify-center p-8 bg-gray-50 rounded-xl">
+   834→              <RoadSignDisplay signImage={q.signImage} size="xl" />
+   835→            </div>
+   836→            <p className="text-center mt-4 text-gray-600">{q.explication}</p>
+   837→          </div>
+   838→        </div>
+   839→      )}
+   840→
+   841→      {/* Scenario Modal */}
+   842→      {showScenarioModal && q.scenarioImage && (
+   843→        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowScenarioModal(false)}>
+   844→          <div className="max-w-3xl w-full bg-white rounded-2xl p-6 relative" onClick={e => e.stopPropagation()}>
+   845→            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600" onClick={() => setShowScenarioModal(false)}>
+   846→              <X className="w-5 h-5" />
+   847→            </button>
+   848→            <h3 className="font-semibold mb-4" style={{ color: '#1A2332' }}>Scénario routier</h3>
+   849→            <img src={q.scenarioImage} alt="Scénario" className="w-full rounded-lg object-cover" />
+   850→            <p className="text-center mt-4 text-gray-600">{q.explication}</p>
+   851→          </div>
+   852→        </div>
+   853→      )}
+   854→
+   855→      {/* Submit Confirmation */}
+   856→      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+   857→        <AlertDialogContent>
+   858→          <AlertDialogHeader>
+   859→            <AlertDialogTitle>Terminer l&apos;examen ?</AlertDialogTitle>
+   860→            <AlertDialogDescription>
+   861→              Vous avez répondu à {answeredCount} questions sur {totalQuestions}.
+   862→              {answeredCount < totalQuestions && ` ${totalQuestions - answeredCount} questions sans réponse.`}
+   863→              {flagged.filter(f => f).length > 0 && ` ${flagged.filter(f => f).length} question(s) marquée(s) d'un drapeau.`}
+   864→              <br /><br />
+   865→              Cette action est irréversible.
+   866→            </AlertDialogDescription>
+   867→          </AlertDialogHeader>
+   868→          <AlertDialogFooter>
+   869→            <AlertDialogCancel>Continuer l&apos;examen</AlertDialogCancel>
+   870→            <AlertDialogAction
+   871→              onClick={() => { setShowConfirm(false); submitExam(); }}
+   872→              className="text-white"
+   873→              style={{ backgroundColor: '#CE1126' }}
+   874→            >
+   875→              Confirmer et soumettre
+   876→            </AlertDialogAction>
+   877→          </AlertDialogFooter>
+   878→        </AlertDialogContent>
+   879→      </AlertDialog>
+   880→    </div>
+   881→  );
+   882→}
+   883→
