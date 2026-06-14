@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/lib/auth-context';
 import { categoriesPermis } from '@/lib/mock-data';
 import { UserRole } from '@/lib/types';
-import { Car, Mail, Lock, User, Phone, MapPin, CreditCard, Shield } from 'lucide-react';
+import { Car, Mail, Lock, User, Phone, MapPin, CreditCard, Shield, Loader2 } from 'lucide-react';
 
 interface AuthModalsProps {
   loginOpen: boolean;
@@ -43,7 +43,7 @@ export default function AuthModals({
   onSwitchToLogin,
   onAuthSuccess,
 }: AuthModalsProps) {
-  const { login, register, loginAsAdmin } = useAuth();
+  const { login, register, loginAsAdmin, loading } = useAuth();
 
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
@@ -63,14 +63,19 @@ export default function AuthModals({
   const [regPassword, setRegPassword] = useState('');
   const [regError, setRegError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Admin login state
+  const [showAdminFields, setShowAdminFields] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     if (!loginEmail || !loginPassword) {
       setLoginError('Veuillez remplir tous les champs');
       return;
     }
-    const success = login(loginEmail, loginPassword);
+    const success = await login(loginEmail, loginPassword);
     if (success) {
       onCloseLogin();
       setLoginEmail('');
@@ -81,13 +86,25 @@ export default function AuthModals({
     }
   };
 
-  const handleAdminLogin = () => {
-    loginAsAdmin();
-    onCloseLogin();
-    onAuthSuccess();
+  const handleAdminLogin = async () => {
+    setLoginError('');
+    if (!adminEmail || !adminPassword) {
+      setLoginError('Veuillez entrer les identifiants administrateur');
+      return;
+    }
+    const success = await loginAsAdmin(adminEmail, adminPassword);
+    if (success) {
+      onCloseLogin();
+      setAdminEmail('');
+      setAdminPassword('');
+      setShowAdminFields(false);
+      onAuthSuccess();
+    } else {
+      setLoginError('Accès administrateur refusé. Vérifiez vos identifiants.');
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
 
@@ -96,7 +113,12 @@ export default function AuthModals({
       return;
     }
 
-    const success = register({
+    if (!regPassword || regPassword.length < 6) {
+      setRegError('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    const success = await register({
       nom: regNom,
       prenom: regPrenom,
       dateNaissance: regDateNaissance,
@@ -104,10 +126,11 @@ export default function AuthModals({
       telephone: regTelephone,
       email: regEmail,
       ville: regVille,
-      region: regVille, // Using ville as region for now
+      region: regVille,
       categoriePermis: regCategorie,
       role: regRole,
       langueMaternelle: 'fr',
+      password: regPassword,
     });
 
     if (success) {
@@ -116,7 +139,7 @@ export default function AuthModals({
       setRegTelephone(''); setRegEmail(''); setRegVille(''); setRegCategorie(''); setRegPassword('');
       onAuthSuccess();
     } else {
-      setRegError('Un compte avec cet email existe déjà');
+      setRegError('Un compte avec cet email ou numéro d\'identité existe déjà');
     }
   };
 
@@ -139,75 +162,136 @@ export default function AuthModals({
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="login-email">Email</Label>
+          {!showAdminFields ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="votre@email.gn"
+                    value={loginEmail}
+                    onChange={e => setLoginEmail(e.target.value)}
+                    className="pl-10"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-password">Mot de passe</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="login-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={loginPassword}
+                    onChange={e => setLoginPassword(e.target.value)}
+                    className="pl-10"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {loginError && (
+                <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{loginError}</p>
+              )}
+
+              <Button type="submit" className="w-full text-white font-semibold" style={{ backgroundColor: '#009460' }} disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Se connecter
+              </Button>
+
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="votre@email.gn"
-                  value={loginEmail}
-                  onChange={e => setLoginEmail(e.target.value)}
-                  className="pl-10"
-                />
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-400">ou</span>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="login-password">Mot de passe</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="login-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={loginPassword}
-                  onChange={e => setLoginPassword(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
 
-            {loginError && (
-              <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{loginError}</p>
-            )}
-
-            <Button type="submit" className="w-full text-white font-semibold" style={{ backgroundColor: '#009460' }}>
-              Se connecter
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-400">ou</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full font-semibold"
-              onClick={handleAdminLogin}
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Connexion Administration
-            </Button>
-
-            <p className="text-center text-sm text-gray-500">
-              Pas encore de compte ?{' '}
-              <button
+              <Button
                 type="button"
-                className="font-semibold hover:underline"
-                style={{ color: '#009460' }}
-                onClick={onSwitchToRegister}
+                variant="outline"
+                className="w-full font-semibold"
+                onClick={() => { setShowAdminFields(true); setLoginError(''); }}
               >
-                S&apos;inscrire
-              </button>
-            </p>
-          </form>
+                <Shield className="w-4 h-4 mr-2" />
+                Connexion Administration
+              </Button>
+
+              <p className="text-center text-sm text-gray-500">
+                Pas encore de compte ?{' '}
+                <button
+                  type="button"
+                  className="font-semibold hover:underline"
+                  style={{ color: '#009460' }}
+                  onClick={onSwitchToRegister}
+                >
+                  S&apos;inscrire
+                </button>
+              </p>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-email">Email administrateur</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="admin-email"
+                    type="email"
+                    placeholder="admin@coderoute-gn.org"
+                    value={adminEmail}
+                    onChange={e => setAdminEmail(e.target.value)}
+                    className="pl-10"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-password">Mot de passe</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={adminPassword}
+                    onChange={e => setAdminPassword(e.target.value)}
+                    className="pl-10"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {loginError && (
+                <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{loginError}</p>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => { setShowAdminFields(false); setLoginError(''); }}
+                >
+                  Retour
+                </Button>
+                <Button
+                  className="flex-1 text-white font-semibold"
+                  style={{ backgroundColor: '#009460' }}
+                  onClick={handleAdminLogin}
+                  disabled={loading}
+                >
+                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
+                  Connexion Admin
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -283,10 +367,10 @@ export default function AuthModals({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reg-password">Mot de passe</Label>
+                  <Label htmlFor="reg-password">Mot de passe * (min. 6 caractères)</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input id="reg-password" type="password" placeholder="••••••••" value={regPassword} onChange={e => setRegPassword(e.target.value)} className="pl-10" />
+                    <Input id="reg-password" type="password" placeholder="••••••••" value={regPassword} onChange={e => setRegPassword(e.target.value)} className="pl-10" required />
                   </div>
                 </div>
               </TabsContent>
@@ -328,7 +412,8 @@ export default function AuthModals({
               <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{regError}</p>
             )}
 
-            <Button type="submit" className="w-full text-white font-semibold" style={{ backgroundColor: '#009460' }}>
+            <Button type="submit" className="w-full text-white font-semibold" style={{ backgroundColor: '#009460' }} disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Créer mon compte
             </Button>
 

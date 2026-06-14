@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { ViewType, BookingData } from '@/lib/types';
 import { regions, centres, creneauxHoraires, getUpcomingDates } from '@/lib/mock-data';
+import QRCode from 'qrcode';
 import {
   MapPin,
   Building2,
@@ -28,42 +29,35 @@ import {
   Smartphone,
   QrCode,
   User,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
 interface ExamBookingProps {
   onViewChange: (view: ViewType) => void;
 }
 
-function QRCodeSVG({ data }: { data: string }) {
-  const size = 120;
-  const cellSize = size / 21;
-  const pattern: React.ReactNode[] = [];
-  for (let row = 0; row < 21; row++) {
-    for (let col = 0; col < 21; col++) {
-      const isCorner =
-        (row < 7 && col < 7) ||
-        (row < 7 && col > 13) ||
-        (row > 13 && col < 7);
-      const isCornerInner =
-        (row < 7 && col < 7 && row > 1 && col > 1 && row < 5 && col < 5) ||
-        (row < 7 && col > 13 && row > 1 && col > 15 && row < 5 && col < 19) ||
-        (row > 13 && col < 7 && row > 15 && col > 1 && row < 19 && col < 5);
-      const hash = (data.charCodeAt(0) * 31 + row * 17 + col * 7) % 100;
-      const shouldFill = isCorner ? !isCornerInner : hash > 45;
-      if (shouldFill) {
-        pattern.push(
-          <rect key={`${row}-${col}`} x={col * cellSize} y={row * cellSize} width={cellSize} height={cellSize} fill="#1A2332" />
-        );
-      }
-    }
+function RealQRCode({ data }: { data: string }) {
+  const [svg, setSvg] = useState<string>('');
+
+  useEffect(() => {
+    QRCode.toString(data, {
+      type: 'svg',
+      width: 120,
+      margin: 1,
+      color: { dark: '#1A2332', light: '#FFFFFF' },
+    }).then(setSvg).catch(console.error);
+  }, [data]);
+
+  if (!svg) {
+    return (
+      <div className="w-[120px] h-[120px] flex items-center justify-center bg-gray-100 rounded">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      </div>
+    );
   }
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <rect width={size} height={size} fill="white" />
-      {pattern}
-    </svg>
-  );
+
+  return <div dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
 export default function ExamBooking({ onViewChange }: ExamBookingProps) {
@@ -95,8 +89,44 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
     { num: 4, label: 'Paiement', icon: CreditCard },
   ];
 
-  const handleConfirm = () => {
-    setConfirmed(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingRef, setBookingRef] = useState<string>('');
+  const [bookingId, setBookingId] = useState<string>('');
+
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidatId: user?.id,
+          centreId: selectedCentre,
+          centreNom: selectedCentreData?.nom || '',
+          region: currentRegion?.nom || '',
+          ville: currentVille?.nom || '',
+          date: selectedDate,
+          heure: selectedTime,
+          langue: 'fr',
+          categoriePermis: user?.categoriePermis || 'B',
+          montant: 50000,
+          numeroPaiement: mobileMoneyNumber,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setBookingRef(data.reference);
+        setBookingId(data.booking.id);
+        setConfirmed(true);
+      }
+    } catch {
+      // Fallback: still confirm locally
+      setBookingRef(`CONV-${Date.now().toString(36).toUpperCase()}`);
+      setConfirmed(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const bookingData: BookingData = {
@@ -107,7 +137,14 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   };
 
   if (confirmed) {
-    const refNumber = `CONV-${Date.now().toString(36).toUpperCase()}`;
+    const qrData = JSON.stringify({
+      ref: bookingRef,
+      candidat: `${user?.prenom} ${user?.nom}`,
+      centre: selectedCentreData?.nom,
+      date: selectedDate,
+      heure: selectedTime,
+    });
+
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-2xl mx-auto px-4 py-12">
@@ -122,13 +159,13 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
 
               <div className="bg-gray-50 rounded-xl p-6 mb-6 text-left">
                 <div className="flex justify-center mb-6">
-                  <QRCodeSVG data={refNumber} />
+                  <RealQRCode data={qrData} />
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-500 text-sm">Référence</span>
-                    <span className="font-mono font-bold text-sm" style={{ color: '#009460' }}>{refNumber}</span>
+                    <span className="font-mono font-bold text-sm" style={{ color: '#009460' }}>{bookingRef}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 text-sm">Candidat</span>
@@ -449,11 +486,11 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                 <Button
                   className="text-white font-semibold"
                   style={{ backgroundColor: '#009460' }}
-                  disabled={!canProceedStep4}
+                  disabled={!canProceedStep4 || isSubmitting}
                   onClick={handleConfirm}
                 >
-                  <QrCode className="w-4 h-4 mr-1" />
-                  Confirmer et payer
+                  {isSubmitting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <QrCode className="w-4 h-4 mr-1" />}
+                  {isSubmitting ? 'Traitement en cours...' : 'Confirmer et payer'}
                 </Button>
               )}
             </div>

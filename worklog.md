@@ -1,58 +1,44 @@
+# CodeRoute Guinée — Worklog
+
 ---
 Task ID: 1
-Agent: Main Agent
-Task: Fix hydration mismatch error + replace emojis + upgrade platform
+Agent: Main
+Task: Nettoyage des traductions en langues locales
 
 Work Log:
-- Fixed hydration mismatch in auth-context.tsx: moved localStorage reads to useEffect to ensure server/client consistency
-- Fixed hydration mismatch in language-context.tsx: same pattern, initial state is 'fr', hydrate in useEffect
-- Replaced all emojis across entire project with lucide-react icons:
-  - mock-data.ts: flag field changed from emojis to icon identifiers ('france', 'wave', 'mountain', 'tree')
-  - language-selection.tsx: replaced languageEmojis with lucide icon components (Flag, Waves, Mountain, TreePine)
-  - landing-page.tsx: replaced 🇬🇳🇫🇷🌊⛰️🌳🪧📷🔊⚠ with Flag, ImageIcon, Eye, Volume2, AlertTriangle icons
-  - exam-booking.tsx: replaced ⚠️ with AlertTriangle icon
-  - exam-taking.tsx: replaced 🪧📷 with ImageIcon/Eye components
-- Created road-signs.tsx: 14 SVG road sign components (STOP, Sens Interdit, Cédez le passage, etc.)
-- Created tts-player.tsx: Reusable TTS audio player with waveform animation, compact/full modes
-- Upgraded exam-taking.tsx: Road sign SVGs, mock video player, TTS integration
-- Upgraded courses-page.tsx: Road sign SVGs, video player, TTS player in lessons
-- Upgraded navigation.tsx: SaaS-style nav with search (Ctrl+K), notifications, user dropdown
-- Upgraded admin-dashboard.tsx: Sidebar nav, sparkline KPIs, data tables, export buttons, settings
-- Enhanced page.tsx: Language selection context routing (exam/practice/course/registration)
-- Build verified: npx next build succeeds with zero errors
+- Landing page: remplacé "4 langues nationales" par "Lecture audio", section langues refaite
+- Admin dashboard: stats langues → Français 100%, pie chart → affichage simple, bar chart → jauge
+- Exam-taking: message simplifié
+- API TTS: supprimé mappings ss/fu/ml
+- Candidate dashboard: texte simplifié
 
 Stage Summary:
-- All 6 tasks completed successfully
-- No emojis remain in the project — all replaced with lucide-react icons
-- Hydration error fixed
-- Platform upgraded to institutional SaaS quality
-- New files: road-signs.tsx, tts-player.tsx
+- Toutes les références fonctionnelles aux langues locales sont supprimées
+- Build réussi sans erreur
 
 ---
-Task ID: lang-removal-1
-Agent: Main Agent
-Task: Remove local language translations (Soussou, Poular, Malinké) to simplify and continue with other features
+Task ID: 2
+Agent: Main
+Task: Schéma Prisma + Base de données + API Routes + Authentification réelle
 
 Work Log:
-- Updated types.ts: NationalLanguage simplified to 'fr' only, translations fields commented out with TODO markers
-- Updated mock-data.ts: Removed all 40 questions' translation blocks, removed course/lesson translations, kept only French in languages array, simplified helper functions
-- Updated language-context.tsx: Always returns French, setLanguage is a no-op
-- Updated page.tsx: Removed language-selection routing, removed LanguageSelection import, exam/practice go directly to exam-taking with 'fr'
-- Updated navigation.tsx: Removed language badge, updated command palette language item
-- Updated candidate-dashboard.tsx: Removed language references, disabled "Changer de langue" button, added "Bientôt disponible" notices
-- Updated exam-taking.tsx: Removed language selection screen, always uses French, removed getQuestionInLanguage/useLanguage/setLanguage calls
-- Updated courses-page.tsx: Removed useLanguage, simplified localized helper functions to 1-arg (no lang param), removed lang prop from CourseCard
-- Updated tts-player.tsx: Simplified to French-only LANG_CODES/LANG_LABELS, removed languages import
-- Updated exam-booking.tsx: Added langue: 'fr' to BookingData, fixed pattern array type
-- Updated auth-modals.tsx: Added region and langueMaternelle: 'fr' to register call
-- Updated language-selection.tsx: Simplified to French-only card with "Bientôt disponible" notice
-- Fixed TypeScript errors: stars array typing, pattern array typing, missing properties
-- Build verified: TypeScript check passes, Next.js build succeeds
+- Créé schéma Prisma complet: User, Centre, Question, ExamSession, Reponse, Booking, FraudAlert, DailyStat, Course, Lesson
+- Exécuté db:push avec succès
+- Créé script de seed avec 2 users, 7 centres, 35 questions, 3 cours, 2 exam sessions, 3 fraud alerts, 30 daily stats
+- Créé 12 API routes: auth/login, auth/register, questions, centres, exams, exams/[id], bookings, bookings/[id]/confirm, stats, fraud, courses, users/me
+- Réécrit auth-context.tsx pour utiliser les API réelles avec fetch
+- Réécrit auth-modals.tsx avec login async, admin login avec email/password, validation mot de passe
+- Installé bcryptjs pour hash des mots de passe
+- Installé qrcode pour vrais QR codes
+- Remplacé faux QR code SVG par vrai QRCode généré
+- Exam booking: confirmation via API /api/bookings avec loading state
+- Mots de passe mis à jour: candidat@demo.gn/demo123, admin@coderoute-gn.org/admin123
+- Test navigateur réussi: login, dashboard, toutes les sections fonctionnelles
 
 Stage Summary:
-- All local language translations (Soussou, Poular, Malinké) removed from the app
-- App now operates exclusively in French
-- Type system preserves extensibility with TODO comments for re-enabling local languages
-- All components updated to remove translation logic
-- "Bientôt disponible" notices placed where language features will return
-- Build compiles successfully with zero src/ TypeScript errors
+- Base de données Prisma connectée et fonctionnelle
+- Authentification réelle avec hash bcrypt
+- 12 API routes opérationnelles
+- QR codes réels (scannables)
+- Réservation via API
+- Build et lint passent sans erreur

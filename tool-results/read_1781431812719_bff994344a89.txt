@@ -1,0 +1,380 @@
+     1→import { PrismaClient } from '@prisma/client';
+     2→import { randomUUID } from 'crypto';
+     3→
+     4→const prisma = new PrismaClient();
+     5→
+     6→async function main() {
+     7→  console.log('🌱 Seeding database...');
+     8→
+     9→  // ─── Clean existing data ───────────────────────────
+    10→  await prisma.reponse.deleteMany();
+    11→  await prisma.fraudAlert.deleteMany();
+    12→  await prisma.examSession.deleteMany();
+    13→  await prisma.booking.deleteMany();
+    14→  await prisma.dailyStat.deleteMany();
+    15→  await prisma.lesson.deleteMany();
+    16→  await prisma.course.deleteMany();
+    17→  await prisma.question.deleteMany();
+    18→  await prisma.centre.deleteMany();
+    19→  await prisma.user.deleteMany();
+    20→
+    21→  // ─── Create Admin User ─────────────────────────────
+    22→  const adminUser = await prisma.user.create({
+    23→    data: {
+    24→      email: 'admin@coderoute-gn.org',
+    25→      passwordHash: '$2b$10$placeholder_admin_hash_not_for_production',
+    26→      nom: 'Admin',
+    27→      prenom: 'System',
+    28→      dateNaissance: '1980-01-01',
+    29→      numeroIdentite: 'GN-ADMIN-001',
+    30→      telephone: '+224 620 00 00 00',
+    31→      ville: 'Conakry',
+    32→      region: 'Conakry',
+    33→      categoriePermis: 'B',
+    34→      role: 'super-admin',
+    35→      numeroUnique: 'GN-CODE-2026-000001',
+    36→      langueMaternelle: 'fr',
+    37→    },
+    38→  });
+    39→
+    40→  // ─── Create Demo Candidate ─────────────────────────
+    41→  const candidateUser = await prisma.user.create({
+    42→    data: {
+    43→      email: 'candidat@demo.gn',
+    44→      passwordHash: '$2b$10$placeholder_candidate_hash_not_for_production',
+    45→      nom: 'Diallo',
+    46→      prenom: 'Mamadou',
+    47→      dateNaissance: '1995-03-15',
+    48→      numeroIdentite: 'GN-12345678',
+    49→      telephone: '+224 622 00 00 00',
+    50→      ville: 'Conakry',
+    51→      region: 'Conakry',
+    52→      categoriePermis: 'B',
+    53→      role: 'candidat',
+    54→      numeroUnique: 'GN-CODE-2026-789012',
+    55→      langueMaternelle: 'fr',
+    56→    },
+    57→  });
+    58→
+    59→  // ─── Create Centres ────────────────────────────────
+    60→  const centres = await Promise.all([
+    61→    prisma.centre.create({
+    62→      data: {
+    63→        nom: 'Centre RouteSafe Kaloum',
+    64→        ville: 'Conakry',
+    65→        region: 'Conakry',
+    66→        adresse: 'Avenue de la République, Kaloum',
+    67→        capacite: 50,
+    68→        telephone: '+224 621 00 01 00',
+    69→        email: 'kaloum@routesafe-gn.com',
+    70→        accredDateDebut: '2025-06-01',
+    71→        accredDateFin: '2027-06-01',
+    72→        accredStatut: 'actif',
+    73→        accredScore: 92,
+    74→        equipements: '["Salle informatique", "Projecteur", "Webcam surveillance"]',
+    75→        languesDisponibles: '["fr"]',
+    76→      },
+    77→    }),
+    78→    prisma.centre.create({
+    79→      data: {
+    80→        nom: 'Centre Auto-Plus Dixinn',
+    81→        ville: 'Conakry',
+    82→        region: 'Conakry',
+    83→        adresse: 'Boulevard du Commerce, Dixinn',
+    84→        capacite: 35,
+    85→        telephone: '+224 621 00 02 00',
+    86→        email: 'dixinn@autoplus-gn.com',
+    87→        accredDateDebut: '2025-09-01',
+    88→        accredDateFin: '2027-09-01',
+    89→        accredStatut: 'actif',
+    90→        accredScore: 88,
+    91→        equipements: '["Salle informatique", "Audio"]',
+    92→        languesDisponibles: '["fr"]',
+    93→      },
+    94→    }),
+    95→    prisma.centre.create({
+    96→      data: {
+    97→        nom: 'Centre Permis Express Matam',
+    98→        ville: 'Conakry',
+    99→        region: 'Conakry',
+   100→        adresse: 'Route du Niger, Matam',
+   101→        capacite: 40,
+   102→        telephone: '+224 621 00 03 00',
+   103→        email: 'matam@permisexpress-gn.com',
+   104→        accredDateDebut: '2025-03-01',
+   105→        accredDateFin: '2026-03-01',
+   106→        accredStatut: 'en_renouvellement',
+   107→        accredScore: 75,
+   108→        equipements: '["Salle informatique"]',
+   109→        languesDisponibles: '["fr"]',
+   110→      },
+   111→    }),
+   112→    prisma.centre.create({
+   113→      data: {
+   114→        nom: 'Centre Permis Kankan',
+   115→        ville: 'Kankan',
+   116→        region: 'Kankan',
+   117→        adresse: 'Avenue Sékou Touré, Kankan',
+   118→        capacite: 30,
+   119→        telephone: '+224 621 00 04 00',
+   120→        email: 'kankan@permis-gn.com',
+   121→        accredDateDebut: '2025-01-01',
+   122→        accredDateFin: '2027-01-01',
+   123→        accredStatut: 'actif',
+   124→        accredScore: 85,
+   125→        equipements: '["Salle informatique", "Projecteur"]',
+   126→        languesDisponibles: '["fr"]',
+   127→      },
+   128→    }),
+   129→    prisma.centre.create({
+   130→      data: {
+   131→        nom: 'Centre Routier Nzérékoré',
+   132→        ville: 'Nzérékoré',
+   133→        region: 'Nzérékoré',
+   134→        adresse: 'Route de la Forestière, Nzérékoré',
+   135→        capacite: 25,
+   136→        telephone: '+224 621 00 05 00',
+   137→        email: 'nzerekore@routier-gn.com',
+   138→        accredDateDebut: '2025-04-01',
+   139→        accredDateFin: '2027-04-01',
+   140→        accredStatut: 'actif',
+   141→        accredScore: 80,
+   142→        equipements: '["Salle informatique"]',
+   143→        languesDisponibles: '["fr"]',
+   144→      },
+   145→    }),
+   146→    prisma.centre.create({
+   147→      data: {
+   148→        nom: 'Centre Auto-École Kindia',
+   149→        ville: 'Kindia',
+   150→        region: 'Kindia',
+   151→        adresse: 'Avenue de l\'Indépendance, Kindia',
+   152→        capacite: 20,
+   153→        telephone: '+224 621 00 06 00',
+   154→        email: 'kindia@autoecole-gn.com',
+   155→        accredDateDebut: '2025-07-01',
+   156→        accredDateFin: '2027-07-01',
+   157→        accredStatut: 'actif',
+   158→        accredScore: 78,
+   159→        equipements: '["Salle informatique"]',
+   160→        languesDisponibles: '["fr"]',
+   161→      },
+   162→    }),
+   163→    prisma.centre.create({
+   164→      data: {
+   165→        nom: 'Centre Routier Boké',
+   166→        ville: 'Boké',
+   167→        region: 'Boké',
+   168→        adresse: 'Quartier Centre, Boké',
+   169→        capacite: 20,
+   170→        telephone: '+224 621 00 07 00',
+   171→        email: 'boke@routier-gn.com',
+   172→        accredDateDebut: '2024-12-01',
+   173→        accredDateFin: '2026-12-01',
+   174→        accredStatut: 'actif',
+   175→        accredScore: 72,
+   176→        equipements: '["Salle informatique"]',
+   177→        languesDisponibles: '["fr"]',
+   178→      },
+   179→    }),
+   180→  ]);
+   181→
+   182→  // ─── Create Questions ──────────────────────────────
+   183→  const questionsData = [
+   184→    { texte: "Que signifie ce panneau ?", options: '["Arrêt obligatoire", "Cédez le passage", "Sens interdit", "Priorité à droite"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/stop.png", explication: "Le panneau STOP (octogonal rouge) impose un arrêt absolu avant de continuer.", points: 1, tempsEstime: 20, tags: '["panneau", "stop", "arrêt"]' },
+   185→    { texte: "Que signifie ce panneau ?", options: '["Interdiction", "Obligation", "Indication", "Danger"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/sens-interdit.png", explication: "Un panneau circulaire avec bord rouge indique une interdiction. Ici, sens interdit.", points: 1, tempsEstime: 20, tags: '["panneau", "interdiction", "sens interdit"]' },
+   186→    { texte: "Que signifie ce panneau ?", options: '["Cédez le passage", "Stop", "Priorité à droite", "Sens unique"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/cede-passage.png", explication: "Le triangle inversé blanc avec bord rouge vous impose de céder le passage.", points: 1, tempsEstime: 20, tags: '["panneau", "cédez", "priorité"]' },
+   187→    { texte: "Que signifie ce panneau ?", options: '["Virage dangereux à gauche", "Virage dangereux à droite", "Route sinueuse", "Chicane"]', bonneReponse: 1, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/virage-droit.png", explication: "Le panneau triangulaire signale un virage dangereux à droite.", points: 1, tempsEstime: 20, tags: '["panneau", "danger", "virage"]' },
+   188→    { texte: "Que signifie ce panneau ?", options: '["Vitesse limitée à 50 km/h", "Vitesse minimale 50 km/h", "Vitesse recommandée 50 km/h", "Zone 50"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/vitesse-limitee.png", explication: "Le panneau circulaire avec chiffre indique la vitesse maximale autorisée.", points: 1, tempsEstime: 20, tags: '["panneau", "vitesse", "limitation"]' },
+   189→    { texte: "Que signifie ce panneau ?", options: '["Stationnement interdit", "Arrêt interdit", "Stationnement autorisé", "Zone de livraison"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "moyen", mediaType: "sign", signImage: "/signs/stationnement-interdit.png", explication: "Le panneau rond avec bord rouge barré indique un stationnement interdit.", points: 1, tempsEstime: 25, tags: '["panneau", "stationnement", "interdiction"]' },
+   190→    { texte: "Que signifie ce panneau ?", options: '["Priorité à droite", "Cédez le passage", "Route prioritaire", "Priorité ponctuelle"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "moyen", mediaType: "sign", signImage: "/signs/priorite-droite.png", explication: "Le panneau triangulaire blanc indique que vous devez céder le passage aux véhicules venant de droite.", points: 1, tempsEstime: 25, tags: '["panneau", "priorité", "droite"]' },
+   191→    { texte: "Que signifie ce panneau ?", options: '["Sens obligatoire tout droit", "Sens unique", "Interdiction de tourner", "Route sans issue"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/sens-obligatoire.png", explication: "Le panneau rond bleu avec flèche indique la direction obligatoire.", points: 1, tempsEstime: 20, tags: '["panneau", "obligation", "direction"]' },
+   192→    { texte: "Que signifie ce panneau ?", options: '["Passage piétons", "École", "Zone résidentielle", "Travaux"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/passage-pietons.png", explication: "Le panneau triangulaire signale un passage pour piétons.", points: 1, tempsEstime: 20, tags: '["panneau", "piétons", "passage"]' },
+   193→    { texte: "Que signifie ce panneau ?", options: '["Travaux en cours", "Route barrée", "Déviation", "Chantier interdit"]', bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/travaux.png", explication: "Le panneau triangulaire orange signale des travaux sur la chaussée.", points: 1, tempsEstime: 20, tags: '["panneau", "travaux", "danger"]' },
+   194→    // Priorités
+   195→    { texte: "À une intersection sans panneaux, qui a la priorité ?", options: '["Le véhicule venant de droite", "Le véhicule venant de gauche", "Le véhicule le plus rapide", "Celui qui klaxonne en premier"]', bonneReponse: 0, categorie: "Priorités", difficulte: "moyen", mediaType: "text", explication: "En l'absence de signalisation, la priorité à droite s'applique toujours.", points: 1, tempsEstime: 30, tags: '["priorité", "intersection", "règle"]' },
+   196→    { texte: "Vous arrivez à un rond-point. Qui a la priorité ?", options: '["Les véhicules déjà engagés", "Les véhicules entrant", "Le véhicule le plus gros", "Celui venant de droite"]', bonneReponse: 0, categorie: "Priorités", difficulte: "moyen", mediaType: "text", explication: "Dans un rond-point, les véhicules déjà engagés ont toujours la priorité.", points: 1, tempsEstime: 25, tags: '["priorité", "rond-point", "circulation"]' },
+   197→    { texte: "Un bus sort d'un arrêt. Qui est prioritaire ?", options: '["Le bus", "Vous", "Celui qui va le plus vite", "Le véhicule le plus petit"]', bonneReponse: 0, categorie: "Priorités", difficulte: "moyen", mediaType: "text", explication: "Les bus en manœuvre de sortie d'arrêt ont la priorité.", points: 1, tempsEstime: 25, tags: '["priorité", "bus", "transport"]' },
+   198→    { texte: "Un véhicule d'urgence avec sirène approche. Que faites-vous ?", options: '["Vous serrez à droite et vous arrêtez", "Vous accélérez", "Vous continuez normalement", "Vous vous arrêtez au milieu"]', bonneReponse: 0, categorie: "Priorités", difficulte: "facile", mediaType: "text", explication: "Vous devez faciliter le passage des véhicules d'urgence en serrant à droite.", points: 1, tempsEstime: 20, tags: '["priorité", "urgence", "sécurité"]' },
+   199→    { texte: "À un feu jaune fixe, que devez-vous faire ?", options: '["Vous arrêter sauf si vous ne pouvez pas le faire en sécurité", "Accélérer pour passer", "Ralentir seulement", "Klaxonner"]', bonneReponse: 0, categorie: "Priorités", difficulte: "facile", mediaType: "text", explication: "Le feu jaune impose l'arrêt, sauf si vous êtes trop près pour vous arrêter en sécurité.", points: 1, tempsEstime: 20, tags: '["feu", "priorité", "arrêt"]' },
+   200→    // Sécurité
+   201→    { texte: "Quelle est la vitesse maximale en ville en Guinée ?", options: '["50 km/h", "60 km/h", "40 km/h", "80 km/h"]', bonneReponse: 0, categorie: "Sécurité", difficulte: "facile", mediaType: "text", explication: "La vitesse maximale en agglomération en Guinée est de 50 km/h.", points: 1, tempsEstime: 15, tags: '["vitesse", "ville", "réglementation"]' },
+   202→    { texte: "Le port de la ceinture de sécurité est obligatoire :", options: '["À l\'avant et à l\'arrière", "Seulement à l\'avant", "Seulement sur autoroute", "Jamais obligatoire"]', bonneReponse: 0, categorie: "Sécurité", difficulte: "facile", mediaType: "text", explication: "La ceinture est obligatoire pour tous les passagers, avant et arrière.", points: 1, tempsEstime: 15, tags: '["ceinture", "sécurité", "obligation"]' },
+   203→    { texte: "Quelle est la distance de sécurité minimale sur route mouillée ?", options: '["Le double de la distance normale", "La même distance", "La moitié", "Pas de distance minimale"]', bonneReponse: 0, categorie: "Sécurité", difficulte: "moyen", mediaType: "text", explication: "Sur route mouillée, la distance de sécurité doit être doublée.", points: 1, tempsEstime: 25, tags: '["sécurité", "distance", "route mouillée"]' },
+   204→    { texte: "Que signifie un triangle de présignalisation placé sur la route ?", options: '["Un véhicule en panne ou un accident", "Un parking", "Un arrêt de bus", "Un passage piétons"]', bonneReponse: 0, categorie: "Sécurité", difficulte: "facile", mediaType: "text", explication: "Le triangle de présignalisation signale un danger (panne, accident) sur la route.", points: 1, tempsEstime: 20, tags: '["sécurité", "signalisation", "danger"]' },
+   205→    { texte: "Quand devez-vous utiliser les feux de détresse ?", options: '["En cas de panne ou d\'arrêt d\'urgence", "Pour saluer quelqu\'un", "La nuit en ville", "Quand il pleut"]', bonneReponse: 0, categorie: "Sécurité", difficulte: "facile", mediaType: "text", explication: "Les feux de détresse sont réservés aux situations d'urgence (panne, accident).", points: 1, tempsEstime: 15, tags: '["feux", "détresse", "urgence"]' },
+   206→    { texte: "En cas de crevaison, que devez-vous faire ?", options: '["Tenir le volant fermement et freiner progressivement", "Freiner brusquement", "Accélérer", "Lâcher le volant"]', bonneReponse: 0, categorie: "Sécurité", difficulte: "moyen", mediaType: "text", explication: "En cas de crevaison, tenez fermement le volant et freinez progressivement sans mouvement brusque.", points: 1, tempsEstime: 30, tags: '["sécurité", "crevaison", "conduite"]' },
+   207→    { texte: "Quel est le taux d'alcoolémie maximal autorisé en Guinée ?", options: '["0,5 g/l", "0,8 g/l", "0,2 g/l", "Zéro"]', bonneReponse: 0, categorie: "Sécurité", difficulte: "moyen", mediaType: "text", explication: "Le taux maximal d'alcoolémie autorisé est de 0,5 g par litre de sang.", points: 1, tempsEstime: 20, tags: '["alcool", "sécurité", "réglementation"]' },
+   208→    { texte: "Un enfant de moins de 10 ans peut-il s'asseoir à l'avant ?", options: '["Non, il doit être à l\'arrière avec un dispositif adapté", "Oui, sans condition", "Oui, avec la ceinture", "Seulement sur autoroute"]', bonneReponse: 0, categorie: "Sécurité", difficulte: "facile", mediaType: "text", explication: "Les enfants de moins de 10 ans doivent voyager à l'arrière avec un dispositif de retenue adapté.", points: 1, tempsEstime: 20, tags: '["enfants", "sécurité", "siège auto"]' },
+   209→    // Conduite
+   210→    { texte: "Comment dépassez-vous un cycliste ?", options: '["En laissant au moins 1 mètre de distance latérale", "En le frôlant", "En klaxonnant", "En le dépassant par la droite"]', bonneReponse: 0, categorie: "Conduite", difficulte: "moyen", mediaType: "scenario", scenarioImage: "/scenarios/depassement-cycliste.png", explication: "Vous devez laisser au moins 1 mètre de distance latérale lors du dépassement d'un cycliste.", points: 1, tempsEstime: 30, tags: '["dépassement", "cycliste", "sécurité"]' },
+   211→    { texte: "Avant de changer de voie, vous devez :", options: '["Vérifier les angles morts et mettre le clignotant", "Klaxonner", "Freiner", "Accélérer"]', bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "Avant tout changement de voie, vérifiez les angles morts et actionnez le clignotant.", points: 1, tempsEstime: 20, tags: '["conduite", "changement voie", "sécurité"]' },
+   212→    { texte: "La nuit, un véhicule arrive en face. Que faites-vous ?", options: '["Passer en feux de croisement", "Garder les pleins phares", "Éteindre les feux", "Clignoter"]', bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "Vous devez passer en feux de croisement pour ne pas éblouir le conducteur opposé.", points: 1, tempsEstime: 15, tags: '["feux", "nuit", "conduite"]' },
+   213→    { texte: "Dans un embouteillage, un véhicule cherche à s'insérer. Vous devez :", options: '["Le laisser passer", "Accélérer pour bloquer", "Klaxonner", "Ignorer"]', bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "La courtoisie routière recommande de laisser les véhicules s'insérer en cas d'embouteillage.", points: 1, tempsEstime: 20, tags: '["conduite", "courtoisie", "circulation"]' },
+   214→    { texte: "Vous arrivez sur un accident. Que faites-vous en premier ?", options: '["Sécuriser les lieux et appeler les secours", "Continuer votre chemin", "Prendre des photos", "Toucher les blessés"]', bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "La première action est de sécuriser les lieux (triangle, feux détresse) puis appeler les secours (112).", points: 1, tempsEstime: 25, tags: '["accident", "secours", "sécurité"]' },
+   215→    // Infractions
+   216→    { texte: "Quel est le montant de l'amende pour excès de vitesse en Guinée ?", options: '["Variable selon l\'excès, de 25 000 à 500 000 GNF", "5 000 GNF fixe", "Pas d\'amende", "1 000 000 GNF"]', bonneReponse: 0, categorie: "Infractions", difficulte: "difficile", mediaType: "text", explication: "L'amende pour excès de vitesse varie de 25 000 à 500 000 GNF selon l'importance du dépassement.", points: 2, tempsEstime: 30, tags: '["infraction", "vitesse", "amende"]' },
+   217→    { texte: "Conduire sans permis est puni de :", options: '["Une amende et/ou de l\'emprisonnement", "Un simple avertissement", "Rien", "La confiscation du véhicule seulement"]', bonneReponse: 0, categorie: "Infractions", difficulte: "moyen", mediaType: "text", explication: "La conduite sans permis est un délit passible d'amende et/ou d'emprisonnement.", points: 2, tempsEstime: 25, tags: '["infraction", "permis", "délit"]' },
+   218→    { texte: "Le non-respect d'un feu rouge entraîne :", options: '["Une amende et un retrait de points", "Un avertissement", "Rien si la voie est libre", "La confiscation du véhicule"]', bonneReponse: 0, categorie: "Infractions", difficulte: "facile", mediaType: "text", explication: "Le franchissement d'un feu rouge est passible d'amende et de retrait de points sur le permis.", points: 2, tempsEstime: 20, tags: '["infraction", "feu rouge", "amende"]' },
+   219→    { texte: "Stationner sur un passage piétons est :", options: '["Toujours interdit", "Autorisé la nuit", "Autorisé 5 minutes", "Autorisé si pas de piétons"]', bonneReponse: 0, categorie: "Infractions", difficulte: "facile", mediaType: "text", explication: "Le stationnement sur un passage piétons est toujours interdit.", points: 1, tempsEstime: 15, tags: '["infraction", "stationnement", "piétons"]' },
+   220→    { texte: "Quel document devez-vous obligatoirement avoir en conduisant ?", options: '["Le permis de conduire", "Seulement la carte grise", "Aucun document", "Le reçu d\'assurance suffit"]', bonneReponse: 0, categorie: "Infractions", difficulte: "facile", mediaType: "text", explication: "Le permis de conduire est obligatoire. Vous devez aussi avoir la carte grise et l'assurance.", points: 1, tempsEstime: 15, tags: '["infraction", "documents", "permis"]' },
+   221→    { texte: "L'usage du téléphone au volant est :", options: '["Interdit même avec kit mains libres", "Autorisé avec kit mains libres", "Toujours autorisé", "Interdit seulement en ville"]', bonneReponse: 0, categorie: "Infractions", difficulte: "moyen", mediaType: "text", explication: "L'usage du téléphone au volant est interdit, même avec un kit mains libres peut être dangereux. La loi guinéenne l'interdit.", points: 2, tempsEstime: 25, tags: '["infraction", "téléphone", "sécurité"]' },
+   222→    { texte: "Que se passe-t-il en cas de délit de fuite ?", options: '["Peine de prison et amende", "Simple amende", "Rien si pas de blessé", "Permis suspendu 1 mois"]', bonneReponse: 0, categorie: "Infractions", difficulte: "moyen", mediaType: "text", explication: "Le délit de fuite est un délit grave passible de peine d'emprisonnement et d'amende.", points: 2, tempsEstime: 25, tags: '["infraction", "fuite", "délit"]' },
+   223→  ];
+   224→
+   225→  for (const q of questionsData) {
+   226→    await prisma.question.create({ data: q });
+   227→  }
+   228→
+   229→  // ─── Create Courses ────────────────────────────────
+   230→  const course1 = await prisma.course.create({
+   231→    data: {
+   232→      titre: 'Signalisation routière',
+   233→      description: 'Apprenez à reconnaître et interpréter tous les panneaux de signalisation routière guinéens.',
+   234→      categorie: 'Signalisation',
+   235→      status: 'publie',
+   236→      dureeTotale: 45,
+   237→      nbInscrits: 1234,
+   238→      rating: 4.8,
+   239→      lessons: {
+   240→        create: [
+   241→          { titre: 'Panneaux de danger', description: 'Les triangles rouges qui signalent les dangers.', type: 'sign', contenu: 'Les panneaux de danger ont une forme triangulaire avec un bord rouge. Ils signalent un danger permanent ou temporaire sur la route.', signImage: '/signs/virage-droit.png', duree: 10, ordre: 1 },
+   242→          { titre: 'Panneaux d\'interdiction', description: 'Les cercles rouges qui interdisent certaines actions.', type: 'sign', contenu: 'Les panneaux d\'interdiction sont circulaires avec un bord rouge. Ils indiquent une interdiction.', signImage: '/signs/sens-interdit.png', duree: 10, ordre: 2 },
+   243→          { titre: 'Panneaux d\'obligation', description: 'Les cercles bleus qui imposent une direction.', type: 'sign', contenu: 'Les panneaux d\'obligation sont circulaires et bleus. Ils imposent un comportement.', signImage: '/signs/sens-obligatoire.png', duree: 10, ordre: 3 },
+   244→          { titre: 'Quiz : Signalisation', description: 'Testez vos connaissances sur les panneaux.', type: 'quiz', contenu: 'Identifiez les panneaux et leur signification.', duree: 15, ordre: 4 },
+   245→        ],
+   246→      },
+   247→    },
+   248→  });
+   249→
+   250→  const course2 = await prisma.course.create({
+   251→    data: {
+   252→      titre: 'Priorités et intersections',
+   253→      description: 'Maîtrisez les règles de priorité et de circulation aux intersections.',
+   254→      categorie: 'Priorités',
+   255→      status: 'publie',
+   256→      dureeTotale: 35,
+   257→      nbInscrits: 892,
+   258→      rating: 4.5,
+   259→      lessons: {
+   260→        create: [
+   261→          { titre: 'La priorité à droite', description: 'Règle fondamentale en l\'absence de signalisation.', type: 'text', contenu: 'En l\'absence de signalisation, la priorité à droite s\'applique. Tout véhicule venant de votre droite a la priorité.', duree: 10, ordre: 1 },
+   262→          { titre: 'Les ronds-points', description: 'Comment circuler dans un carrefour giratoire.', type: 'text', contenu: 'Dans un rond-point, les véhicules déjà engagés ont la priorité. Mettez votre clignotant gauche pour entrer, droit pour sortir.', duree: 10, ordre: 2 },
+   263→          { titre: 'Scénario : Intersection complexe', description: 'Analysez une situation réelle d\'intersection.', type: 'sign', contenu: 'Observez le scénario et déterminez qui a la priorité.', scenarioImage: '/scenarios/intersection.png', duree: 15, ordre: 3 },
+   264→        ],
+   265→      },
+   266→    },
+   267→  });
+   268→
+   269→  const course3 = await prisma.course.create({
+   270→    data: {
+   271→      titre: 'Sécurité et conduite responsable',
+   272→      description: 'Les règles essentielles pour conduire en toute sécurité en Guinée.',
+   273→      categorie: 'Sécurité',
+   274→      status: 'publie',
+   275→      dureeTotale: 40,
+   276→      nbInscrits: 1056,
+   277→      rating: 4.7,
+   278→      lessons: {
+   279→        create: [
+   280→          { titre: 'Vitesse et distances', description: 'Les limitations de vitesse et distances de sécurité.', type: 'text', contenu: 'En ville : 50 km/h. Sur route : 90 km/h. Sur autoroute : 110 km/h. Distance de sécurité : au moins 2 secondes.', duree: 10, ordre: 1 },
+   281→          { titre: 'Équipement obligatoire', description: 'Ce que doit avoir votre véhicule.', type: 'text', contenu: 'Triangle de présignalisation, gilet réfléchissant, trousse de premiers secours, roue de secours, extincteur.', duree: 10, ordre: 2 },
+   282→          { titre: 'Conduite par mauvais temps', description: 'Comment adapter sa conduite quand il pleut.', type: 'text', contenu: 'Réduisez votre vitesse, doublez la distance de sécurité, allumez vos feux de croisement.', signImage: '/signs/vitesse-limitee.png', duree: 10, ordre: 3 },
+   283→          { titre: 'Quiz : Sécurité', description: 'Vérifiez vos connaissances en sécurité routière.', type: 'quiz', contenu: 'Questions sur la sécurité et la conduite responsable.', duree: 10, ordre: 4 },
+   284→        ],
+   285→      },
+   286→    },
+   287→  });
+   288→
+   289→  // ─── Create some Exam Sessions for the demo user ───
+   290→  await prisma.examSession.createMany({
+   291→    data: [
+   292→      {
+   293→        candidatId: candidateUser.id,
+   294→        centreId: centres[0].id,
+   295→        centreNom: centres[0].nom,
+   296→        date: '2026-02-15',
+   297→        heure: '09:00',
+   298→        langue: 'fr',
+   299→        statut: 'reussi',
+   300→        score: 38,
+   301→        totalQuestions: 40,
+   302→        dureeEffective: 1650,
+   303→        dateInscription: new Date('2026-02-01'),
+   304→      },
+   305→      {
+   306→        candidatId: candidateUser.id,
+   307→        centreId: centres[1].id,
+   308→        centreNom: centres[1].nom,
+   309→        date: '2026-01-20',
+   310→        heure: '14:00',
+   311→        langue: 'fr',
+   312→        statut: 'echoue',
+   313→        score: 30,
+   314→        totalQuestions: 40,
+   315→        dureeEffective: 1800,
+   316→        dateInscription: new Date('2026-01-10'),
+   317→      },
+   318→    ],
+   319→  });
+   320→
+   321→  // ─── Create sample Fraud Alerts ────────────────────
+   322→  await prisma.fraudAlert.createMany({
+   323→    data: [
+   324→      {
+   325→        type: 'Identité suspecte',
+   326→        description: 'Photo du candidat ne correspond pas à la pièce d\'identité présentée',
+   327→        severity: 'critical',
+   328→        status: 'active',
+   329→        candidatId: candidateUser.id,
+   330→        centreId: centres[0].id,
+   331→      },
+   332→      {
+   333→        type: 'Comportement anormal',
+   334→        description: 'Temps de réponse moyen de 3.2s — seuil normal: 8-15s',
+   335→        severity: 'high',
+   336→        status: 'investigating',
+   337→        centreId: centres[1].id,
+   338→      },
+   339→      {
+   340→        type: 'Double inscription',
+   341→        description: 'Même numéro d\'identité détecté dans deux centres différents',
+   342→        severity: 'critical',
+   343→        status: 'active',
+   344→      },
+   345→    ],
+   346→  });
+   347→
+   348→  // ─── Create Daily Stats (last 30 days) ─────────────
+   349→  const stats = [];
+   350→  for (let i = 30; i >= 1; i--) {
+   351→    const date = new Date(2026, 2, i); // March 2026
+   352→    const dateStr = date.toISOString().split('T')[0];
+   353→    const exams = 100 + Math.floor(Math.random() * 60);
+   354→    const passed = Math.floor(exams * (0.6 + Math.random() * 0.15));
+   355→    stats.push({
+   356→      date: dateStr,
+   357→      exams,
+   358→      passed,
+   359→      failed: exams - passed,
+   360→      cancelled: Math.floor(Math.random() * 5),
+   361→      avgScore: Math.round((60 + Math.random() * 20) * 10) / 10,
+   362→      revenue: exams * 50000,
+   363→    });
+   364→  }
+   365→  await prisma.dailyStat.createMany({ data: stats });
+   366→
+   367→  console.log(`✅ Seed completed!`);
+   368→  console.log(`   - 2 users (admin + candidate)`);
+   369→  console.log(`   - 7 centres`);
+   370→  console.log(`   - ${questionsData.length} questions`);
+   371→  console.log(`   - 3 courses with lessons`);
+   372→  console.log(`   - 2 exam sessions`);
+   373→  console.log(`   - 3 fraud alerts`);
+   374→  console.log(`   - 30 daily stats`);
+   375→}
+   376→
+   377→main()
+   378→  .catch(console.error)
+   379→  .finally(() => prisma.$disconnect());
+   380→

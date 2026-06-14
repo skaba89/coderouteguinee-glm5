@@ -2,23 +2,46 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { User, UserRole, NationalLanguage } from './types';
-import { generateCandidateNumber } from './mock-data';
 
 interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   mounted: boolean;
-  login: (email: string, password: string) => boolean;
-  register: (userData: Omit<User, 'id' | 'numeroUnique'>) => boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (userData: Omit<User, 'id' | 'numeroUnique'> & { password?: string }) => Promise<boolean>;
   logout: () => void;
-  loginAsAdmin: () => void;
+  loginAsAdmin: (email: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Map API user response to our User type
+function mapApiUser(apiUser: Record<string, unknown>): User {
+  return {
+    id: apiUser.id as string,
+    nom: apiUser.nom as string,
+    prenom: apiUser.prenom as string,
+    dateNaissance: apiUser.dateNaissance as string,
+    numeroIdentite: apiUser.numeroIdentite as string,
+    telephone: apiUser.telephone as string,
+    email: apiUser.email as string,
+    ville: apiUser.ville as string,
+    region: apiUser.region as string,
+    categoriePermis: apiUser.categoriePermis as string,
+    role: apiUser.role as UserRole,
+    numeroUnique: apiUser.numeroUnique as string,
+    langueMaternelle: (apiUser.langueMaternelle as NationalLanguage) || 'fr',
+    photo: apiUser.photo as string | undefined,
+    createdAt: apiUser.createdAt as string | undefined,
+    lastLogin: apiUser.updatedAt as string | undefined,
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const isLoggedIn = user !== null;
 
   // Hydrate from localStorage after mount to avoid SSR mismatch
@@ -26,8 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = localStorage.getItem('coderoute_user');
       if (stored) {
-        // Use a microtask to avoid synchronous setState in effect
-        queueMicrotask(() => setUser(JSON.parse(stored)));
+        const parsed = JSON.parse(stored);
+        queueMicrotask(() => setUser(mapApiUser(parsed)));
       }
     } catch {
       localStorage.removeItem('coderoute_user');
@@ -35,55 +58,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queueMicrotask(() => setMounted(true));
   }, []);
 
-  const login = useCallback((email: string, _password: string): boolean => {
-    const stored = localStorage.getItem('coderoute_users');
-    let users: User[] = stored ? JSON.parse(stored) : [];
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    let found = users.find(u => u.email === email);
+      if (!res.ok) return false;
 
-    if (!found) {
-      found = {
-        id: `USR-${Date.now()}`,
-        nom: 'Diallo',
-        prenom: 'Mamadou',
-        dateNaissance: '1995-03-15',
-        numeroIdentite: 'GN-12345678',
-        telephone: '+224 622 00 00 00',
-        email: email,
-        ville: 'Conakry',
-        region: 'Conakry',
-        categoriePermis: 'B',
-        role: 'candidat' as UserRole,
-        numeroUnique: generateCandidateNumber(),
-        langueMaternelle: 'fr' as NationalLanguage
-      };
-      users.push(found);
-      localStorage.setItem('coderoute_users', JSON.stringify(users));
+      const data = await res.json();
+      const mappedUser = mapApiUser(data.user);
+      setUser(mappedUser);
+      localStorage.setItem('coderoute_user', JSON.stringify(data.user));
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setLoading(false);
     }
-
-    setUser(found);
-    localStorage.setItem('coderoute_user', JSON.stringify(found));
-    return true;
   }, []);
 
-  const register = useCallback((userData: Omit<User, 'id' | 'numeroUnique'>): boolean => {
-    const stored = localStorage.getItem('coderoute_users');
-    let users: User[] = stored ? JSON.parse(stored) : [];
+  const register = useCallback(async (userData: Omit<User, 'id' | 'numeroUnique'> & { password?: string }): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
 
-    const exists = users.find(u => u.email === userData.email);
-    if (exists) return false;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error('Registration failed:', data.error);
+        return false;
+      }
 
-    const newUser: User = {
-      ...userData,
-      id: `USR-${Date.now()}`,
-      numeroUnique: generateCandidateNumber()
-    };
-
-    users.push(newUser);
-    localStorage.setItem('coderoute_users', JSON.stringify(users));
-    setUser(newUser);
-    localStorage.setItem('coderoute_user', JSON.stringify(newUser));
-    return true;
+      const data = await res.json();
+      const mappedUser = mapApiUser(data.user);
+      setUser(mappedUser);
+      localStorage.setItem('coderoute_user', JSON.stringify(data.user));
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -91,28 +113,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('coderoute_user');
   }, []);
 
-  const loginAsAdmin = useCallback(() => {
-    const adminUser: User = {
-      id: 'USR-ADMIN',
-      nom: 'Administrateur',
-      prenom: 'Système',
-      dateNaissance: '1980-01-01',
-      numeroIdentite: 'GN-ADMIN-001',
-      telephone: '+224 622 00 00 01',
-      email: 'admin@coderoute.gn',
-      ville: 'Conakry',
-      region: 'Conakry',
-      categoriePermis: 'B',
-      role: 'administration' as UserRole,
-      numeroUnique: 'GN-CODE-ADMIN-001',
-      langueMaternelle: 'fr' as NationalLanguage
-    };
-    setUser(adminUser);
-    localStorage.setItem('coderoute_user', JSON.stringify(adminUser));
-  }, []);
+  const loginAsAdmin = useCallback(async (email: string, password: string): Promise<boolean> => {
+    const success = await login(email, password);
+    if (success && user?.role !== 'administration' && user?.role !== 'super-admin') {
+      // Not an admin - logout and return false
+      logout();
+      return false;
+    }
+    return success;
+  }, [login, user, logout]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, mounted, login, register, logout, loginAsAdmin }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, mounted, loading, login, register, logout, loginAsAdmin }}>
       {children}
     </AuthContext.Provider>
   );
