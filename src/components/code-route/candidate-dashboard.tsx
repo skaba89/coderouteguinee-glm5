@@ -45,6 +45,7 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
   const [examSessions, setExamSessions] = useState<ExamSession[]>([]);
   const [stats, setStats] = useState<CandidateStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState<{ id: string; centreNom: string; date: string; heure: string; statutPaiement: string; confirmee: boolean; numeroConvocation?: string }[]>([]);
 
   const signQuestions = questions.filter(q => q.mediaType === 'sign' || q.mediaType === 'sign+scenario').length;
   const scenarioQuestions = questions.filter(q => q.mediaType === 'scenario' || q.mediaType === 'sign+scenario').length;
@@ -69,6 +70,15 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
           dateInscription: s.dateInscription as string,
         })));
         setStats(data.stats);
+        setBookings((data.bookings || []).map((b: Record<string, unknown>) => ({
+          id: b.id as string,
+          centreNom: b.centreNom as string,
+          date: b.date as string,
+          heure: b.heure as string,
+          statutPaiement: b.statutPaiement as string,
+          confirmee: b.confirmee as boolean,
+          numeroConvocation: b.numeroConvocation as string | undefined,
+        })));
       }
     } catch (error) {
       console.error('Failed to fetch candidate data:', error);
@@ -202,6 +212,50 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
             </Card>
           ))}
         </div>
+
+        {/* Confirmed Bookings with PDF Download */}
+        {bookings.filter(b => b.confirmee || b.statutPaiement === 'confirme').length > 0 && (
+          <Card className="mb-8 border-0 shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2" style={{ color: '#1A2332' }}>
+                <Calendar className="w-5 h-5" style={{ color: '#009460' }} />
+                Vos convocations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {bookings.filter(b => b.confirmee || b.statutPaiement === 'confirme').map(booking => (
+                  <div key={booking.id} className="flex items-center justify-between p-4 bg-green-50/50 rounded-lg border border-green-100">
+                    <div>
+                      <p className="font-medium text-sm" style={{ color: '#1A2332' }}>{booking.centreNom}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(booking.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} a {booking.heure}
+                      </p>
+                      {booking.numeroConvocation && (
+                        <p className="text-[10px] font-mono text-gray-400 mt-0.5">Ref: {booking.numeroConvocation}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-xs">
+                        <CheckCircle className="w-3 h-3 mr-1" />Confirme
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1"
+                        style={{ borderColor: '#009460', color: '#009460' }}
+                        onClick={() => window.open(`/api/convocation/${booking.id}`, '_blank')}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        Telecharger PDF
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Multimedia Features Banner */}
         <Card className="mb-8 border-0 shadow-md overflow-hidden">

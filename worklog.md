@@ -82,3 +82,44 @@ Stage Summary:
 - exam-taking: ✅ Connected to /api/questions with fallback
 - courses-page: ✅ Connected to /api/courses with fallback
 - admin-dashboard: ✅ Connected to /api/admin/stats with full data refresh
+---
+Task ID: 4
+Agent: Main
+Task: Implement remaining features: functional admin actions, role-based views, PDF generation, cleanup
+
+Work Log:
+- Created 8 new API routes for admin CRUD operations:
+  - GET /api/admin/users (list with search/filter/pagination)
+  - PATCH /api/admin/users/[id] (edit role, toggle actif)
+  - PATCH /api/admin/centres/[id] (edit, suspend, reactivate)
+  - PATCH /api/admin/fraud/[id] (investigate, resolve, dismiss with notes)
+  - POST /api/admin/questions (create new question)
+  - PATCH /api/admin/questions/[id] (edit, deactivate)
+  - GET /api/admin/bookings (list with filters)
+  - PATCH /api/admin/bookings/[id] (confirm, reject)
+- Updated middleware.ts to protect /api/admin/* routes
+- Rewrote admin-dashboard.tsx with:
+  - Functional CRUD actions for users (toggle actif, change role)
+  - Centre management (suspend, reactivate, deactivate)
+  - Fraud resolution (investigate, resolve with notes, dismiss)
+  - Bookings management (confirm payment, reject, approve)
+  - CSV export for all data tables
+  - Confirmation modals and notes modal for actions
+  - Role-based sidebar (super-admin sees all tabs, administration sees most, centre-agree sees limited)
+  - Removed mock-data languages import
+- Updated page.tsx for role-based routing (centre-agree also goes to admin dashboard)
+- Added PDF convocation generation using pdfkit:
+  - GET /api/convocation/[id] generates downloadable PDF
+  - PDF includes Guinea flag stripe, candidate info, exam details, payment info, instructions
+  - Added "Telecharger PDF" button in exam-booking confirmed view
+  - Added "Vos convocations" section in candidate dashboard with PDF download buttons
+- Cleanup:
+  - Removed dead language-selection.tsx component (not imported anywhere)
+  - Fixed typo in convocation route (moyainPaiement -> moyenPaiement)
+- All builds pass successfully
+
+Stage Summary:
+- Admin dashboard is now fully functional with real CRUD operations
+- Role-based access control: super-admin, administration, centre-agree see different sidebar items
+- PDF convocation generation is live
+- All 5 remaining features from audit are implemented

@@ -356,6 +356,17 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                 >
                   Retour au tableau de bord
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (bookingId) {
+                      window.open(`/api/convocation/${bookingId}`, '_blank');
+                    }
+                  }}
+                  disabled={!bookingId}
+                >
+                  Telecharger PDF
+                </Button>
                 <Button variant="outline" onClick={() => window.print()}>
                   Imprimer
                 </Button>

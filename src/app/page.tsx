@@ -20,7 +20,7 @@ function AppContent() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [latestResult, setLatestResult] = useState<ExamResult | null>(null);
-  // Language always French for now — local language selection disabled
+  // Language always French for now -- local language selection disabled
   const examLanguage: NationalLanguage = 'fr';
 
   const handleViewChange = useCallback((view: ViewType) => {
@@ -28,7 +28,8 @@ function AppContent() {
   }, []);
 
   const handleAuthSuccess = useCallback(() => {
-    if (user?.role === 'administration') {
+    // Route based on user role
+    if (user?.role === 'administration' || user?.role === 'super-admin' || user?.role === 'centre-agree') {
       setCurrentView('admin-dashboard');
     } else {
       setCurrentView('candidate-dashboard');
@@ -40,6 +41,9 @@ function AppContent() {
   }, []);
 
   const isExamTaking = currentView === 'exam-taking' || currentView === 'practice-test';
+
+  // Determine if current user should see admin views
+  const isAdminRole = user?.role === 'administration' || user?.role === 'super-admin' || user?.role === 'centre-agree';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -82,19 +86,8 @@ function AppContent() {
         {currentView === 'results' && (
           <Results latestResult={latestResult} onViewChange={handleViewChange} />
         )}
-        {currentView === 'admin-dashboard' && (
-          <AdminDashboard />
-        )}
-        {currentView === 'analytics' && (
-          <AdminDashboard />
-        )}
-        {currentView === 'fraud-monitoring' && (
-          <AdminDashboard />
-        )}
-        {currentView === 'center-management' && (
-          <AdminDashboard />
-        )}
-        {currentView === 'settings' && (
+        {/* All admin sub-views render the same AdminDashboard component, which manages its own tabs */}
+        {(currentView === 'admin-dashboard' || currentView === 'analytics' || currentView === 'fraud-monitoring' || currentView === 'center-management' || currentView === 'settings') && (
           <AdminDashboard />
         )}
       </main>

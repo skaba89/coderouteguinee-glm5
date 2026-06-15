@@ -8,10 +8,13 @@ const protectedRoutes = [
   '/api/exams',
   '/api/fraud',
   '/api/courses',
+  '/api/payments',
+  '/api/exams/candidate',
 ]
 
-// Routes that require admin role
+// Routes that require admin role (administration or super-admin)
 const adminRoutes = [
+  '/api/admin',
   '/api/fraud',
 ]
 
@@ -72,5 +75,7 @@ export const config = {
     '/api/bookings/:path*',
     '/api/exams/:path*',
     '/api/fraud/:path*',
+    '/api/admin/:path*',
+    '/api/payments/:path*',
   ],
 }
