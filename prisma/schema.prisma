@@ -280,3 +280,41 @@ model Lesson {
   @@index([courseId])
   @@index([ordre])
 }
+
+// ─── Password Reset Token ──────────────────────────────────
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// ─── Audit Log ─────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  eventType   String   // AUTH_LOGIN | AUTH_LOGIN_FAILED | USER_UPDATE | etc.
+  severity    String   @default("info") // info | warning | critical
+  userId      String?  // Who performed the action
+  userRole    String?  // Role of the user at time of action
+  targetId    String?  // ID of the affected entity
+  targetType  String?  // User | Centre | Booking | Payment | etc.
+  description String   // Human-readable description
+  details     String?  // JSON string for additional context
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+
+  @@index([eventType])
+  @@index([userId])
+  @@index([targetId])
+  @@index([severity])
+  @@index([timestamp])
+}

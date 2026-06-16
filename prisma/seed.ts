@@ -1,10 +1,36 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
 
+// ─── Secure password management ───────────────────────────
+// In production: passwords MUST come from environment variables
+// In development/demo: auto-generated secure passwords are printed once
+function getSeedPassword(envVar: string, role: string): string {
+  const envPassword = process.env[envVar]
+  if (envPassword) {
+    console.log(`  Using password from env ${envVar} for ${role}`)
+    return envPassword
+  }
+  // Generate a secure random password for demo/development
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@'
+  let password = ''
+  const bytes = randomBytes(16)
+  for (let i = 0; i < 12; i++) {
+    password += chars[bytes[i] % chars.length]
+  }
+  // Ensure it meets complexity requirements
+  if (!/[A-Z]/.test(password)) password = 'A' + password.slice(1)
+  if (!/[a-z]/.test(password)) password = password.slice(0, -1) + 'a'
+  if (!/[0-9]/.test(password)) password = password.slice(0, -2) + '3'
+  console.log(`  [DEMO] Generated password for ${role}: ${password}`)
+  console.log(`  [SECURITY] Set env ${envVar} to use a fixed password in production`)
+  return password
+}
+
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Seeding database...');
 
   // ─── Clean existing data ─────────────────────────────────
   console.log('Cleaning existing data...');
@@ -26,7 +52,7 @@ async function main() {
   const adminUser = await prisma.user.create({
     data: {
       email: 'admin@coderoute-gn.org',
-      passwordHash: await bcrypt.hash('Admin@2024', saltRounds),
+      passwordHash: await bcrypt.hash(getSeedPassword('SEED_ADMIN_PASSWORD', 'super-admin'), saltRounds),
       nom: 'Admin',
       prenom: 'System',
       dateNaissance: '1980-01-01',
@@ -45,7 +71,7 @@ async function main() {
   const inspectorUser = await prisma.user.create({
     data: {
       email: 'inspecteur@coderoute-gn.org',
-      passwordHash: await bcrypt.hash('Inspect@2024', saltRounds),
+      passwordHash: await bcrypt.hash(getSeedPassword('SEED_INSPECTOR_PASSWORD', 'administration'), saltRounds),
       nom: 'Camara',
       prenom: 'Ibrahima',
       dateNaissance: '1975-05-15',
@@ -64,7 +90,7 @@ async function main() {
   const centreManagerUser = await prisma.user.create({
     data: {
       email: 'centre@coderoute-gn.org',
-      passwordHash: await bcrypt.hash('Centre@2024', saltRounds),
+      passwordHash: await bcrypt.hash(getSeedPassword('SEED_CENTRE_PASSWORD', 'centre-agree'), saltRounds),
       nom: 'Bah',
       prenom: 'Fatoumata',
       dateNaissance: '1985-03-20',
@@ -83,7 +109,7 @@ async function main() {
   const candidat1 = await prisma.user.create({
     data: {
       email: 'candidat@demo.gn',
-      passwordHash: await bcrypt.hash('Candidat@2024', saltRounds),
+      passwordHash: await bcrypt.hash(getSeedPassword('SEED_CANDIDAT_PASSWORD', 'candidat'), saltRounds),
       nom: 'Diallo',
       prenom: 'Mamadou',
       dateNaissance: '1995-08-10',
@@ -102,7 +128,7 @@ async function main() {
   const candidat2 = await prisma.user.create({
     data: {
       email: 'aicha@demo.gn',
-      passwordHash: await bcrypt.hash('Candidat@2024', saltRounds),
+      passwordHash: await bcrypt.hash(getSeedPassword('SEED_CANDIDAT_PASSWORD', 'candidat'), saltRounds),
       nom: 'Sow',
       prenom: 'Aicha',
       dateNaissance: '1998-02-14',
@@ -121,7 +147,7 @@ async function main() {
   const candidat3 = await prisma.user.create({
     data: {
       email: 'ousmane@demo.gn',
-      passwordHash: await bcrypt.hash('Candidat@2024', saltRounds),
+      passwordHash: await bcrypt.hash(getSeedPassword('SEED_CANDIDAT_PASSWORD', 'candidat'), saltRounds),
       nom: 'Traore',
       prenom: 'Ousmane',
       dateNaissance: '1992-11-30',

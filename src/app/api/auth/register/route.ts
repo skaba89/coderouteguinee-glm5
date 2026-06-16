@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { createSession, setSessionCookie } from '@/lib/session'
+import { validateInput, registerSchema } from '@/lib/validation'
+import { logAudit } from '@/lib/audit-log'
 
 function generateCandidateNumber(): string {
   const year = new Date().getFullYear()
@@ -12,38 +14,20 @@ function generateCandidateNumber(): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const {
-      email,
-      password,
-      nom,
-      prenom,
-      dateNaissance,
-      numeroIdentite,
-      telephone,
-      ville,
-      region,
-      categoriePermis,
-      role,
-    } = body
 
-    // Validate required fields
-    if (!email || !password || !nom || !prenom || !dateNaissance || !numeroIdentite || !telephone) {
+    // Validate input with Zod schema
+    const validation = validateInput(registerSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Veuillez remplir tous les champs obligatoires' },
+        { error: validation.errors.join(', ') },
         { status: 400 }
       )
     }
 
-    // Validate password strength
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Le mot de passe doit contenir au moins 6 caractères' },
-        { status: 400 }
-      )
-    }
+    const data = validation.data
 
     // Check if email already exists
-    const existingUser = await db.user.findUnique({ where: { email } })
+    const existingUser = await db.user.findUnique({ where: { email: data.email.toLowerCase() } })
     if (existingUser) {
       return NextResponse.json(
         { error: 'Un compte avec cet email existe déjà' },
@@ -52,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if numeroIdentite already exists
-    const existingIdentite = await db.user.findUnique({ where: { numeroIdentite } })
+    const existingIdentite = await db.user.findUnique({ where: { numeroIdentite: data.numeroIdentite } })
     if (existingIdentite) {
       return NextResponse.json(
         { error: 'Ce numéro d\'identité est déjà enregistré' },
@@ -62,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Hash password
     const salt = await bcrypt.genSalt(10)
-    const passwordHash = await bcrypt.hash(password, salt)
+    const passwordHash = await bcrypt.hash(data.password, salt)
 
     // Generate unique candidate number
     let numeroUnique = generateCandidateNumber()
@@ -75,17 +59,17 @@ export async function POST(request: NextRequest) {
     // Create user
     const user = await db.user.create({
       data: {
-        email,
+        email: data.email.toLowerCase(),
         passwordHash,
-        nom,
-        prenom,
-        dateNaissance,
-        numeroIdentite,
-        telephone,
-        ville: ville || 'Conakry',
-        region: region || 'Conakry',
-        categoriePermis: categoriePermis || 'B',
-        role: role || 'candidat',
+        nom: data.nom,
+        prenom: data.prenom,
+        dateNaissance: data.dateNaissance,
+        numeroIdentite: data.numeroIdentite,
+        telephone: data.telephone,
+        ville: data.ville,
+        region: data.region,
+        categoriePermis: data.categoriePermis,
+        role: 'candidat', // Always candidat on registration
         numeroUnique,
       },
     })
@@ -99,6 +83,13 @@ export async function POST(request: NextRequest) {
       nom: user.nom,
       prenom: user.prenom,
     })
+
+    // Log registration
+    await logAudit({
+      eventType: 'AUTH_REGISTER',
+      userId: user.id,
+      description: `New candidate registered: ${user.email}`,
+    }, request)
 
     // Return user without passwordHash
     const { passwordHash: _, ...userWithoutPassword } = user

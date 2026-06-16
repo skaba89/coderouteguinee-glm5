@@ -396,7 +396,8 @@ function getSidebarItems(role: string) {
     { id: 'centers', label: 'Centres', icon: Building2, roles: ['super-admin', 'administration'] },
     { id: 'bookings', label: 'Reservations', icon: CalendarCheck, roles: ['super-admin', 'administration'] },
     { id: 'users', label: 'Utilisateurs', icon: UserCog, roles: ['super-admin', 'administration'] },
-    { id: 'settings', label: 'Parametres', icon: Settings, roles: ['super-admin'] },
+    { id: 'audit', label: 'Journal d\'audit', icon: FileSearch, roles: ['super-admin'] },
+    { id: 'settings', label: 'Parametres', icon: Settings, roles: ['super-admin', 'administration'] },
   ];
   return baseItems.filter(item => item.roles.includes(role));
 }
@@ -442,6 +443,22 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   const [bookingsData, setBookingsData] = useState<ApiBooking[]>([]);
   const [bookingsFilter, setBookingsFilter] = useState('');
   const [bookingsLoading, setBookingsLoading] = useState(false);
+
+  // ─── Audit logs state ─────────────────────────────────
+  const [auditLogs, setAuditLogs] = useState<Array<{
+    id: string; eventType: string; severity: string; userId?: string;
+    userRole?: string; description: string; timestamp: string; ipAddress?: string;
+  }>>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditFilter, setAuditFilter] = useState('');
+  const [auditTotal, setAuditTotal] = useState(0);
+
+  // ─── Password change state ────────────────────────────
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
+  const [passwordChangeMessage, setPasswordChangeMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // ─── Action state ─────────────────────────────────────
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void; confirmLabel: string; confirmColor: string }>({
@@ -573,6 +590,58 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
     setBookingsLoading(false);
   }, [bookingsFilter]);
 
+  // ─── Fetch audit logs ────────────────────────────────
+  const fetchAuditLogs = useCallback(async () => {
+    setAuditLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (auditFilter) params.set('eventType', auditFilter);
+      params.set('limit', '100');
+      const res = await fetch(`/api/admin/audit-logs?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAuditLogs(data.logs || []);
+        setAuditTotal(data.total || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch audit logs:', err);
+    }
+    setAuditLoading(false);
+  }, [auditFilter]);
+
+  // ─── Change password ─────────────────────────────────
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmNewPassword) {
+      setPasswordChangeMessage({ type: 'error', text: 'Les mots de passe ne correspondent pas.' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordChangeMessage({ type: 'error', text: 'Le mot de passe doit contenir au moins 8 caracteres.' });
+      return;
+    }
+    setPasswordChangeLoading(true);
+    setPasswordChangeMessage(null);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPasswordChangeMessage({ type: 'success', text: 'Mot de passe modifie avec succes.' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } else {
+        setPasswordChangeMessage({ type: 'error', text: data.error || 'Erreur lors du changement.' });
+      }
+    } catch {
+      setPasswordChangeMessage({ type: 'error', text: 'Erreur de connexion.' });
+    }
+    setPasswordChangeLoading(false);
+  };
+
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
@@ -590,6 +659,10 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   useEffect(() => {
     if (activeTab === 'bookings') fetchBookings();
   }, [activeTab, fetchBookings]);
+
+  useEffect(() => {
+    if (activeTab === 'audit') fetchAuditLogs();
+  }, [activeTab, fetchAuditLogs]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -1827,6 +1900,84 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
               </Card>
             </TabsContent>
 
+            {/* ═══════ TAB: Journal d'audit ═══════ */}
+            <TabsContent value="audit" className="space-y-4">
+              <Card className="border-0 shadow-sm bg-white">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold" style={{ color: COLORS.primaryDark }}>Journal d&apos;audit</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={auditFilter}
+                        onChange={(e) => setAuditFilter(e.target.value)}
+                        className="text-xs border rounded px-2 py-1"
+                      >
+                        <option value="">Tous les evenements</option>
+                        <option value="AUTH_LOGIN">Connexion</option>
+                        <option value="AUTH_LOGIN_FAILED">Echec connexion</option>
+                        <option value="AUTH_REGISTER">Inscription</option>
+                        <option value="AUTH_PASSWORD_RESET_REQUEST">Demande reset MDP</option>
+                        <option value="AUTH_PASSWORD_CHANGE">Changement MDP</option>
+                        <option value="USER_UPDATE">Modification utilisateur</option>
+                        <option value="USER_DEACTIVATE">Desactivation utilisateur</option>
+                        <option value="BOOKING_CONFIRM">Confirmation reservation</option>
+                        <option value="PAYMENT_INITIATE">Paiement initie</option>
+                        <option value="PAYMENT_CONFIRM">Paiement confirme</option>
+                        <option value="FRAUD_INVESTIGATE">Fraude - investigation</option>
+                        <option value="FRAUD_RESOLVE">Fraude - resolue</option>
+                        <option value="RATE_LIMIT_EXCEEDED">Limite de debit depassee</option>
+                        <option value="CSRF_VALIDATION_FAILED">Echec CSRF</option>
+                        <option value="DATA_EXPORT">Export de donnees</option>
+                      </select>
+                      <Button size="sm" variant="outline" onClick={() => fetchAuditLogs()}>
+                        <RefreshCw className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">{auditTotal} entrees au total</p>
+                </CardHeader>
+                <CardContent>
+                  {auditLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    </div>
+                  ) : auditLogs.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-8">Aucune entree d&apos;audit trouvee.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                      {auditLogs.map((log) => (
+                        <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <div className={`mt-0.5 h-2 w-2 rounded-full flex-shrink-0 ${
+                            log.severity === 'critical' ? 'bg-red-500' :
+                            log.severity === 'warning' ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0" style={{
+                                borderColor: log.severity === 'critical' ? COLORS.red : log.severity === 'warning' ? COLORS.yellow : COLORS.green,
+                                color: log.severity === 'critical' ? COLORS.red : log.severity === 'warning' ? '#b8860b' : COLORS.green,
+                              }}>
+                                {log.eventType}
+                              </Badge>
+                              {log.userRole && (
+                                <span className="text-[10px] text-gray-400">{log.userRole}</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-700 mt-1">{log.description}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              {new Date(log.timestamp).toLocaleString('fr-FR')}
+                              {log.ipAddress && ` | IP: ${log.ipAddress}`}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* ═══════ TAB: Parametres ═══════ */}
             <TabsContent value="settings" className="space-y-4">
               <Card className="border-0 shadow-sm bg-white">
@@ -1888,6 +2039,80 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                         </div>
                       </div>
                     </div>
+                    {/* ─── Change Password ─── */}
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2" style={{ color: COLORS.primaryDark }}>Changer votre mot de passe</h3>
+                      <Separator className="mb-4" />
+                      <div className="max-w-md space-y-3">
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Mot de passe actuel</label>
+                          <input
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            className="w-full text-sm border rounded px-3 py-2"
+                            placeholder="Mot de passe actuel"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Nouveau mot de passe</label>
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full text-sm border rounded px-3 py-2"
+                            placeholder="Min. 8 caracteres, 1 majuscule, 1 minuscule, 1 chiffre"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Confirmer le nouveau mot de passe</label>
+                          <input
+                            type="password"
+                            value={confirmNewPassword}
+                            onChange={(e) => setConfirmNewPassword(e.target.value)}
+                            className="w-full text-sm border rounded px-3 py-2"
+                            placeholder="Ressaisir le nouveau mot de passe"
+                          />
+                        </div>
+                        {passwordChangeMessage && (
+                          <p className={`text-xs ${passwordChangeMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                            {passwordChangeMessage.text}
+                          </p>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={handleChangePassword}
+                          disabled={passwordChangeLoading || !currentPassword || !newPassword || !confirmNewPassword}
+                          style={{ backgroundColor: COLORS.green }}
+                          className="text-white"
+                        >
+                          {passwordChangeLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+                          Changer le mot de passe
+                        </Button>
+                      </div>
+                    </div>
+                    {/* ─── Database Backup ─── */}
+                    {userRole === 'super-admin' && (
+                      <div>
+                        <h3 className="text-sm font-semibold mb-2" style={{ color: COLORS.primaryDark }}>Sauvegarde de la base de donnees</h3>
+                        <Separator className="mb-4" />
+                        <p className="text-xs text-gray-500 mb-3">Creer une sauvegarde complete de la base de donnees. Les sauvegardes sont conservees pendant 30 jours.</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch('/api/admin/backup', { method: 'POST' });
+                              const data = await res.json();
+                              alert(res.ok ? 'Sauvegarde creee avec succes.' : data.error || 'Erreur lors de la sauvegarde.');
+                            } catch { alert('Erreur de connexion.'); }
+                          }}
+                        >
+                          <Download className="h-3 w-3 mr-1" />
+                          Creer une sauvegarde
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

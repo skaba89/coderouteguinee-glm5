@@ -123,3 +123,34 @@ Stage Summary:
 - Role-based access control: super-admin, administration, centre-agree see different sidebar items
 - PDF convocation generation is live
 - All 5 remaining features from audit are implemented
+
+---
+Task ID: Phase 1 Security
+Agent: Main Agent
+Task: Implement critical production security corrections (Phase 1)
+
+Work Log:
+- Created CSRF protection system (src/lib/csrf.ts) — Web Crypto API compatible, double-submit cookie pattern
+- Created rate limiting system (src/lib/rate-limit.ts) — In-memory sliding window with presets for auth/payment/admin/general
+- Created audit logging system (src/lib/audit-log.ts) — Prisma-based with AuditLog model, 20+ event types, severity levels
+- Added AuditLog and PasswordResetToken models to Prisma schema
+- Created password reset API (POST + PUT /api/auth/reset-password)
+- Created password change API (POST /api/auth/change-password)
+- Created CSRF token endpoint (GET /api/auth/csrf)
+- Created admin audit logs API (GET /api/admin/audit-logs)
+- Created admin backup API (GET + POST /api/admin/backup)
+- Rewrote middleware.ts with: CSRF validation, rate limiting, security headers (CSP, X-Frame-Options, etc.), session header forwarding
+- Updated login/register routes with Zod validation and audit logging
+- Created centralized input validation (src/lib/validation.ts) with Zod schemas for all API endpoints
+- Secured seed script: passwords now come from env vars or auto-generated (no hardcoded passwords)
+- Updated auth-context.tsx: added CSRF token management, apiFetch helper, password reset/change functions
+- Updated admin dashboard: added Audit tab, Password Change form, Database Backup button
+- Added .env configuration for SESSION_SECRET, CSRF_SECRET, seed passwords
+
+Stage Summary:
+- All 8 critical security features implemented
+- Build passes with 0 errors
+- CSRF: Edge Runtime compatible (Web Crypto API)
+- Rate limiting: 5 preset profiles (auth, payment, admin, general, password-reset)
+- Audit: 20+ event types with auto-severity classification
+- All API routes now use singleton db client (no new PrismaClient())
