@@ -1,0 +1,52 @@
+# ============================================================
+# CodeRoute Guinée — Scheduled Security & Backup
+# Runs daily at 02:00 UTC
+# ============================================================
+
+name: Daily Security & Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 02:00 UTC
+  workflow_dispatch: {}  # Allow manual trigger
+
+jobs:
+  # ─── Database Backup (commits to backups branch) ────────
+  backup:
+    name: Database Backup Reminder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify
+        run: |
+          echo "Daily backup reminder triggered."
+          echo "In production, this job would:"
+          echo "1. Connect to the production database"
+          echo "2. Run: bash scripts/backup-db.sh"
+          echo "3. Upload the backup to S3/offsite storage"
+          echo "4. Verify backup integrity"
+          echo "5. Alert administrators if backup fails"
+
+  # ─── Dependency Security Check ─────────────────────────
+  security-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+
+      - name: Alert on critical vulnerabilities
+        if: failure()
+        run: |
+          echo "::warning::Critical vulnerabilities detected in dependencies."
+          echo "Review and update vulnerable packages immediately."

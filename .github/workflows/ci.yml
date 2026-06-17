@@ -1,0 +1,152 @@
+# ============================================================
+# CodeRoute Guinée — CI/CD Pipeline
+# Runs on push to main/develop and on pull requests
+# ============================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '20'
+  DATABASE_URL: 'file:./db/test.db'
+  SESSION_SECRET: 'ci-test-session-secret-not-for-production'
+  CSRF_SECRET: 'ci-test-csrf-secret-not-for-production'
+
+jobs:
+  # ─── Lint & Type Check ──────────────────────────────────
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: true # Lint warnings shouldn't block the pipeline
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+  # ─── Unit Tests ─────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test database
+        run: |
+          mkdir -p db
+          npx prisma generate
+          npx prisma db push --accept-data-loss
+
+      - name: Run tests
+        run: npm test -- --coverage --passWithNoTests
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # ─── Build ──────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: |
+          npx prisma generate
+
+      - name: Build Next.js
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: .next/
+          retention-days: 3
+
+  # ─── Security Scan ──────────────────────────────────────
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true # Warnings only — don't block pipeline
+
+      - name: Check for hardcoded secrets
+        run: |
+          ! grep -r "Admin@2024\|Candidat@2024\|Inspect@2024\|Centre@2024" --include="*.ts" --include="*.tsx" --include="*.js" src/ prisma/ && echo "No hardcoded passwords found" || (echo "ERROR: Hardcoded passwords detected" && exit 1)
+
+  # ─── Deploy (production only) ───────────────────────────
+  deploy:
+    name: Deploy to Production
+    needs: [build, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://coderoute-gn.org
+    steps:
+      - name: Deploy notification
+        run: |
+          echo "Deploying to production..."
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+          echo "In a real setup, this would deploy to your hosting provider"
+          echo "(Vercel, self-hosted, Docker, etc.)"

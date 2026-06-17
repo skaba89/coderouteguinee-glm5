@@ -1,5 +1,7 @@
 // ============================================================
-// CodeRoute Guinée — Database Schema
+// CodeRoute Guinée — Database Schema (PostgreSQL variant)
+// Identical models to schema.prisma (SQLite) but uses PostgreSQL provider
+// To activate: bash scripts/switch-db.sh postgres
 // ============================================================
 
 generator client {
@@ -7,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -56,9 +58,9 @@ model Centre {
   email       String
   actif       Boolean  @default(true)
   // Accreditation
-  accredDateDebut  String?  // ISO date
-  accredDateFin    String?  // ISO date
-  accredStatut     String   @default("actif") // actif | en_renouvellement | expire | suspendu
+  accredDateDebut  String?
+  accredDateFin    String?
+  accredStatut     String   @default("actif")
   accredScore      Float    @default(80.0)
   // Equipements (JSON string)
   equipements String?
@@ -81,24 +83,23 @@ model Centre {
 model Question {
   id            Int      @id @default(autoincrement())
   texte         String
-  options       String   // JSON string array
+  options       String
   bonneReponse  Int
-  categorie     String   // Signalisation | Priorités | Conduite | Sécurité | Infractions
-  difficulte    String   @default("facile") // facile | moyen | difficile
-  mediaType     String   @default("text") // text | sign | scenario | video | sign+scenario
+  categorie     String
+  difficulte    String   @default("facile")
+  mediaType     String   @default("text")
   signImage     String?
   scenarioImage String?
   videoUrl      String?
   audioFr       String?
   explication   String
   points        Int      @default(1)
-  tempsEstime   Int      @default(20) // seconds
-  tags          String   @default("[]") // JSON string array
+  tempsEstime   Int      @default(20)
+  tags          String   @default("[]")
   actif         Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relation to exam answers
   reponses      Reponse[]
 
   @@index([categorie])
@@ -112,21 +113,19 @@ model ExamSession {
   candidatId      String
   centreId        String
   centreNom       String
-  date            String   // ISO date
-  heure           String   // HH:mm
+  date            String
+  heure           String
   langue          String   @default("fr")
-  statut          String   @default("programme") // programme | en_cours | passe | reussi | echoue | annule
+  statut          String   @default("programme")
   score           Int?
   totalQuestions  Int      @default(40)
-  dureeEffective  Int?     // seconds
+  dureeEffective  Int?
   dateInscription DateTime @default(now())
-  // Anti-fraud
   ipAdresse       String?
   navigateur      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  // Relations
   candidat        User         @relation(fields: [candidatId], references: [id])
   centre          Centre       @relation(fields: [centreId], references: [id])
   reponses        Reponse[]
@@ -138,18 +137,17 @@ model ExamSession {
   @@index([date])
 }
 
-// ─── Reponses (answers per question in an exam) ─────────────
+// ─── Reponses ───────────────────────────────────────────────
 
 model Reponse {
   id            String   @id @default(cuid())
   sessionId     String
   questionId    Int
-  reponseDonnee Int      // index of selected option
+  reponseDonnee Int
   correcte      Boolean
-  tempsReponse  Int?     // seconds taken
+  tempsReponse  Int?
   createdAt     DateTime @default(now())
 
-  // Relations
   session       ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   question      Question    @relation(fields: [questionId], references: [id])
 
@@ -166,24 +164,21 @@ model Booking {
   centreNom       String
   region          String
   ville           String
-  date            String   // ISO date
-  heure           String   // HH:mm
+  date            String
+  heure           String
   langue          String   @default("fr")
   categoriePermis String   @default("B")
-  // Payment
-  montant         Int      @default(50000) // GNF
-  moyenPaiement   String   @default("mobile_money") // mobile_money | cash | carte
-  numeroPaiement  String?  // Mobile Money number
-  referencePaiement String? // Transaction reference
-  statutPaiement  String   @default("en_attente") // en_attente | confirme | echoue | rembourse
-  // Convocation
-  numeroConvocation String? // CONV-XXXXXX
-  qrCodeData      String?  // Data encoded in QR
+  montant         Int      @default(50000)
+  moyenPaiement   String   @default("mobile_money")
+  numeroPaiement  String?
+  referencePaiement String?
+  statutPaiement  String   @default("en_attente")
+  numeroConvocation String?
+  qrCodeData      String?
   confirmee       Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  // Relations
   candidat        User    @relation(fields: [candidatId], references: [id])
   centre          Centre  @relation(fields: [centreId], references: [id])
 
@@ -196,21 +191,20 @@ model Booking {
 
 model FraudAlert {
   id          String   @id @default(cuid())
-  type        String   // Identité suspecte | Comportement anormal | Double inscription | etc.
+  type        String
   description String
-  severity    String   @default("medium") // info | low | medium | high | critical
-  status      String   @default("active") // active | investigating | resolved | dismissed
+  severity    String   @default("medium")
+  status      String   @default("active")
   candidatId  String?
   centreId    String?
   sessionId   String?
   timestamp   DateTime @default(now())
-  details     String?  // JSON string for additional info
+  details     String?
   resolvedAt  DateTime?
-  resolvedBy  String?  // Admin user ID
+  resolvedBy  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
   candidat    User?       @relation("FraudCandidate", fields: [candidatId], references: [id])
   centre      Centre?     @relation("FraudCentre", fields: [centreId], references: [id])
   session     ExamSession? @relation(fields: [sessionId], references: [id])
@@ -220,18 +214,18 @@ model FraudAlert {
   @@index([candidatId])
 }
 
-// ─── Daily Stats (materialized for dashboard) ───────────────
+// ─── Daily Stats ────────────────────────────────────────────
 
 model DailyStat {
   id        String   @id @default(cuid())
-  date      String   @unique // YYYY-MM-DD
+  date      String   @unique
   centreId  String?
   exams     Int      @default(0)
   passed    Int      @default(0)
   failed    Int      @default(0)
   cancelled Int      @default(0)
   avgScore  Float    @default(0)
-  revenue   Int      @default(0) // GNF
+  revenue   Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -246,9 +240,9 @@ model Course {
   titre       String
   description String
   categorie   String
-  status      String   @default("publie") // brouillon | publie | archive
+  status      String   @default("publie")
   imageCover  String?
-  dureeTotale Int      @default(0) // minutes
+  dureeTotale Int      @default(0)
   nbInscrits  Int      @default(0)
   rating      Float    @default(0)
   createdAt   DateTime @default(now())
@@ -265,12 +259,12 @@ model Lesson {
   courseId      String
   titre         String
   description   String
-  type          String   @default("text") // video | sign | text | quiz | interactive
+  type          String   @default("text")
   contenu       String
   mediaUrl      String?
   signImage     String?
   scenarioImage String?
-  duree         Int      @default(5) // minutes
+  duree         Int      @default(5)
   ordre         Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -336,14 +330,14 @@ model NotificationLog {
 
 model AuditLog {
   id          String   @id @default(cuid())
-  eventType   String   // AUTH_LOGIN | AUTH_LOGIN_FAILED | USER_UPDATE | etc.
-  severity    String   @default("info") // info | warning | critical
-  userId      String?  // Who performed the action
-  userRole    String?  // Role of the user at time of action
-  targetId    String?  // ID of the affected entity
-  targetType  String?  // User | Centre | Booking | Payment | etc.
-  description String   // Human-readable description
-  details     String?  // JSON string for additional context
+  eventType   String
+  severity    String   @default("info")
+  userId      String?
+  userRole    String?
+  targetId    String?
+  targetType  String?
+  description String
+  details     String?
   ipAddress   String?
   userAgent   String?
   timestamp   DateTime @default(now())

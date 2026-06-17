@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { createSession, setSessionCookie } from '@/lib/session'
 import { validateInput, loginSchema } from '@/lib/validation'
 import { logAudit } from '@/lib/audit-log'
+import { isTwoFactorEnabled, verifyTwoFactorLogin } from '@/lib/two-factor'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = validation.data
+    const twoFactorCode = body.twoFactorCode // Optional — only required if 2FA is enabled
 
     const user = await db.user.findUnique({ where: { email: email.toLowerCase() } })
 
@@ -59,6 +61,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ─── 2FA verification ──────────────────────────────────
+    const twoFactorEnabled = await isTwoFactorEnabled(user.id)
+    if (twoFactorEnabled) {
+      if (!twoFactorCode) {
+        // Inform client that 2FA is required
+        return NextResponse.json(
+          {
+            error: 'Authentification à deux facteurs requise.',
+            twoFactorRequired: true,
+            userId: user.id,
+          },
+          { status: 200 }
+        )
+      }
+
+      const twoFactorResult = await verifyTwoFactorLogin(user.id, twoFactorCode)
+      if (!twoFactorResult.success) {
+        await logAudit({
+          eventType: 'AUTH_LOGIN_FAILED',
+          severity: 'critical',
+          userId: user.id,
+          description: `2FA verification failed for ${user.email}`,
+        }, request)
+
+        return NextResponse.json(
+          { error: twoFactorResult.error || 'Code 2FA invalide.' },
+          { status: 401 }
+        )
+      }
+    }
+
     // Create JWT session
     const token = await createSession({
       userId: user.id,
@@ -74,7 +107,7 @@ export async function POST(request: NextRequest) {
       eventType: 'AUTH_LOGIN',
       userId: user.id,
       userRole: user.role,
-      description: `User ${user.email} logged in successfully`,
+      description: `User ${user.email} logged in successfully${twoFactorEnabled ? ' (with 2FA)' : ''}`,
     }, request)
 
     // Return user without passwordHash

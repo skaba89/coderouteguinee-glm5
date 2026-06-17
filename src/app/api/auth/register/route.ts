@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { createSession, setSessionCookie } from '@/lib/session'
 import { validateInput, registerSchema } from '@/lib/validation'
 import { logAudit } from '@/lib/audit-log'
+import { sendNotification } from '@/lib/notifications'
 
 function generateCandidateNumber(): string {
   const year = new Date().getFullYear()
@@ -90,6 +91,31 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       description: `New candidate registered: ${user.email}`,
     }, request)
+
+    // Send welcome notification (non-blocking)
+    sendNotification({
+      userId: user.id,
+      channel: 'email',
+      template: 'welcome',
+      recipient: user.email,
+      variables: {
+        prenom: user.prenom,
+        nom: user.nom,
+        numeroUnique: user.numeroUnique,
+        email: user.email,
+      },
+    }).catch(err => console.error('[WELCOME_EMAIL_ERROR]', err))
+
+    sendNotification({
+      userId: user.id,
+      channel: 'sms',
+      template: 'welcome',
+      recipient: user.telephone,
+      variables: {
+        prenom: user.prenom,
+        numeroUnique: user.numeroUnique,
+      },
+    }).catch(err => console.error('[WELCOME_SMS_ERROR]', err))
 
     // Return user without passwordHash
     const { passwordHash: _, ...userWithoutPassword } = user

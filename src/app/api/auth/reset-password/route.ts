@@ -9,6 +9,7 @@ import { db } from '@/lib/db'
 import { hash } from 'bcryptjs'
 import { randomBytes } from 'crypto'
 import { logAudit } from '@/lib/audit-log'
+import { sendNotification } from '@/lib/notifications'
 
 // ─── POST: Request password reset ──────────────────────────
 export async function POST(request: NextRequest) {
@@ -72,6 +73,17 @@ export async function POST(request: NextRequest) {
       description: `Password reset token generated for ${user.email}`,
       details: { method: email ? 'email' : 'sms' },
     }, request)
+
+    // Send notification with the reset code
+    const channel = email ? 'email' : 'sms' as const
+    const recipient = email ? user.email : user.telephone
+    sendNotification({
+      userId: user.id,
+      channel,
+      template: 'password_reset',
+      recipient,
+      variables: { code: resetCode, prenom: user.prenom },
+    }).catch(err => console.error('[PASSWORD_RESET_NOTIFICATION_ERROR]', err))
 
     return NextResponse.json({
       message: 'Si votre compte existe, un code de réinitialisation a été envoyé.',
