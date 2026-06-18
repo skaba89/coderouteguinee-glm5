@@ -10,8 +10,8 @@ const CSRF_SECRET = process.env.CSRF_SECRET || 'coderoute-csrf-secret-change-in-
 const CSRF_COOKIE_NAME = 'coderoute_csrf'
 const CSRF_HEADER_NAME = 'x-csrf-token'
 
-// ─── Convert string to ArrayBuffer ─────────────────────────
-function encoder(str: string): ArrayBuffer {
+// ─── Convert string to Uint8Array (BufferSource-compatible) ─
+function encoder(str: string): Uint8Array {
   return new TextEncoder().encode(str)
 }
 
@@ -19,12 +19,12 @@ function encoder(str: string): ArrayBuffer {
 async function hmacSign(data: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder(secret),
+    encoder(secret) as BufferSource,
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
   )
-  const signature = await crypto.subtle.sign('HMAC', key, encoder(data))
+  const signature = await crypto.subtle.sign('HMAC', key, encoder(data) as BufferSource)
   // Convert ArrayBuffer to hex string
   return Array.from(new Uint8Array(signature))
     .map(b => b.toString(16).padStart(2, '0'))

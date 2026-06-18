@@ -2,7 +2,8 @@ import type { Config } from 'jest'
 
 const config: Config = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: '@edge-runtime/jest-environment',
+  setupFiles: ['<rootDir>/jest.polyfills.ts'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -26,14 +27,6 @@ const config: Config = {
     }],
   },
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
-  // Handle static assets
-  moduleNameMappers: undefined,
-}
-
-// For React component tests, use jsdom
-const reactComponentTests = config.testMatch?.some(p => p.includes('.tsx'))
-if (reactComponentTests) {
-  config.testEnvironment = 'jsdom'
 }
 
 export default config

@@ -107,25 +107,37 @@ export async function GET() {
     })
 
     // ─── Category performance ───────────────────────────────
-    const categoryPerformance = await db.reponse.groupBy({
-      by: ['questionId'],
-      _count: { id: true },
-      _sum: { correcte: true },
-    })
+    // `correcte` is a Boolean, which Prisma cannot `_sum`. So we issue
+    // two `_count` aggregations grouped by questionId: one for all
+    // responses, one filtered to correct responses only.
+    const [totalByQuestion, correctByQuestion] = await Promise.all([
+      db.reponse.groupBy({
+        by: ['questionId'],
+        _count: { id: true },
+      }),
+      db.reponse.groupBy({
+        by: ['questionId'],
+        _count: { id: true },
+        where: { correcte: true },
+      }),
+    ])
 
-    const questionIds = categoryPerformance.map(cp => cp.questionId)
+    const questionIds = totalByQuestion.map(cp => cp.questionId)
     const questions = await db.question.findMany({
       where: { id: { in: questionIds } },
       select: { id: true, categorie: true },
     })
     const questionCategoryMap = Object.fromEntries(questions.map(q => [q.id, q.categorie]))
+    const correctMap = new Map(correctByQuestion.map(cp => [cp.questionId, cp._count.id]))
 
     const categoryScores: Record<string, { total: number; correct: number }> = {}
-    for (const cp of categoryPerformance) {
+    for (const cp of totalByQuestion) {
       const cat = questionCategoryMap[cp.questionId] || 'Autre'
       if (!categoryScores[cat]) categoryScores[cat] = { total: 0, correct: 0 }
-      categoryScores[cat].total += cp._count.id
-      categoryScores[cat].correct += (cp._sum.correcte || 0)
+      const total = cp._count?.id ?? 0
+      const correct = correctMap.get(cp.questionId) ?? 0
+      categoryScores[cat].total += total
+      categoryScores[cat].correct += correct
     }
 
     const categoryData = Object.entries(categoryScores).map(([categorie, data]) => ({

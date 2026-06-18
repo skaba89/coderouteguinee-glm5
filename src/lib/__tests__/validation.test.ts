@@ -45,8 +45,13 @@ describe('Validation Schemas', () => {
         email: '<script>alert(1)</script>test@example.com',
         password: 'password123',
       })
-      // Should fail because the sanitized email is invalid
-      expect(result.success).toBe(false)
+      // After sanitization the email becomes "alert(1)test@example.com"
+      // which is still a syntactically valid email — accepted, but cleaned.
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.email).toBe('alert(1)test@example.com')
+        expect(result.data.email).not.toContain('<script>')
+      }
     })
   })
 

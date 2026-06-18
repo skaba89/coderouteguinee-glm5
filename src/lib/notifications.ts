@@ -231,12 +231,12 @@ export async function sendNotification(req: NotificationRequest): Promise<{ succ
     if (req.channel === 'email') {
       const result = await sendEmail(req.recipient, subject, body)
       success = result.success
-      error = result.error
+      error = result.error ?? null
       provider = result.provider
     } else {
       const result = await sendSms(req.recipient, body)
       success = result.success
-      error = result.error
+      error = result.error ?? null
       provider = result.provider
     }
   } catch (err: any) {

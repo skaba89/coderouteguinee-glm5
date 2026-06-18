@@ -13,6 +13,11 @@ interface RateLimitEntry {
   blockedUntil: number
 }
 
+// Max time to keep a non-blocked entry before garbage collection.
+// Chosen as 2× the longest preset window (passwordReset = 1h) so cleanup
+// never evicts an entry that could still be reused within its window.
+const ENTRY_TTL_MS = 2 * 60 * 60 * 1000 // 2 hours
+
 // ─── Configuration per route category ──────────────────────
 export interface RateLimitConfig {
   windowMs: number      // Time window in milliseconds
@@ -76,7 +81,7 @@ function cleanupStore(): void {
   for (const [key, entry] of store.entries()) {
     if (entry.blocked && now > entry.blockedUntil) {
       store.delete(key)
-    } else if (!entry.blocked && now - entry.windowStart > entry.windowMs * 2) {
+    } else if (!entry.blocked && now - entry.windowStart > ENTRY_TTL_MS) {
       store.delete(key)
     }
   }

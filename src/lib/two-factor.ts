@@ -82,7 +82,7 @@ async function generateTotp(secret: string, timestamp: number = Date.now()): Pro
 
   const key = await crypto.subtle.importKey(
     'raw',
-    base32Decode(secret),
+    base32Decode(secret) as BufferSource,
     { name: 'HMAC', hash: 'SHA-1' },
     false,
     ['sign']

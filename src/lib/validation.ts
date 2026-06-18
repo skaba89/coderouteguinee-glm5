@@ -12,10 +12,13 @@ function sanitizeString(val: string): string {
   return val.replace(/<[^>]*>/g, '').trim()
 }
 
-/** Validate a Guinean phone number */
+/** Validate a Guinean phone number.
+ *  Accepts formats: +224 6XX XX XX XX, 00224 6XX XX XX XX, 6XX XX XX XX
+ *  Guinea mobile numbers are 9 digits starting with 6 (Orange 622/621/620,
+ *  Celcom 623/624/625, MTN 626/627/628). */
 function isValidGuineanPhone(phone: string): boolean {
   const cleaned = phone.replace(/[\s\-()]/g, '')
-  return /^(\+224|00224)?6[2-8]\d{6}$/.test(cleaned)
+  return /^(\+224|00224)?6[2-8]\d{7}$/.test(cleaned)
 }
 
 /** Validate email format */
@@ -194,6 +197,8 @@ export function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): {
   if (result.success) {
     return { success: true, data: result.data }
   }
-  const errors = result.error.errors.map(err => err.message)
+  // Zod v4 exposes `issues`; Zod v3 exposed `errors`. Support both.
+  const issues = (result.error.issues || (result.error as unknown as { errors?: Array<{ message: string }> }).errors || []) as Array<{ message: string }>
+  const errors = issues.map(err => err.message)
   return { success: false, errors }
 }

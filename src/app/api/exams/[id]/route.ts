@@ -30,8 +30,12 @@ export async function PATCH(
       data: updateData,
     })
 
-    // Create individual Reponse records if provided
-    if (reponses && Array.isArray(reponses)) {
+    // Create individual Reponse records if provided.
+    // SQLite does not support `skipDuplicates` in createMany, so we first
+    // delete any existing responses for this session, then insert the new ones
+    // (matching the PATCH semantics of "replace the response set").
+    if (reponses && Array.isArray(reponses) && reponses.length > 0) {
+      await db.reponse.deleteMany({ where: { sessionId: id } })
       await db.reponse.createMany({
         data: reponses.map(
           (r: { questionId: number; reponseDonnee: number; correcte: boolean; tempsReponse?: number }) => ({
@@ -42,7 +46,6 @@ export async function PATCH(
             tempsReponse: r.tempsReponse || null,
           })
         ),
-        skipDuplicates: true,
       })
     }
 
