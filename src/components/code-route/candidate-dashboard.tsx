@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth-context';
+import { TwoFactorSettings } from './two-factor-settings';
 import { ViewType, ExamSession, NationalLanguage } from '@/lib/types';
 import { questions } from '@/lib/mock-data';
 import {
@@ -426,6 +427,9 @@ export default function CandidateDashboard({ onViewChange }: CandidateDashboardP
             </CardContent>
           </Card>
         </div>
+
+        {/* 2FA Settings — protect candidate account */}
+        <TwoFactorSettings />
       </div>
     </div>
   );

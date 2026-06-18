@@ -14,6 +14,8 @@ const protectedRoutes = [
   '/api/payments',
   '/api/exams/candidate',
   '/api/convocation',
+  '/api/auto-ecole',
+  '/api/centre',
 ]
 
 const adminRoutes = [

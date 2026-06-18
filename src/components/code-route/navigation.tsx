@@ -22,6 +22,7 @@ import {
   CommandItem,
 } from '@/components/ui/command';
 import { useAuth } from '@/lib/auth-context';
+import { NotificationsBell } from './notifications-bell';
 import {
   Car,
   LogOut,
@@ -35,7 +36,6 @@ import {
   BarChart3,
   AlertTriangle,
   Search,
-  Bell,
   Settings,
   User,
   ChevronDown,
@@ -57,6 +57,8 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
   const [searchOpen, setSearchOpen] = useState(false);
 
   const isAdmin = user?.role === 'administration' || user?.role === 'super-admin';
+  const isAutoEcole = user?.role === 'auto-ecole';
+  const isCentre = user?.role === 'centre-agree';
   const showNav = isLoggedIn;
 
   const adminNavItems = [
@@ -64,6 +66,14 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
     { view: 'analytics' as ViewType, label: 'Analyses', icon: BarChart3, section: 'principal' },
     { view: 'fraud-monitoring' as ViewType, label: 'Anti-fraude', icon: AlertTriangle, section: 'principal' },
     { view: 'center-management' as ViewType, label: 'Centres', icon: Building2, section: 'principal' },
+  ];
+
+  const autoEcoleNavItems = [
+    { view: 'auto-ecole-dashboard' as ViewType, label: 'Vue d\'ensemble', icon: LayoutDashboard, section: 'principal' },
+  ];
+
+  const centreNavItems = [
+    { view: 'centre-dashboard' as ViewType, label: 'Vue d\'ensemble', icon: LayoutDashboard, section: 'principal' },
   ];
 
   const candidateNavItems = [
@@ -74,7 +84,13 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
     { view: 'results' as ViewType, label: 'Résultats', icon: Shield },
   ];
 
-  const navItems = isAdmin ? adminNavItems : candidateNavItems;
+  const navItems = isAdmin
+    ? adminNavItems
+    : isAutoEcole
+      ? autoEcoleNavItems
+      : isCentre
+        ? centreNavItems
+        : candidateNavItems;
 
   // Keyboard shortcut for search
   useEffect(() => {
@@ -116,7 +132,12 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
               {/* Logo */}
               <div
                 className="flex items-center gap-2 cursor-pointer"
-                onClick={() => onViewChange(isAdmin ? 'admin-dashboard' : 'candidate-dashboard')}
+                onClick={() => onViewChange(
+                  isAdmin ? 'admin-dashboard' :
+                  isAutoEcole ? 'auto-ecole-dashboard' :
+                  isCentre ? 'centre-dashboard' :
+                  'candidate-dashboard'
+                )}
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#009460' }}>
                   <Car className="w-5 h-5 text-white" />
@@ -181,13 +202,10 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
                 <Search className="w-4 h-4" />
               </Button>
 
-              {/* Notifications */}
-              <Button variant="ghost" size="sm" className="relative text-gray-500 hover:text-gray-700">
-                <Bell className="w-4 h-4" />
-                <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-[8px] font-bold text-white flex items-center justify-center" style={{ backgroundColor: '#CE1126' }}>
-                  3
-                </span>
-              </Button>
+              {/* Notifications bell (admin/super-admin only) */}
+              {user && (user.role === 'administration' || user.role === 'super-admin') && (
+                <NotificationsBell />
+              )}
 
               {/* User dropdown */}
               <DropdownMenu>

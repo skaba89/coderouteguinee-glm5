@@ -13,6 +13,8 @@ import ExamTaking from '@/components/code-route/exam-taking';
 import Results from '@/components/code-route/results';
 import AdminDashboard from '@/components/code-route/admin-dashboard';
 import CoursesPage from '@/components/code-route/courses-page';
+import AutoEcoleDashboard from '@/components/code-route/auto-ecole-dashboard';
+import CentreDashboard from '@/components/code-route/centre-dashboard';
 
 function AppContent() {
   const { user, isLoggedIn } = useAuth();
@@ -29,8 +31,12 @@ function AppContent() {
 
   const handleAuthSuccess = useCallback(() => {
     // Route based on user role
-    if (user?.role === 'administration' || user?.role === 'super-admin' || user?.role === 'centre-agree') {
+    if (user?.role === 'administration' || user?.role === 'super-admin') {
       setCurrentView('admin-dashboard');
+    } else if (user?.role === 'centre-agree') {
+      setCurrentView('centre-dashboard');
+    } else if (user?.role === 'auto-ecole') {
+      setCurrentView('auto-ecole-dashboard');
     } else {
       setCurrentView('candidate-dashboard');
     }
@@ -44,6 +50,7 @@ function AppContent() {
 
   // Determine if current user should see admin views
   const isAdminRole = user?.role === 'administration' || user?.role === 'super-admin' || user?.role === 'centre-agree';
+  const isAutoEcole = user?.role === 'auto-ecole';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -89,6 +96,14 @@ function AppContent() {
         {/* All admin sub-views render the same AdminDashboard component, which manages its own tabs */}
         {(currentView === 'admin-dashboard' || currentView === 'analytics' || currentView === 'fraud-monitoring' || currentView === 'center-management' || currentView === 'settings') && (
           <AdminDashboard />
+        )}
+        {/* Auto-ecole dashboard */}
+        {currentView === 'auto-ecole-dashboard' && isAutoEcole && (
+          <AutoEcoleDashboard onViewChange={handleViewChange} />
+        )}
+        {/* Centre-agree dashboard */}
+        {currentView === 'centre-dashboard' && user?.role === 'centre-agree' && (
+          <CentreDashboard onViewChange={handleViewChange} />
         )}
       </main>
 

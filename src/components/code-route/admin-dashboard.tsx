@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ViewType, FraudAlert, FraudSeverity, RegionalStat, Centre, NationalLanguage } from '@/lib/types';
 import { useAuth } from '@/lib/auth-context';
+import { HealthCheckWidget } from './health-check-widget';
+import { TwoFactorSettings } from './two-factor-settings';
 import {
   LineChart,
   Line,
@@ -397,6 +399,7 @@ function getSidebarItems(role: string) {
     { id: 'bookings', label: 'Reservations', icon: CalendarCheck, roles: ['super-admin', 'administration'] },
     { id: 'users', label: 'Utilisateurs', icon: UserCog, roles: ['super-admin', 'administration'] },
     { id: 'audit', label: 'Journal d\'audit', icon: FileSearch, roles: ['super-admin'] },
+    { id: 'system', label: 'Système', icon: Activity, roles: ['super-admin'] },
     { id: 'settings', label: 'Parametres', icon: Settings, roles: ['super-admin', 'administration'] },
   ];
   return baseItems.filter(item => item.roles.includes(role));
@@ -1978,6 +1981,40 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
               </Card>
             </TabsContent>
 
+            {/* ═══════ TAB: Système (super-admin only) ═══════ */}
+            <TabsContent value="system" className="space-y-4">
+              <Card className="border-0 shadow-sm bg-white">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold" style={{ color: COLORS.primaryDark }}>
+                    État du système
+                  </CardTitle>
+                  <CardDescription className="text-sm text-gray-500">
+                    Surveillance en temps réel de la santé de la plateforme (base de données, environnement, secret de session)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <HealthCheckWidget />
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg text-sm text-gray-600 space-y-1">
+                    <div className="font-medium text-gray-700">Informations</div>
+                    <div>• Stack : Next.js 16 + Prisma + SQLite (dev) / PostgreSQL (prod)</div>
+                    <div>• Endpoint : <code className="text-xs bg-white px-1.5 py-0.5 rounded">GET /api/health</code></div>
+                    <div>• L'endpoint poll toutes les 30 secondes automatiquement</div>
+                    <div>
+                      • Voir le JSON complet :{' '}
+                      <a
+                        href="/api/health"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#009460] hover:underline"
+                      >
+                        /api/health
+                      </a>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* ═══════ TAB: Parametres ═══════ */}
             <TabsContent value="settings" className="space-y-4">
               <Card className="border-0 shadow-sm bg-white">
@@ -2091,6 +2128,16 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                         </Button>
                       </div>
                     </div>
+
+                    {/* ─── 2FA Management ─── */}
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2" style={{ color: COLORS.primaryDark }}>
+                        Authentification à deux facteurs (2FA)
+                      </h3>
+                      <Separator className="mb-4" />
+                      <TwoFactorSettings />
+                    </div>
+
                     {/* ─── Database Backup ─── */}
                     {userRole === 'super-admin' && (
                       <div>
