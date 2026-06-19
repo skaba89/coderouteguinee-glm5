@@ -538,3 +538,52 @@ Stage Summary:
 - Flux admin validé en live : login super-admin → PATCH user (CSRF protégé puis succès).
 - Build, lint, tests : tous verts (197 tests, 0 erreur TS, 0 erreur lint, 38 pages build OK).
 - Note : le bouton "Sauvegarde DB" de l'admin retourne 500 car `sqlite3` n'est pas installé en dev — bug pré-existant hors scope.
+
+---
+Task ID: Phase 15 — Fix backup sqlite3 + try/catch API routes + centres DB + test visuel complet
+Agent: Main Agent
+Task: Continuer sur les prochaines étapes après Phase 14 : réparer le bug sqlite3 du backup, auditer les API routes pour d'autres bugs, et tester visuellement le flow complet via agent-browser.
+
+Work Log:
+- **Bug backup sqlite3 manquant** (`scripts/backup-db.sh`) :
+  - Cause : `sqlite3` CLI non installé en dev (`sqlite3: command not found`), seulement `libsqlite3-0`.
+  - Fix : ajout d'un fallback `if command -v sqlite3 >/dev/null 2>&1; then ... else cp ... fi` qui copie directement le fichier DB si sqlite3 est absent. Safe pour dev (pas de transactions concurrentes).
+  - Test live : `bash scripts/backup-db.sh` → "Backup created: ...db (336K)" + gzip 29 KB. `POST /api/admin/backup` → HTTP 200 "Sauvegarde créée avec succès." `GET /api/admin/backup` → liste 2 backups. ✅
+
+- **Audit API routes — 3 routes sans try/catch** :
+  - `src/app/api/centre/bookings/route.ts` (GET + PATCH) : si DB error, retournait 500 brut sans message. Wrappé les 2 handlers dans try/catch avec `console.error('[CENTRE_BOOKINGS_*_ERROR]', error)` + retour JSON `{ error: 'Erreur lors de...' }` 500.
+  - `src/app/api/centre/exam-results/route.ts` (POST) : idem, wrappé dans try/catch.
+  - `src/app/api/auto-ecole/students/route.ts` (POST) : idem, wrappé dans try/catch. Cette route est cruciale (inscription d'étudiants par auto-école) — un bcrypt/db error aurait rendu l'inscription silencieusement cassée.
+  - Tests live : routes toujours fonctionnelles (handle cas nominaux comme avant), maintenant elles retournent un message friendly en cas d'erreur serveur.
+
+- **Bug mismatch centres mock vs DB** (découvert via test visuel) :
+  - Symptôme : `exam-booking.tsx` affichait les centres mock (Centre RouteSafe Kaloum, Auto-Plus Dixinn...) avec IDs `CTR-001` etc., mais l'API `/api/bookings` attend un vrai centreId Prisma (`cmqkxbcrx...`). → `POST /api/bookings` retournait 404 "Centre not found" même si l'utilisateur avait sélectionné un centre dans l'UI.
+  - Fix : `exam-booking.tsx` fetche maintenant `/api/centres` au mount et utilise les vrais centres DB si disponibles (fallback mock si API fail). Mapping du type DB → type local `Centre`. `availableCentres` filtre par région ET ville sur les centres DB (ignore les centres mock liés à `currentVille.centres` quand `dbCentres.length > 0`).
+  - Test live visuel : après reload, l'étape 2 affiche maintenant "Centre d'Examen de Dixinn" et "Centre d'Examen de Kaloum" (vrais centres DB) au lieu de "Centre RouteSafe Kaloum" (mock). ✅
+
+- **Test visuel complet via agent-browser** (candidat@demo.gn) :
+  1. Login → dashboard OK, zéro erreur console
+  2. Onglet "Entraînement" → clic "Commencer l'examen" → Q1 affichée, **zéro erreur d'hydratation** (le fix Phase 13 button-in-button est confirmé en live)
+  3. Clic sur Q8 → scénario image "pont Conakry" affiché, **zéro erreur console**
+  4. Onglet "Réserver" → sélection Conakry/Conakry → étape 2 affiche les **vrais centres DB** (Dixinn, Kaloum)
+  5. Sélection Centre d'Examen de Dixinn → date 20 juin → 09:00 → étape 4 paiement
+  6. Saisie numéro `622 12 34 56` → clic "Payer 50 000 GNF" → **zéro erreur CSRF** (le fix Phase 13 CSRF est confirmé en live)
+  7. Page "Confirmez le paiement" (sandbox pending) → attente 60s → **"Réservation confirmée !"** avec PDF téléchargeable
+  8. PDF convocation validé via curl : HTTP 200, application/pdf, 3.4 KB, PDF v1.7
+  - 4 screenshots dans `/home/z/my-project/download/screenshots/` :
+    - phase14-exam-options.png, phase14-exam-answer.png, phase14-q8-scenario.png
+    - phase14-payment-pending.png, phase14-booking-confirmed.png
+
+- **Vérifications finales statiques** :
+  - `npx tsc --noEmit` → 0 erreur dans `src/`
+  - `npx next build` → ✓ Compiled successfully in 7.8s, 38/38 pages
+  - `npx eslint` sur 6 fichiers touchés → exit 0, 0 erreur, 0 warning
+  - `npx jest --silent` → 197/197 tests OK (9 suites)
+
+Stage Summary:
+- Backup DB admin réparé (fallback file copy quand sqlite3 absent) — `POST /api/admin/backup` retourne maintenant 200 au lieu de 500.
+- 3 API routes (centre/bookings, centre/exam-results, auto-ecole/students) wrappées dans try/catch — fini les 500 bruts sans message en cas d'erreur DB.
+- Bug majeur découvert et corrigé : mismatch centres mock vs DB cassait silencieusement toutes les réservations depuis l'UI (404 "Centre not found"). Maintenant les vrais centres Prisma sont affichés et utilisés.
+- Flow candidat complet validé visuellement via agent-browser : login → entraînement (scénario image, **0 erreur hydratation**) → réservation (vrais centres DB, **0 erreur CSRF**) → paiement sandbox → confirmation auto → PDF convocation.
+- Build, lint, tests : tous verts (197 tests, 0 erreur TS, 0 erreur lint, 38 pages).
+- 5 captures d'écran dans /home/z/my-project/download/screenshots/.

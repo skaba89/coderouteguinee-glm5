@@ -91,6 +91,57 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   const [selectedTime, setSelectedTime] = useState('');
   const [mobileMoneyNumber, setMobileMoneyNumber] = useState('');
 
+  // Real centres fetched from DB (fallback to mock if API fails)
+  const [dbCentres, setDbCentres] = useState<typeof centres>([]);
+
+  useEffect(() => {
+    apiFetch('/api/centres')
+      .then(res => res.ok ? res.json() : [])
+      .then((data: Array<{
+        id: string;
+        nom: string;
+        ville: string;
+        region: string;
+        adresse: string;
+        capacite: number;
+        telephone: string;
+        email: string;
+        actif: boolean;
+        accredStatut?: string;
+        equipements?: string[];
+        languesDisponibles?: string[];
+      }>) => {
+        if (Array.isArray(data) && data.length > 0) {
+          // Map DB centres to the local Centre type
+          const mapped: typeof centres = data
+            .filter(c => c.actif && c.accredStatut !== 'suspendu')
+            .map(c => ({
+              id: c.id,
+              nom: c.nom,
+              ville: c.ville,
+              region: c.region,
+              adresse: c.adresse,
+              capacite: c.capacite,
+              telephone: c.telephone,
+              email: c.email,
+              actif: c.actif,
+              accreditation: {
+                dateDebut: '',
+                dateFin: '',
+                statut: (c.accredStatut === 'actif' || c.accredStatut === 'en_renouvellement' || c.accredStatut === 'expire' || c.accredStatut === 'suspendu' ? c.accredStatut : 'actif'),
+                scoreQualite: 0,
+              },
+              equipements: c.equipements || [],
+              languesDisponibles: ['fr'],
+            }));
+          setDbCentres(mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback to mock centres if API fails
+      });
+  }, [apiFetch]);
+
   // Payment state
   const [paymentStep, setPaymentStep] = useState<PaymentStep>('idle');
   const [paymentError, setPaymentError] = useState('');
@@ -101,8 +152,12 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   const availableDates = getUpcomingDates();
   const currentRegion = regions.find(r => r.id === selectedRegion);
   const currentVille = currentRegion?.villes.find(v => v.id === selectedVille);
-  const availableCentres = currentVille?.centres || centres.filter(c => c.region === (currentRegion?.nom || ''));
-  const selectedCentreData = centres.find(c => c.id === selectedCentre);
+  // Use DB centres if loaded, otherwise fallback to mock centres (currentVille.centres)
+  const allCentres = dbCentres.length > 0 ? dbCentres : centres;
+  const availableCentres = dbCentres.length > 0
+    ? allCentres.filter(c => c.region === (currentRegion?.nom || '') && c.ville === (currentVille?.nom || ''))
+    : (currentVille?.centres || allCentres.filter(c => c.region === (currentRegion?.nom || '')));
+  const selectedCentreData = allCentres.find(c => c.id === selectedCentre);
 
   const canProceedStep1 = selectedRegion && selectedVille;
   const canProceedStep2 = selectedCentre;
