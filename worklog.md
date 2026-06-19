@@ -367,3 +367,93 @@ Stage Summary:
 - 2 suites de tests restaurées (session + mobile-money), 3 suites pré-existantes re-corrigées pour le typing Prisma strict.
 - 197 tests, 0 erreur TS, 0 erreur lint, build OK.
 - Le flow complet candidat marche : login → dashboard → cours → réservation → paiement Mobile Money → PDF convocation → entraînement → résultats.
+
+---
+Task ID: Phase 12 — Images et vidéos sur cours et examens (style apps françaises)
+Agent: Main Agent
+Task: L'utilisateur a demandé d'ajouter des images et des vidéos sur les cours et examens comme ce qui se fait de mieux sur les applications d'examen en France (Ornikal, Code Rousseau, En Voiture Simone), adapté au contexte guinéen.
+
+Work Log:
+- Exploration du codebase : schema Prisma supporte déjà `signImage`, `scenarioImage`, `videoUrl`, `audioFr` pour les questions et `imageCover`, `mediaUrl`, `signImage`, `scenarioImage` pour les lessons/courses. Mais peu utilisés : seulement 3 scenarios dans /public/scenarios/ (depassement, intersection-conakry, passage-pietons-approche) et 0 vidéo réelle. `MockVideoPlayer` était un faux lecteur (animation sans vraie vidéo).
+- Génération de 12 nouvelles images scénario (1344x768) via `z-ai image` CLI :
+  - intersection-kaloum.png, rond-point-kankan.png, passage-pietons-marche.png
+  - zone-scolaire-dixinn.png, route-nationale-depassement.png, conduite-nuit-conakry.png
+  - route-pluie.png, peage-rn1.png, pont-tombo.png
+  - zone-marche-pietons.png, route-rurale-animaux.png, carrefour-feux.png
+  - Total : 1.6 Mo dans /public/scenarios/
+- Génération de 3 couvertures de cours (1344x768) : cover-signalisation.png, cover-priorites.png, cover-securite.png dans /public/courses/
+- Création de 8 vidéos MP4 H.264 (1280x720, 12s, 600-850 Ko chacune) avec effet Ken Burns (zoom-in lent + pan vertical) via ffmpeg + zoompan filter :
+  - scenario-intersection.mp4, scenario-rond-point.mp4, scenario-pietons.mp4
+  - scenario-depassement.mp4, scenario-nuit.mp4, scenario-pluie.mp4
+  - scenario-ecole.mp4, scenario-feux.mp4
+  - Total : 5.4 Mo dans /public/videos/
+  - Toutes avec `Accept-Ranges: bytes` (streaming HTTP supporté), libx264 preset fast CRF 28, +faststart pour streaming web
+- Mise à jour de `prisma/seed.ts` :
+  - Ajout de 12 nouvelles questions "scenario" (photo) avec `scenarioImage` — situations réelles : intersection Kaloum, rond-point Kankan, marché Conakry, route nationale, nuit Conakry, pluie, école Dixinn, feu orange, péage RN1, pont Tombo, marché piétons, animaux route rurale
+  - Ajout de 6 nouvelles questions "video" avec `videoUrl` + `scenarioImage` (poster) — séquences animées Ornikal-style
+  - Update de `prisma.question.create` pour passer `scenarioImage` et `videoUrl` (n'étaient pas propagés avant)
+  - Update des 3 cours avec `imageCover` réel (couverture photo, pas juste SVG)
+  - Enrichissement des lessons : lesson "sign" a maintenant `signImage` (SVG), lesson "video" a `mediaUrl` (MP4) + `scenarioImage` (poster), lesson "interactive" a `scenarioImage` (photo réelle)
+  - Total questions : 59 (avant 41) — 12 scenario + 6 video + 9 sign + 32 text
+  - Total lessons avec media : 11/17 (avant 0/13)
+- Création de `src/components/code-route/video-player.tsx` (nouveau composant) :
+  - Vrai lecteur HTML5 `<video>` avec source MP4 + poster PNG
+  - Contrôles custom : play/pause, mute, fullscreen, restart, seek (click sur progress bar)
+  - Badge rouge "SCÉNARIO VIDÉO" en haut à gauche
+  - Format temps (m:ss), auto-hide des contrôles après 3s
+  - Hint "Cliquez sur la vidéo pour la lire" avant première lecture
+  - Couleurs accent guinéennes (rouge/jaune/vert) sur la progress bar
+- Mise à jour de `src/components/code-route/exam-taking.tsx` :
+  - Suppression de `MockVideoPlayer` (118 lignes de faux lecteur)
+  - Import du nouveau `VideoPlayer`
+  - Remplacement du rendu vidéo : `<VideoPlayer src={q.videoUrl} poster={q.scenarioImage} title="Scénario vidéo — Code de la route" />`
+  - Ajout d'un hint "Regardez attentivement la séquence vidéo avant de répondre"
+- Mise à jour de `src/components/code-route/courses-page.tsx` :
+  - Import du nouveau `VideoPlayer`
+  - Lesson "video" avec `mediaUrl` → rend `<VideoPlayer src={mediaUrl} poster={scenarioImage} title={titre} />`
+  - Lesson "video" sans `mediaUrl` → fallback "Vidéo non disponible"
+  - Lesson "interactive" avec `scenarioImage` → rend la photo réelle avec badge "SITUATION RÉELLE" violet
+  - Suppression du vieux placeholder "Scénario interactif" qui affichait juste `{lesson.scenarioImage}` (le nom du fichier !)
+  - CourseCard : si `imageCover` existe (vraie photo), rend `<img>` ; sinon fallback SVG sign ; ajout d'un gradient sombre sur la photo pour la lisibilité
+- Re-seed de la DB :
+  - `npx prisma db push --skip-generate` + `npx tsx prisma/seed.ts`
+  - Vérifié : 59 questions (12 scenario + 6 video + 9 sign + 32 text), 3 cours avec couverture, 17 lessons dont 11 avec média
+- Vérifications finales RÉELLES :
+  - `npx tsc --noEmit` → 0 erreur dans `src/`
+  - `npx next build` → ✓ Compiled successfully, 38 pages, 0 erreur/warning
+  - `npx jest --silent` → 197/197 tests passent (9 suites, inchangé)
+  - `npx eslint` sur 4 fichiers touchés → 0 erreur, 0 warning
+- Tests live via curl (candidat@demo.gn connecté) :
+  - `GET /api/questions?random=true&count=5` → renvoie questions avec scenarioImage + videoUrl correctement peuplés ✅
+  - `GET /api/courses` (auth) → 3 cours avec imageCover, 17 lessons dont 11 avec media ✅
+  - `HEAD /videos/scenario-pietons.mp4` → `Accept-Ranges: bytes`, `Content-Type: video/mp4`, 677 Ko ✅
+  - `HEAD /scenarios/intersection-kaloum.png` → `image/png`, 145 Ko ✅
+  - `HEAD /courses/cover-signalisation.png` → `image/png`, 132 Ko ✅
+- Tests live via agent-browser (VLM GLM-4.6v confirme visuellement) :
+  - Login candidat → dashboard OK
+  - Page Cours → 3 cartes avec couverture photo réelle (pas SVG)
+  - Expansion 1er cours "Sécurité" → 7 leçons dont 3 "Vidéo" et 1 "Signalisation"
+  - Expansion lesson "Conduite sous la pluie" → lecteur vidéo HTML5 visible avec poster "route sous pluie"
+  - Démarrage entraînement → Q1-Q8 ont badge "(avec image)" dans le navigator
+  - Q4 (scénario) → photo réelle rue Kaloum Conakry (taxis jaunes, motos, piétons, marché), badge "SITUATION RÉELLE" violet confirmé par VLM
+  - Q8 (vidéo) → lecteur HTML5 avec badge rouge "SCÉNARIO VIDÉO", poster marché Conakry, contrôles "Lire la vidéo/Pause/Recommencer/Couper le son/Plein écran"
+  - Clic sur "Lire la vidéo" → bouton devient "Pause" (la vidéo joue réellement)
+- 12 captures d'écran dans `/home/z/my-project/download/screenshots/` :
+  - 01-landing, 02-dashboard, 03-courses, 04-course-expanded
+  - 05-lesson-video, 05b-lesson-video-full
+  - 06-exam-q1, 07-exam-q6, 08-exam-q3-scenario, 09-exam-q4-scenario
+  - 10-exam-video, 11-exam-video-q, 12-exam-video-playing
+
+Stage Summary:
+- 12 nouvelles images scénario + 3 couvertures de cours générées (1.7 Mo total)
+- 8 vidéos MP4 H.264 créées avec effet Ken Burns (5.4 Mo total, 12s chacune)
+- 18 nouvelles questions ajoutées (12 scénarios photo + 6 vidéos) — total DB : 59 questions
+- 11 lessons sur 17 ont désormais un média (sign/scenario/video)
+- 3 cours ont une couverture photo réelle (au lieu de fallback SVG)
+- Nouveau composant `VideoPlayer` HTML5 réutilisable avec contrôles custom (play/pause/seek/mute/fullscreen/restart)
+- `MockVideoPlayer` (faux lecteur) supprimé — remplacé par vrai `<video>` HTML5
+- Build, lint, tests : tous verts (197 tests, 0 erreur TS, 0 erreur lint)
+- Tests live OK : images servis en 200, vidéos en 206 (Partial Content) pour le streaming
+- Captures d'écran VLM-validées dans /home/z/my-project/download/screenshots/
+- Inspiration apps françaises (Ornikal, Code Rousseau) : photos de situations réelles, vidéos de scénarios, badges "SITUATION RÉELLE" et "SCÉNARIO VIDÉO"
+- Adaptation Guinée : tous les contextes sont guinéens (Kaloum, Kankan, Dixinn, Conakry, RN1, Pont Tombo, marché, taxis jaunes, motos, etc.)

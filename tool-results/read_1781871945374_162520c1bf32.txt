@@ -1,0 +1,300 @@
+   240→    }),
+   241→    prisma.centre.create({
+   242→      data: {
+   243→        nom: 'Centre d\'Examen de Kindia',
+   244→        ville: 'Kindia',
+   245→        region: 'Kindia',
+   246→        adresse: 'Avenue Sékou Touré, Kindia',
+   247→        capacite: 25,
+   248→        telephone: '+224 625 00 10 05',
+   249→        email: 'kindia@coderoute-gn.org',
+   250→        actif: true,
+   251→        accredDateDebut: '2024-02-01',
+   252→        accredDateFin: '2026-02-01',
+   253→        accredStatut: 'actif',
+   254→        accredScore: 82.0,
+   255→        equipements: JSON.stringify(['Salle informatique', 'Climatisation']),
+   256→        languesDisponibles: JSON.stringify(['fr']),
+   257→      },
+   258→    }),
+   259→    prisma.centre.create({
+   260→      data: {
+   261→        nom: 'Centre d\'Examen de Labe',
+   262→        ville: 'Labe',
+   263→        region: 'Labe',
+   264→        adresse: 'Centre Ville, Labe',
+   265→        capacite: 20,
+   266→        telephone: '+224 626 00 10 06',
+   267→        email: 'labe@coderoute-gn.org',
+   268→        actif: true,
+   269→        accredDateDebut: '2024-04-01',
+   270→        accredDateFin: '2026-04-01',
+   271→        accredStatut: 'en_renouvellement',
+   272→        accredScore: 78.0,
+   273→        equipements: JSON.stringify(['Salle informatique']),
+   274→        languesDisponibles: JSON.stringify(['fr']),
+   275→      },
+   276→    }),
+   277→    prisma.centre.create({
+   278→      data: {
+   279→        nom: 'Centre d\'Examen de Boké',
+   280→        ville: 'Boke',
+   281→        region: 'Boke',
+   282→        adresse: 'Quartier administratif, Boké',
+   283→        capacite: 15,
+   284→        telephone: '+224 627 00 10 07',
+   285→        email: 'boke@coderoute-gn.org',
+   286→        actif: true,
+   287→        accredDateDebut: '2023-06-01',
+   288→        accredDateFin: '2025-06-01',
+   289→        accredStatut: 'expire',
+   290→        accredScore: 72.0,
+   291→        equipements: JSON.stringify(['Salle informatique']),
+   292→        languesDisponibles: JSON.stringify(['fr']),
+   293→      },
+   294→    }),
+   295→  ]);
+   296→
+   297→  // ─── Questions ────────────────────────────────────────────
+   298→  console.log('Creating questions...');
+   299→  const questionData = [
+   300→    // Signalisation
+   301→    { texte: "Que signifie un panneau octogonal rouge ?", options: JSON.stringify(["Arrêt obligatoire", "Cédez le passage", "Sens interdit", "Priorité à droite"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/stop.png", explication: "Le panneau STOP (octogonal rouge) impose un arrêt absolu avant de continuer.", tags: JSON.stringify(["panneau", "stop", "arrêt"]) },
+   302→    { texte: "Que signifie un panneau circulaire avec bord rouge ?", options: JSON.stringify(["Interdiction", "Obligation", "Indication", "Danger"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/sens-interdit.png", explication: "Un panneau circulaire avec bord rouge indique une interdiction.", tags: JSON.stringify(["panneau", "interdiction"]) },
+   303→    { texte: "Que signifie un panneau triangulaire inversé pointe en bas ?", options: JSON.stringify(["Arrêt", "Cédez le passage", "Priorité à droite", "Danger"]), bonneReponse: 1, categorie: "Signalisation", difficulte: "moyen", mediaType: "sign", signImage: "/signs/cedezer-passage.png", explication: "Le panneau triangulaire inversé impose de laisser passer les autres véhicules.", tags: JSON.stringify(["panneau", "cédez le passage"]) },
+   304→    { texte: "Un panneau en losange indique :", options: JSON.stringify(["Interdiction", "Obligation", "Indication", "Priorité"]), bonneReponse: 3, categorie: "Signalisation", difficulte: "moyen", mediaType: "sign", signImage: "/signs/priorite-droite.png", explication: "Le panneau en losange indique une priorité à l'intersection.", tags: JSON.stringify(["panneau", "priorité"]) },
+   305→    { texte: "Un panneau circulaire avec un chiffre et un bord rouge signifie :", options: JSON.stringify(["Vitesse limitée", "Vitesse minimale", "Vitesse recommandée", "Fin de limitation"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/limitation-50.png", explication: "Un panneau circulaire avec bord rouge et chiffre indique une limitation de vitesse maximale.", tags: JSON.stringify(["panneau", "vitesse"]) },
+   306→    { texte: "Que signifie un panneau bleu circulaire ?", options: JSON.stringify(["Interdiction", "Obligation", "Indication", "Fin d'interdiction"]), bonneReponse: 1, categorie: "Signalisation", difficulte: "moyen", mediaType: "sign", signImage: "/signs/obligation-droite.png", explication: "Un panneau bleu circulaire indique une obligation.", tags: JSON.stringify(["panneau", "obligation"]) },
+   307→    { texte: "Un panneau triangulaire rouge pointe en haut indique :", options: JSON.stringify(["Interdiction", "Obligation", "Danger", "Priorité"]), bonneReponse: 2, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/danger.png", explication: "Un panneau triangulaire rouge pointe en haut signale un danger.", tags: JSON.stringify(["panneau", "danger"]) },
+   308→    { texte: "Que signifie un panneau avec une croix rouge ?", options: JSON.stringify(["Interdiction de stationner", "Interdiction de s'arrêter", "Sens interdit", "Fin de route"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/interdiction-stationner.png", explication: "Le panneau avec croix rouge interdit le stationnement.", tags: JSON.stringify(["panneau", "stationnement"]) },
+   309→    // Priorités
+   310→    { texte: "À une intersection sans panneau, qui a la priorité ?", options: JSON.stringify(["Le véhicule venant de droite", "Le véhicule venant de gauche", "Le véhicule le plus rapide", "Le véhicule le plus lourd"]), bonneReponse: 0, categorie: "Priorités", difficulte: "facile", mediaType: "text", explication: "En l'absence de signalisation, la priorité est à droite.", tags: JSON.stringify(["priorité", "intersection", "droite"]) },
+   311→    { texte: "Dans un rond-point, qui a la priorité ?", options: JSON.stringify(["Les véhicules déjà dans le rond-point", "Les véhicules entrant", "Les véhicules venant de droite", "Les piétons"]), bonneReponse: 0, categorie: "Priorités", difficulte: "facile", mediaType: "text", explication: "Dans un rond-point, les véhicules circulant à l'intérieur ont la priorité.", tags: JSON.stringify(["priorité", "rond-point"]) },
+   312→    { texte: "Un véhicule d'urgence avec sirène approche. Que devez-vous faire ?", options: JSON.stringify(["Accélérer pour passer", "Vous arrêter sur le côté", "Continuer normalement", "Faire un demi-tour"]), bonneReponse: 1, categorie: "Priorités", difficulte: "facile", mediaType: "text", explication: "Vous devez vous arrêter sur le côté pour laisser passer les véhicules d'urgence.", tags: JSON.stringify(["priorité", "urgence"]) },
+   313→    { texte: "Qui a la priorité à un passage piéton ?", options: JSON.stringify(["Le piéton", "Le véhicule", "Celui qui arrive le premier", "Le véhicule le plus rapide"]), bonneReponse: 0, categorie: "Priorités", difficulte: "facile", mediaType: "text", explication: "Le piéton a toujours la priorité aux passages piétons.", tags: JSON.stringify(["priorité", "piéton"]) },
+   314→    // Conduite
+   315→    { texte: "Quelle est la vitesse maximale en agglomération en Guinée ?", options: JSON.stringify(["50 km/h", "60 km/h", "40 km/h", "80 km/h"]), bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "La vitesse maximale en agglomération est de 50 km/h en Guinée.", tags: JSON.stringify(["vitesse", "agglomération"]) },
+   316→    { texte: "Quelle est la distance de sécurité minimale sur route sèche ?", options: JSON.stringify(["2 secondes", "1 seconde", "3 secondes", "5 secondes"]), bonneReponse: 0, categorie: "Conduite", difficulte: "moyen", mediaType: "text", explication: "La distance de sécurité minimale est de 2 secondes sur route sèche.", tags: JSON.stringify(["sécurité", "distance"]) },
+   317→    { texte: "Quand devez-vous allumer vos feux de croisement ?", options: JSON.stringify(["La nuit et en tunnel", "Uniquement la nuit", "En cas de pluie uniquement", "Jamais en ville"]), bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "Les feux de croisement sont obligatoires la nuit et en tunnel.", tags: JSON.stringify(["feux", "nuit"]) },
+   318→    { texte: "Quelle est la limite d'alcoolémie en Guinée pour conduire ?", options: JSON.stringify(["0.5 g/l", "0.8 g/l", "0.2 g/l", "0 g/l"]), bonneReponse: 0, categorie: "Conduite", difficulte: "moyen", mediaType: "text", explication: "La limite d'alcoolémie est de 0.5 g/l de sang en Guinée.", tags: JSON.stringify(["alcool", "conduite"]) },
+   319→    // Sécurité
+   320→    { texte: "Le port de la ceinture de sécurité est obligatoire :", options: JSON.stringify(["Pour tous les occupants, à l'avant et à l'arrière", "Uniquement pour le conducteur", "Uniquement à l'avant", "Uniquement sur autoroute"]), bonneReponse: 0, categorie: "Sécurité", difficulte: "facile", mediaType: "text", explication: "La ceinture de sécurité est obligatoire pour tous les occupants du véhicule.", tags: JSON.stringify(["sécurité", "ceinture"]) },
+   321→    { texte: "Que devez-vous faire en cas de crevaison sur autoroute ?", options: JSON.stringify(["Ranger le véhicule sur la bande d'arrêt d'urgence", "Continuer doucement", "Changer le pneu sur la voie de gauche", "Faire signe aux autres véhicules"]), bonneReponse: 0, categorie: "Sécurité", difficulte: "moyen", mediaType: "text", explication: "En cas de crevaison, rangez-vous sur la bande d'arrêt d'urgence.", tags: JSON.stringify(["sécurité", "autoroute", "crevaison"]) },
+   322→    { texte: "Quel est le taux d'alcool maximal pour un jeune conducteur ?", options: JSON.stringify(["0.2 g/l", "0.5 g/l", "0.8 g/l", "0 g/l"]), bonneReponse: 0, categorie: "Sécurité", difficulte: "moyen", mediaType: "text", explication: "Pour les jeunes conducteurs, le taux maximal est de 0.2 g/l.", tags: JSON.stringify(["alcool", "jeune conducteur"]) },
+   323→    { texte: "En cas d'accident avec blessé, que devez-vous faire en premier ?", options: JSON.stringify(["Secourir les blessés et appeler les secours", "Appeler votre assurance", "Déplacer les véhicules", "Prendre des photos"]), bonneReponse: 0, categorie: "Sécurité", difficulte: "facile", mediaType: "text", explication: "La priorité est de secourir les blessés et d'appeler les secours (18 ou 112).", tags: JSON.stringify(["sécurité", "accident"]) },
+   324→    // Infractions
+   325→    { texte: "Quel est le montant de l'amende pour excès de vitesse en Guinée ?", options: JSON.stringify(["De 25 000 à 100 000 GNF", "50 000 GNF fixe", "200 000 GNF", "1 000 000 GNF"]), bonneReponse: 0, categorie: "Infractions", difficulte: "difficile", mediaType: "text", explication: "L'amende pour excès de vitesse varie de 25 000 à 100 000 GNF selon le dépassement.", tags: JSON.stringify(["infraction", "vitesse", "amende"]) },
+   326→    { texte: "Conduire sans permis est puni de :", options: JSON.stringify(["Amende et emprisonnement", "Simple amende", "Retrait de points", "Travaux d'intérêt général"]), bonneReponse: 0, categorie: "Infractions", difficulte: "moyen", mediaType: "text", explication: "Conduire sans permis est puni d'une amende et potentiellement d'emprisonnement.", tags: JSON.stringify(["infraction", "permis"]) },
+   327→    { texte: "Le non-port de la ceinture est sanctionné par :", options: JSON.stringify(["Une amende forfaitaire", "Un retrait de permis", "Une mise en fourrière", "Rien"]), bonneReponse: 0, categorie: "Infractions", difficulte: "facile", mediaType: "text", explication: "Le non-port de la ceinture est sanctionné par une amende forfaitaire.", tags: JSON.stringify(["infraction", "ceinture"]) },
+   328→    // Signalisation avancée
+   329→    { texte: "Un panneau carré bleu indique :", options: JSON.stringify(["Une indication", "Une obligation", "Une interdiction", "Un danger"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "moyen", mediaType: "text", explication: "Un panneau carré bleu est un panneau d'indication (direction, services, etc.).", tags: JSON.stringify(["panneau", "indication"]) },
+   330→    { texte: "Un panneau rond bleu avec une flèche blanche pointant vers le haut signifie :", options: JSON.stringify(["Tout droit obligatoire", "Sens unique", "Route prioritaire", "Fin d'obligation"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "moyen", mediaType: "text", explication: "Ce panneau indique l'obligation d'aller tout droit.", tags: JSON.stringify(["panneau", "obligation", "direction"]) },
+   331→    { texte: "Un panneau avec un 'H' bleu indique :", options: JSON.stringify(["Hôpital", "Hôtel", "Halte", "Autoroute"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "difficile", mediaType: "text", explication: "Le panneau 'H' bleu indique la proximité d'un hôpital.", tags: JSON.stringify(["panneau", "indication", "hôpital"]) },
+   332→    // Conduite avancée
+   333→    { texte: "Quel est l'angle mort d'un véhicule ?", options: JSON.stringify(["La zone non visible dans les rétroviseurs", "L'avant du véhicule", "Le coffre", "Le toit"]), bonneReponse: 0, categorie: "Conduite", difficulte: "moyen", mediaType: "text", explication: "L'angle mort est la zone autour du véhicule non visible dans les rétroviseurs.", tags: JSON.stringify(["conduite", "angle mort", "sécurité"]) },
+   334→    { texte: "Comment franchir un passage à niveau non gardé ?", options: JSON.stringify(["S'arrêter, écouter et regarder avant de traverser", "Accélérer pour passer vite", "Klaxonner et passer", "Attendre qu'un autre véhicule passe"]), bonneReponse: 0, categorie: "Conduite", difficulte: "moyen", mediaType: "text", explication: "À un passage à niveau non gardé, il faut s'arrêter, écouter et regarder.", tags: JSON.stringify(["conduite", "passage à niveau"]) },
+   335→    { texte: "Quelle distance de freinage est nécessaire à 90 km/h sur route mouillée ?", options: JSON.stringify(["Environ 75 mètres", "Environ 40 mètres", "Environ 20 mètres", "Environ 100 mètres"]), bonneReponse: 0, categorie: "Conduite", difficulte: "difficile", mediaType: "text", explication: "Sur route mouillée à 90 km/h, la distance de freinage est d'environ 75 mètres.", tags: JSON.stringify(["conduite", "freinage", "pluie"]) },
+   336→    // Sécurité avancée
+   337→    { texte: "Un triangle de pré-signalisation doit être placé à quelle distance ?", options: JSON.stringify(["Au moins 30 mètres du véhicule", "5 mètres", "10 mètres", "50 mètres"]), bonneReponse: 0, categorie: "Sécurité", difficulte: "moyen", mediaType: "text", explication: "Le triangle de pré-signalisation doit être placé à au moins 30 mètres du véhicule.", tags: JSON.stringify(["sécurité", "panne", "triangle"]) },
+   338→    { texte: "Quand devez-vous utiliser les feux de détresse ?", options: JSON.stringify(["En cas de panne ou d'accident", "Quand il pleut", "La nuit", "En ville"]), bonneReponse: 0, categorie: "Sécurité", difficulte: "facile", mediaType: "text", explication: "Les feux de détresse sont utilisés en cas de panne, d'accident ou de ralentissement brusque.", tags: JSON.stringify(["sécurité", "feux", "détresse"]) },
+   339→    { texte: "Quel est l'âge minimum pour conduire un scooter en Guinée ?", options: JSON.stringify(["16 ans", "14 ans", "18 ans", "21 ans"]), bonneReponse: 0, categorie: "Conduite", difficulte: "moyen", mediaType: "text", explication: "L'âge minimum pour conduire un scooter (permis AM) est de 16 ans.", tags: JSON.stringify(["conduite", "âge", "scooter"]) },
+   340→    { texte: "Que signifie un feu clignotant orange à un carrefour ?", options: JSON.stringify(["Cédez le passage", "Arrêt absolu", "Priorité", "Route barrée"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "moyen", mediaType: "text", explication: "Un feu orange clignotant signifie cédez le passage.", tags: JSON.stringify(["feu", "signalisation"]) },
+   341→    { texte: "En cas de brouillard dense, quels feux devez-vous allumer ?", options: JSON.stringify(["Feux de brouillard arrière et avant", "Feux de croisement uniquement", "Feux de route", "Feux de détresse"]), bonneReponse: 0, categorie: "Sécurité", difficulte: "difficile", mediaType: "text", explication: "Par brouillard dense, allumez les feux de brouillard avant et arrière.", tags: JSON.stringify(["sécurité", "brouillard", "feux"]) },
+   342→    { texte: "Quelle est la sanction pour conduite en état d'ivresse en Guinée ?", options: JSON.stringify(["Amende, retrait de permis et prison possible", "Simple amende", "Retrait de points uniquement", "Travaux d'intérêt général"]), bonneReponse: 0, categorie: "Infractions", difficulte: "moyen", mediaType: "text", explication: "La conduite en état d'ivresse est sévèrement punie : amende, retrait de permis et prison possible.", tags: JSON.stringify(["infraction", "alcool", "sanction"]) },
+   343→    { texte: "Un panneau rond avec un fond blanc et une bordure rouge contenant un 'P' barré signifie :", options: JSON.stringify(["Interdiction de stationner", "Parking", "Parc", "Péage"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "facile", mediaType: "sign", signImage: "/signs/interdiction-stationner.png", explication: "Ce panneau interdit le stationnement dans la zone.", tags: JSON.stringify(["panneau", "stationnement", "interdiction"]) },
+   344→    { texte: "Comment effectuer un dépassement correct ?", options: JSON.stringify(["Vérifier les rétroviseurs, mettre le clignotant, déboîter et doubler", "Accélérer et déboîter", "Klaxonner et doubler", "Déboîter sans préavis"]), bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "Un dépassement correct nécessite : vérification rétroviseurs, clignotant, déboîtement, dépassement.", tags: JSON.stringify(["conduite", "dépassement"]) },
+   345→    { texte: "Quelle est la vitesse maximale sur autoroute en Guinée ?", options: JSON.stringify(["110 km/h", "130 km/h", "90 km/h", "100 km/h"]), bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "La vitesse maximale sur autoroute en Guinée est de 110 km/h.", tags: JSON.stringify(["vitesse", "autoroute"]) },
+   346→    { texte: "Un enfant de moins de 10 ans peut-il s'asseoir à l'avant ?", options: JSON.stringify(["Non, il doit être à l'arrière dans un siège adapté", "Oui, s'il est attaché", "Oui, s'il est grand", "Ça dépend du véhicule"]), bonneReponse: 0, categorie: "Sécurité", difficulte: "moyen", mediaType: "text", explication: "Les enfants de moins de 10 ans doivent être installés à l'arrière dans un dispositif adapté.", tags: JSON.stringify(["sécurité", "enfant", "siège auto"]) },
+   347→    { texte: "Que signifie un marquage au sol continu ?", options: JSON.stringify(["Interdiction de franchir la ligne", "Dépassement dangereux", "Séparation de voies", "Fin de voie"]), bonneReponse: 0, categorie: "Signalisation", difficulte: "moyen", mediaType: "text", explication: "Une ligne continue ne peut pas être franchie. Le dépassement est interdit.", tags: JSON.stringify(["signalisation", "marquage", "ligne continue"]) },
+   348→    { texte: "Le permis B permet de conduire :", options: JSON.stringify(["Les véhicules de moins de 3,5 tonnes", "Tous les véhicules", "Les motos", "Les camions"]), bonneReponse: 0, categorie: "Conduite", difficulte: "facile", mediaType: "text", explication: "Le permis B autorise la conduite de véhicules d'un poids total autorisé en charge inférieur à 3,5 tonnes.", tags: JSON.stringify(["permis", "catégorie B"]) },
+   349→  ];
+   350→
+   351→  for (const q of questionData) {
+   352→    await prisma.question.create({
+   353→      data: {
+   354→        texte: q.texte,
+   355→        options: q.options,
+   356→        bonneReponse: q.bonneReponse,
+   357→        categorie: q.categorie,
+   358→        difficulte: q.difficulte,
+   359→        mediaType: q.mediaType,
+   360→        signImage: q.signImage || null,
+   361→        explication: q.explication,
+   362→        points: 1,
+   363→        tempsEstime: 20,
+   364→        tags: q.tags,
+   365→        actif: true,
+   366→      },
+   367→    });
+   368→  }
+   369→
+   370→  // ─── Exam Sessions ────────────────────────────────────────
+   371→  console.log('Creating exam sessions...');
+   372→  await prisma.examSession.create({
+   373→    data: {
+   374→      candidatId: candidat1.id,
+   375→      centreId: centres[0].id,
+   376→      centreNom: centres[0].nom,
+   377→      date: '2026-01-15',
+   378→      heure: '09:00',
+   379→      langue: 'fr',
+   380→      statut: 'reussi',
+   381→      score: 38,
+   382→      totalQuestions: 40,
+   383→      dureeEffective: 1800,
+   384→      dateInscription: new Date('2026-01-01'),
+   385→    },
+   386→  });
+   387→
+   388→  await prisma.examSession.create({
+   389→    data: {
+   390→      candidatId: candidat1.id,
+   391→      centreId: centres[1].id,
+   392→      centreNom: centres[1].nom,
+   393→      date: '2026-02-20',
+   394→      heure: '14:00',
+   395→      langue: 'fr',
+   396→      statut: 'echoue',
+   397→      score: 30,
+   398→      totalQuestions: 40,
+   399→      dureeEffective: 2100,
+   400→      dateInscription: new Date('2026-02-10'),
+   401→    },
+   402→  });
+   403→
+   404→  await prisma.examSession.create({
+   405→    data: {
+   406→      candidatId: candidat2.id,
+   407→      centreId: centres[2].id,
+   408→      centreNom: centres[2].nom,
+   409→      date: '2026-03-01',
+   410→      heure: '10:00',
+   411→      langue: 'fr',
+   412→      statut: 'reussi',
+   413→      score: 36,
+   414→      totalQuestions: 40,
+   415→      dureeEffective: 1650,
+   416→      dateInscription: new Date('2026-02-20'),
+   417→    },
+   418→  });
+   419→
+   420→  // ─── Courses ──────────────────────────────────────────────
+   421→  console.log('Creating courses...');
+   422→  const course1 = await prisma.course.create({
+   423→    data: {
+   424→      titre: 'Signalisation routière — Les fondamentaux',
+   425→      description: 'Apprenez à reconnaître et interpréter tous les panneaux de signalisation routière. Ce cours couvre les panneaux de danger, d\'interdiction, d\'obligation et d\'indication.',
+   426→      categorie: 'Signalisation',
+   427→      status: 'publie',
+   428→      dureeTotale: 45,
+   429→      nbInscrits: 234,
+   430→      rating: 4.8,
+   431→    },
+   432→  });
+   433→
+   434→  await prisma.lesson.createMany({
+   435→    data: [
+   436→      { courseId: course1.id, titre: 'Panneaux de danger', description: 'Les panneaux triangulaires qui signalent les dangers', type: 'sign', contenu: 'Les panneaux de danger sont de forme triangulaire avec la pointe en haut. Ils ont un fond blanc avec une bordure rouge. Ils alertent le conducteur d\'un danger potentiel sur la route.', ordre: 1, duree: 10 },
+   437→      { courseId: course1.id, titre: 'Panneaux d\'interdiction', description: 'Les panneaux circulaires avec bord rouge', type: 'sign', contenu: 'Les panneaux d\'interdiction sont circulaires avec un fond blanc et une bordure rouge. Ils interdisent une action spécifique aux conducteurs.', ordre: 2, duree: 10 },
+   438→      { courseId: course1.id, titre: 'Panneaux d\'obligation', description: 'Les panneaux bleus circulaires', type: 'sign', contenu: 'Les panneaux d\'obligation sont circulaires avec un fond bleu. Ils imposent une action spécifique aux conducteurs.', ordre: 3, duree: 10 },
+   439→      { courseId: course1.id, titre: 'Quiz — Signalisation', description: 'Testez vos connaissances', type: 'quiz', contenu: 'Quiz de 10 questions sur la signalisation routière.', ordre: 4, duree: 15 },
+   440→    ],
+   441→  });
+   442→
+   443→  const course2 = await prisma.course.create({
+   444→    data: {
+   445→      titre: 'Règles de priorité — Maîtrisez les intersections',
+   446→      description: 'Comprenez parfaitement les règles de priorité aux intersections, ronds-points et passages piétons. Un cours essentiel pour réussir l\'examen.',
+   447→      categorie: 'Priorités',
+   448→      status: 'publie',
+   449→      dureeTotale: 30,
+   450→      nbInscrits: 189,
+   451→      rating: 4.6,
+   452→    },
+   453→  });
+   454→
+   455→  await prisma.lesson.createMany({
+   456→    data: [
+   457→      { courseId: course2.id, titre: 'Priorité à droite', description: 'La règle fondamentale', type: 'text', contenu: 'En l\'absence de signalisation, la priorité est toujours à droite. Cette règle s\'applique dans les carrefours sans panneaux de priorité.', ordre: 1, duree: 8 },
+   458→      { courseId: course2.id, titre: 'Ronds-points', description: 'Priorité dans les giratoires', type: 'text', contenu: 'Dans un rond-point, les véhicules circulant à l\'intérieur ont toujours la priorité sur les véhicules entrants.', ordre: 2, duree: 8 },
+   459→      { courseId: course2.id, titre: 'Passages piétons', description: 'Priorité aux piétons', type: 'text', contenu: 'Le piéton a toujours la priorité aux passages piétons. Le conducteur doit ralentir et s\'arrêter si nécessaire.', ordre: 3, duree: 7 },
+   460→      { courseId: course2.id, titre: 'Quiz — Priorités', description: 'Vérifiez votre compréhension', type: 'quiz', contenu: 'Quiz de 8 questions sur les règles de priorité.', ordre: 4, duree: 7 },
+   461→    ],
+   462→  });
+   463→
+   464→  const course3 = await prisma.course.create({
+   465→    data: {
+   466→      titre: 'Sécurité routière — Les bonnes pratiques',
+   467→      description: 'Découvrez toutes les règles de sécurité routière : ceinture, vitesse, alcool, distance de sécurité et conduite par mauvais temps.',
+   468→      categorie: 'Sécurité',
+   469→      status: 'publie',
+   470→      dureeTotale: 60,
+   471→      nbInscrits: 156,
+   472→      rating: 4.9,
+   473→    },
+   474→  });
+   475→
+   476→  await prisma.lesson.createMany({
+   477→    data: [
+   478→      { courseId: course3.id, titre: 'La ceinture de sécurité', description: 'Obligatoire pour tous', type: 'text', contenu: 'Le port de la ceinture de sécurité est obligatoire pour tous les occupants du véhicule, à l\'avant comme à l\'arrière. La ceinture réduit de 50% le risque de décès en cas d\'accident.', ordre: 1, duree: 10 },
+   479→      { courseId: course3.id, titre: 'Vitesse et distances', description: 'Adapter sa vitesse', type: 'text', contenu: 'La vitesse doit être adaptée aux conditions de la route. Respectez les limitations et maintenez une distance de sécurité de 2 secondes minimum.', ordre: 2, duree: 15 },
+   480→      { courseId: course3.id, titre: 'Alcool et conduite', description: 'Les dangers de l\'alcool au volant', type: 'text', contenu: 'L\'alcool réduit les réflexes et altère le jugement. La limite légale est de 0.5 g/l en Guinée. Ne conduisez jamais après avoir bu.', ordre: 3, duree: 10 },
+   481→      { courseId: course3.id, titre: 'Conduite par mauvais temps', description: 'Pluie, brouillard, nuit', type: 'text', contenu: 'Par temps de pluie, réduisez votre vitesse et augmentez la distance de sécurité. En cas de brouillard, utilisez les feux de brouillard.', ordre: 4, duree: 12 },
+   482→      { courseId: course3.id, titre: 'Quiz — Sécurité', description: 'Test final du cours', type: 'quiz', contenu: 'Quiz de 12 questions sur la sécurité routière.', ordre: 5, duree: 13 },
+   483→    ],
+   484→  });
+   485→
+   486→  // ─── Daily Stats ──────────────────────────────────────────
+   487→  console.log('Creating daily stats...');
+   488→  const today = new Date();
+   489→  for (let i = 30; i >= 0; i--) {
+   490→    const date = new Date(today);
+   491→    date.setDate(date.getDate() - i);
+   492→    const dateStr = date.toISOString().split('T')[0];
+   493→    const exams = Math.floor(Math.random() * 15) + 5;
+   494→    const passed = Math.floor(exams * (0.55 + Math.random() * 0.25));
+   495→    const failed = exams - passed;
+   496→    const avgScore = Math.round((55 + Math.random() * 30) * 100) / 100;
+   497→
+   498→    await prisma.dailyStat.create({
+   499→      data: {
+   500→        date: dateStr,
+   501→        exams,
+   502→        passed,
+   503→        failed,
+   504→        cancelled: Math.floor(Math.random() * 3),
+   505→        avgScore,
+   506→        revenue: exams * 50000,
+   507→      },
+   508→    });
+   509→  }
+   510→
+   511→  // ─── Fraud Alerts ─────────────────────────────────────────
+   512→  console.log('Creating fraud alerts...');
+   513→  await prisma.fraudAlert.createMany({
+   514→    data: [
+   515→      { type: 'Double inscription', description: 'Même numéro d\'identité utilisé pour deux comptes différents', severity: 'high', status: 'active', candidatId: candidat3.id, details: JSON.stringify({ field: 'numeroIdentite', value: 'GN-11223344' }) },
+   516→      { type: 'Comportement anormal', description: 'Temps de réponse anormalement rapide (2s par question)', severity: 'medium', status: 'investigating', sessionId: null, details: JSON.stringify({ avgTime: 2, threshold: 5 }) },
+   517→      { type: 'Identité suspecte', description: 'Photo non conforme aux normes', severity: 'low', status: 'resolved', candidatId: candidat2.id, details: JSON.stringify({ reason: 'Photo trop sombre' }) },
+   518→    ],
+   519→  });
+   520→
+   521→  console.log('\n✅ Seed completed successfully!');
+   522→  console.log('\n📋 Test Accounts:');
+   523→  console.log('   👤 Admin:     admin@coderoute-gn.org / Admin@2024');
+   524→  console.log('   👤 Inspecteur: inspecteur@coderoute-gn.org / Inspect@2024');
+   525→  console.log('   👤 Centre:    centre@coderoute-gn.org / Centre@2024');
+   526→  console.log('   👤 Candidat:  candidat@demo.gn / Candidat@2024');
+   527→  console.log('   👤 Candidat:  aicha@demo.gn / Candidat@2024');
+   528→  console.log('   👤 Candidat:  ousmane@demo.gn / Candidat@2024');
+   529→}
+   530→
+   531→main()
+   532→  .catch((e) => {
+   533→    console.error('Seed error:', e);
+   534→    process.exit(1);
+   535→  })
+   536→  .finally(async () => {
+   537→    await prisma.$disconnect();
+   538→  });
+   539→

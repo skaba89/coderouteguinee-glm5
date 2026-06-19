@@ -19,6 +19,7 @@ import { Question, ViewType, ExamResult, CategoryResult, NationalLanguage } from
 import { useAuth } from '@/lib/auth-context';
 import { RoadSignDisplay } from '@/components/code-route/road-signs';
 import TTSPlayer from '@/components/code-route/tts-player';
+import { VideoPlayer } from '@/components/code-route/video-player';
 import {
   Clock,
   ChevronLeft,
@@ -47,124 +48,7 @@ interface ExamTakingProps {
   preselectedLanguage?: NationalLanguage;
 }
 
-// ─── Mock Video Player Component ──────────────────────────────
-function MockVideoPlayer({
-  thumbnailUrl,
-  title,
-}: {
-  thumbnailUrl?: string;
-  title?: string;
-}) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-    const timer = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          setIsPlaying(false);
-          return 100;
-        }
-        return prev + 0.5;
-      });
-    }, 100);
-    return () => clearInterval(timer);
-  }, [isPlaying]);
-
-  return (
-    <div className="relative rounded-xl overflow-hidden border-2 border-white/10 shadow-lg bg-gray-900">
-      {/* Player area */}
-      <div className="relative aspect-video max-h-56 flex items-center justify-center">
-        {/* Scenario thumbnail or placeholder */}
-        {thumbnailUrl ? (
-          <img
-            src={thumbnailUrl}
-            alt={title || 'Scenario video'}
-            className={`w-full h-full object-cover transition-opacity ${isPlaying ? 'opacity-60' : 'opacity-80'}`}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1A2332 0%, #2A3A52 100%)' }}>
-            <Film className="w-16 h-16 text-white/20" />
-          </div>
-        )}
-
-        {/* Play button overlay */}
-        {!isPlaying && (
-          <button
-            className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors cursor-pointer"
-            onClick={() => setIsPlaying(true)}
-          >
-            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm border-2 border-white/40 hover:bg-white/30 hover:scale-110 transition-all">
-              <Play className="w-8 h-8 text-white ml-1" />
-            </div>
-          </button>
-        )}
-
-        {/* Pause overlay when playing */}
-        {isPlaying && (
-          <button
-            className="absolute inset-0 flex items-center justify-center cursor-pointer"
-            onClick={() => setIsPlaying(false)}
-          >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 hover:opacity-100 transition-opacity">
-              <Pause className="w-6 h-6 text-white" />
-            </div>
-          </button>
-        )}
-
-        {/* Video label */}
-        <div className="absolute top-3 left-3 flex items-center gap-2">
-          <Badge className="text-[10px] px-2 py-0.5 bg-red-600 text-white border-0">
-            <Video className="w-3 h-3 mr-1" />
-            VIDEO
-          </Badge>
-        </div>
-
-        {/* Time indicator */}
-        {isPlaying && (
-          <div className="absolute top-3 right-3 bg-black/60 rounded-md px-2 py-0.5 text-white text-xs font-mono">
-            {Math.floor(progress * 0.3).toString().padStart(1, '0')}:{(Math.floor((progress * 0.3) % 1 * 60)).toString().padStart(2, '0')} / 0:30
-          </div>
-        )}
-      </div>
-
-      {/* Progress bar */}
-      <div className="h-1 bg-gray-700">
-        <div
-          className="h-full transition-all duration-100"
-          style={{
-            width: `${progress}%`,
-            backgroundColor: progress >= 100 ? '#009460' : '#CE1126',
-          }}
-        />
-      </div>
-
-      {/* Controls bar */}
-      <div className="flex items-center gap-3 px-4 py-2 bg-gray-800">
-        <button
-          className="text-white hover:text-green-400 transition-colors"
-          onClick={() => {
-            if (isPlaying) setIsPlaying(false);
-            else {
-              setProgress(0);
-              setIsPlaying(true);
-            }
-          }}
-        >
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-        </button>
-        <div className="flex-1">
-          <div className="text-xs text-gray-400">{title || 'Scénario vidéo'}</div>
-        </div>
-        <span className="text-xs text-gray-500 font-mono">
-          {Math.floor(progress * 0.3)}s
-        </span>
-      </div>
-    </div>
-  );
-}
-
+// ─── Main Exam Taking Component ──────────────────────────────
 export default function ExamTaking({ isPractice = false, onViewChange, onExamComplete, preselectedLanguage }: ExamTakingProps) {
   const { user } = useAuth();
   const totalQuestions = isPractice ? 20 : 40;
@@ -702,12 +586,17 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
             )}
 
             {/* Video Player */}
-            {q.mediaType === 'video' && (
+            {q.mediaType === 'video' && q.videoUrl && (
               <div className="mb-6">
-                <MockVideoPlayer
-                  thumbnailUrl={q.videoThumbnail || q.scenarioImage}
+                <VideoPlayer
+                  src={q.videoUrl}
+                  poster={q.scenarioImage}
                   title="Scénario vidéo — Code de la route"
                 />
+                <p className="text-xs text-gray-500 mt-2 italic flex items-center gap-1">
+                  <Play className="w-3 h-3" />
+                  Regardez attentivement la séquence vidéo avant de répondre.
+                </p>
               </div>
             )}
 
