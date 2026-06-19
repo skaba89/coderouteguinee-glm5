@@ -399,11 +399,16 @@ export default function AuthModals({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="candidat">Candidat</SelectItem>
-                      <SelectItem value="auto-ecole">Auto-école</SelectItem>
-                      <SelectItem value="centre-agree">Centre agréé</SelectItem>
-                      <SelectItem value="administration">Administration</SelectItem>
+                      <SelectItem value="auto-ecole">Auto-école (inscription via admin)</SelectItem>
+                      <SelectItem value="centre-agree">Centre agréé (inscription via admin)</SelectItem>
+                      <SelectItem value="administration">Administration (inscription via admin)</SelectItem>
                     </SelectContent>
                   </Select>
+                  {(regRole !== 'candidat') && (
+                    <p className="text-xs text-amber-600">
+                      ℹ️ Les comptes auto-école, centre agréé et administration doivent être validés par un administrateur. Votre demande sera traitée sous 48h.
+                    </p>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { LanguageProvider } from '@/lib/language-context';
 import { ViewType, ExamResult, NationalLanguage } from '@/lib/types';
@@ -30,17 +30,44 @@ function AppContent() {
   }, []);
 
   const handleAuthSuccess = useCallback(() => {
-    // Route based on user role
-    if (user?.role === 'administration' || user?.role === 'super-admin') {
-      setCurrentView('admin-dashboard');
-    } else if (user?.role === 'centre-agree') {
-      setCurrentView('centre-dashboard');
-    } else if (user?.role === 'auto-ecole') {
-      setCurrentView('auto-ecole-dashboard');
-    } else {
-      setCurrentView('candidate-dashboard');
+    // Routing will be handled by useEffect watching user?.role
+    // (user state may not be updated yet when this callback fires)
+  }, []);
+
+  // Track previous user id to detect login/role changes
+  const prevUserIdRef = useRef<string | null>(null);
+
+  // Auto-route to correct dashboard when user changes (after login)
+  useEffect(() => {
+    if (!isLoggedIn || !user) {
+      prevUserIdRef.current = null;
+      return;
     }
-  }, [user?.role]);
+    // Only re-route when the user identity actually changes (login/logout/role switch)
+    if (prevUserIdRef.current === user.id) return;
+    prevUserIdRef.current = user.id;
+
+    // Don't override if user is in the middle of an exam/practice
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentView((prev) => {
+      if (prev === 'exam-taking' || prev === 'practice-test') return prev;
+      if (user.role === 'administration' || user.role === 'super-admin') {
+        if (prev === 'admin-dashboard' || prev === 'analytics' || prev === 'fraud-monitoring' || prev === 'center-management' || prev === 'settings') return prev;
+        return 'admin-dashboard';
+      }
+      if (user.role === 'centre-agree') {
+        if (prev === 'centre-dashboard') return prev;
+        return 'centre-dashboard';
+      }
+      if (user.role === 'auto-ecole') {
+        if (prev === 'auto-ecole-dashboard') return prev;
+        return 'auto-ecole-dashboard';
+      }
+      // candidat
+      if (prev === 'candidate-dashboard' || prev === 'courses' || prev === 'exam-booking' || prev === 'results') return prev;
+      return 'candidate-dashboard';
+    });
+  }, [isLoggedIn, user]);
 
   const handleExamComplete = useCallback((result: ExamResult) => {
     setLatestResult(result);
