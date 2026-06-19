@@ -457,3 +457,25 @@ Stage Summary:
 - Captures d'écran VLM-validées dans /home/z/my-project/download/screenshots/
 - Inspiration apps françaises (Ornikal, Code Rousseau) : photos de situations réelles, vidéos de scénarios, badges "SITUATION RÉELLE" et "SCÉNARIO VIDÉO"
 - Adaptation Guinée : tous les contextes sont guinéens (Kaloum, Kankan, Dixinn, Conakry, RN1, Pont Tombo, marché, taxis jaunes, motos, etc.)
+
+---
+Task ID: Phase 13 — Fix erreurs console (CSRF + button-in-button hydration)
+Agent: Main Agent
+Task: L'utilisateur a signalé 3 erreurs console bloquantes : (1) "Token CSRF manquant" sur exam-booking.tsx:174 lors de handleConfirm ; (2) "<button> cannot be a descendant of <button>" sur exam-taking.tsx:621/641 ; (3) même bug signalé comme cause d'erreur d'hydratation.
+
+Work Log:
+- Investigation du middleware (`src/middleware.ts`) et du helper CSRF (`src/lib/csrf.ts`) : toutes les routes POST/PUT/PATCH/DELETE sous `/api/` (sauf login/register/logout/reset-password) exigent un header `x-csrf-token` qui doit matcher le cookie `coderoute_csrf`. Sans ce header → 403 "Token CSRF manquant. Rechargez la page et réessayez."
+- Investigation de `src/lib/auth-context.tsx` : la méthode `apiFetch()` injecte automatiquement le header CSRF (et retry une fois si 403 CSRF). Le hook `useAuth()` expose `apiFetch`.
+- Bug CSRF dans `src/components/code-route/exam-booking.tsx` : `handleConfirm` et `pollPaymentStatus` utilisaient `fetch()` brut au lieu de `apiFetch()`, donc n'envoyaient jamais le header `x-csrf-token` → 403 sur `/api/bookings`, `/api/payments`, `/api/payments/verify`.
+  - Fix : `const { user, apiFetch } = useAuth();` puis remplacement des 3 appels `fetch(...)` → `apiFetch(...)` (POST /api/bookings, POST /api/payments, POST /api/payments/verify).
+- Bug HTML dans `src/components/code-route/exam-taking.tsx` lignes 620-654 : la liste des options rendait un `<button>` natif (ligne 621) contenant un `<Button>` shadcn (ligne 641, bouton TTS/speakText). HTML interdit `<button>` dans `<button>` → erreur d'hydratation React.
+  - Fix : remplacement du `<button>` externe par un `<div role="button" tabIndex={0} aria-pressed={isSelected}>` avec gestion `onKeyDown` (Entrée/Espace) pour l'accessibilité clavier. Le `<Button>` TTS interne reste un vrai bouton (sémantique accessible conservée). Ajout de `focus:ring-2 focus:ring-green-400` pour le focus visible.
+- Vérifications finales :
+  - `npx tsc --noEmit` → 0 erreur dans `src/` (les erreurs dans `examples/` et `skills/` sont pré-existantes, hors scope).
+  - `npx next build` → ✓ Compiled successfully in 8.4s, 38/38 pages générées.
+  - `npx eslint` sur les 2 fichiers touchés → exit 0, 0 erreur, 0 warning.
+
+Stage Summary:
+- CSRF réparé : `handleConfirm` et le polling de paiement utilisent désormais `apiFetch()` qui injecte le header `x-csrf-token` automatiquement. La réservation d'examen et le paiement Mobile Money ne sont plus bloqués par "Token CSRF manquant".
+- Hydratation réparée : plus aucun `<button>` imbriqué dans `<button>`. L'option de réponse est un `div role="button"` accessible (clavier + screen reader), le bouton volume reste un vrai `<button>`.
+- Build, lint : tous verts.

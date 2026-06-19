@@ -81,7 +81,7 @@ function RealQRCode({ data }: { data: string }) {
 type PaymentStep = 'idle' | 'initiating' | 'pending' | 'verifying' | 'confirmed' | 'failed';
 
 export default function ExamBooking({ onViewChange }: ExamBookingProps) {
-  const { user } = useAuth();
+  const { user, apiFetch } = useAuth();
   const [step, setStep] = useState(1);
   const [confirmed, setConfirmed] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState('');
@@ -150,8 +150,8 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
     setPaymentError('');
 
     try {
-      // Step 1: Create booking
-      const bookingRes = await fetch('/api/bookings', {
+      // Step 1: Create booking (apiFetch injects the CSRF token automatically)
+      const bookingRes = await apiFetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -180,9 +180,9 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
       setBookingId(newBookingId);
       setBookingRef(newBookingRef);
 
-      // Step 2: Initiate Mobile Money payment
+      // Step 2: Initiate Mobile Money payment (apiFetch injects the CSRF token)
       setPaymentStep('pending');
-      const paymentRes = await fetch('/api/payments', {
+      const paymentRes = await apiFetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -224,7 +224,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
     const interval = setInterval(async () => {
       attempts++;
       try {
-        const res = await fetch('/api/payments/verify', {
+        const res = await apiFetch('/api/payments/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ transactionRef: ref }),

@@ -615,43 +615,55 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
               </CardContent>
             </Card>
 
-            {/* Options */}
+            {/* Options — outer element is a div with role="button" so we can nest the TTS <Button> (HTML forbids <button> inside <button>) */}
             <div className="grid gap-3">
-              {q.options.map((option, optIndex) => (
-                <button
-                  key={optIndex}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                    answers[currentQuestion] === optIndex
-                      ? 'border-green-500 bg-green-50 shadow-md'
-                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                  }`}
-                  onClick={() => handleAnswer(currentQuestion, optIndex)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
-                      answers[currentQuestion] === optIndex
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {String.fromCharCode(65 + optIndex)}
+              {q.options.map((option, optIndex) => {
+                const isSelected = answers[currentQuestion] === optIndex;
+                return (
+                  <div
+                    key={optIndex}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-400 ${
+                      isSelected
+                        ? 'border-green-500 bg-green-50 shadow-md'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                    onClick={() => handleAnswer(currentQuestion, optIndex)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleAnswer(currentQuestion, optIndex);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+                        isSelected
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {String.fromCharCode(65 + optIndex)}
+                      </div>
+                      <span className={`font-medium flex-1 ${isSelected ? 'text-green-700' : ''}`} style={!isSelected ? { color: '#1A2332' } : {}}>
+                        {option}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-50 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          speakText(option);
+                        }}
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
-                    <span className={`font-medium flex-1 ${answers[currentQuestion] === optIndex ? 'text-green-700' : ''}`} style={answers[currentQuestion] !== optIndex ? { color: '#1A2332' } : {}}>
-                      {option}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-50 hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        speakText(option);
-                      }}
-                    >
-                      <Volume2 className="w-3.5 h-3.5" />
-                    </Button>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
