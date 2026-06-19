@@ -772,3 +772,82 @@ Stage Summary:
   - phase18-media-mode-scenario-selected.png — mode Scénarios sélectionné
   - phase18-media-mode-video-selected.png — mode Vidéos sélectionné
 - **Build/lint/tests** : tous verts (38/38 pages, 0 erreur TS dans src/, 197/197 tests).
+
+---
+Task ID: Phase 19 — New videos for image-only scenarios + audioFr wiring
+Agent: Main Agent
+Task: Continuer l'enrichissement multimédia après Phase 17 et 18. Deux tâches restantes identifiées : (1) Générer des vidéos courtes (Ken Burns) pour les 5 nouveaux scénarios qui n'étaient que des images. (2) Wirer le champ `audioFr` du schéma Prisma pour offrir une narration française enrichie aux candidats malvoyants.
+
+Work Log:
+- **Phase 19-1 : 5 nouvelles vidéos Ken Burns** :
+  - Symptôme : Les 5 scénarios générés en Phase 17 (moto-circulation-conakry, animaux-nuit, zone-scolaire-approche, carrefour-giratoire-nuit, panneau-travaux) n'étaient que des PNGs statiques. Les autres scénarios avaient une vidéo Ken Burns correspondante (effet zoom/pan lent sur 12s avec libellé en bas).
+  - Approche : Étendre le script `scripts/generate-videos.sh` existant avec 5 nouveaux appels à `make_kb_video` (fonction qui orchestre ffmpeg avec scale→crop→zoompan→drawtext→libx264).
+  - Génération : Une vidéo à la fois (les exécutions parallèles déclenchaient un timeout du tool bash). Chaque vidéo ~12s, 1280x720, H.264 yuv420p, faststart, ~600-960 KB.
+  - Résultat : Inventaire vidéos passe de 8 → 13 (8 originales + 5 nouvelles Phase 19).
+  - Nouveaux fichiers :
+    - `public/videos/scenario-moto.mp4` (962 KB)
+    - `public/videos/scenario-animaux.mp4` (810 KB)
+    - `public/videos/scenario-ecole-approche.mp4` (642 KB)
+    - `public/videos/scenario-giratoire-nuit.mp4` (751 KB)
+    - `public/videos/scenario-travaux.mp4` (589 KB)
+
+- **Phase 19-2 : 5 nouvelles questions vidéo** dans `prisma/seed-multimedia.ts` :
+  - Chaque nouveau scénario obtient sa propre question vidéo (avec `videoUrl` ET `scenarioImage` pour la poster-frame).
+  - Thématiques : moto Conakry (Conduite), bovins route rurale nuit (Sécurité), zone scolaire (Sécurité), giratoire nuit Conakry (Priorités), chantier route nationale (Conduite).
+  - Ajout du champ `audioFr?: string` au type `NewQuestion` et propagation dans `prisma.question.create({ data: { ..., audioFr: q.audioFr || null } })`.
+  - Mise à jour de l'inventaire final affiché par le seed : `Videos: 13 (8 original + 5 new Phase 19)`.
+  - Exécution : `npx tsx prisma/seed-multimedia.ts` → 5 nouvelles questions ajoutées (15 existantes skippées par idempotence). Total questions : 74 → 79. Total questions vidéo : 11 → 16.
+
+- **Phase 19-3 : Wirer `audioFr` dans l'UI** :
+  - Vérification pré-existante : `audioFr` était déjà dans le schéma Prisma (`Question.audioFr String?`), dans `src/lib/types.ts` (interface `Question.audioFr?: string`), et dans l'API admin update (`allowedFields` de `/api/admin/questions/[id]/route.ts`). L'API publique `/api/questions` retourne `audioFr` automatiquement (Prisma `findMany` sélectionne toutes les colonnes par défaut).
+  - Modification unique : `src/components/code-route/exam-taking.tsx` ligne 582 — le `TTSPlayer` du compact-player (bouton "Lire la question") utilise maintenant `q.audioFr || \`${q.texte}. ${options}\`` comme texte à lire.
+  - Comportement : Si `audioFr` est défini → TTS lit la narration enrichie (description du contexte + options). Sinon → fallback sur le concat par défaut (texte + options).
+  - Cas d'usage : Candidats malvoyants ou ceux qui veulent une description plus détaillée du scénario avant de répondre. La narration est en français (langue officielle de l'examen).
+
+- **Phase 19-4 : Ajouter des narrations `audioFr` à 5 questions existantes** :
+  - Script idempotent `scripts/add-audio-narrations.ts` qui cherche 5 questions par sous-chaîne de `texte` et update leur champ `audioFr` avec une narration de 647-692 caractères.
+  - Questions choisies (mix de catégories et de médias) :
+    - id=101 : panneau vitesse 30 km/h (sign) → narration décrit le panneau + contexte scolaire/marché
+    - id=107 : bovins route rurale nuit (scenario) → narration décrit la nuit, feux de croisement, vitesse 60 km/h
+    - id=63 : rond-point Kankan (video) → narration décrit le rond-point, le camion à gauche, l'intention de sortie
+    - id=113 : pluie intense (video) → narration décrit visibilité 50m, chaussée glissante, distance de freinage x2
+    - id=116 : motos Conakry (video) → narration décrit trafic dense, moto à droite, prévisibilité
+  - Exécution : `npx tsx scripts/add-audio-narrations.ts` → 5 narrations ajoutées, 0 non trouvées.
+
+- **Vérifications statiques** :
+  - `npx tsc --noEmit` → 0 erreur dans `src/`.
+  - `npx next build` → ✓ Compiled successfully in 8.7s, 38/38 pages.
+  - `npx eslint` sur les fichiers modifiés (`exam-taking.tsx`, `types.ts`, `seed-multimedia.ts`, `add-audio-narrations.ts`) → 0 erreur, 0 warning.
+  - `npx jest` → 197/197 tests passent (9 suites).
+
+- **Test live via agent-browser** (candidat@demo.gn / Candidat@2026) :
+  - **Test Phase 19-1 (nouvelles vidéos)** : Onglet "Entraînement" → mode "Vidéos" → 16 questions chargées (11 originales + 5 nouvelles Phase 19). Toutes les 5 nouvelles questions (Q12 moto, Q13 animaux, Q14 école-approche, Q15 giratoire-nuit, Q16 travaux) affichent leur vidéo correctement. Vérification network : 0 vidéo 404, 0 image cassée.
+  - **Test Phase 19-3 + 19-4 (audioFr)** : Sur Q12 (moto, audioFr=692 chars), intercepté `speechSynthesis.speak()` via `window.speechSynthesis.speak = function(u) { captured.push({text: u.text, lang: u.lang, length: u.text.length}); ... }`. Clic sur bouton "Lire la question" → l'utterance capturée contient exactement la narration audioFr ("Voici une vidéo tournée à Conakry. Le trafic est dense et lent...", 692 chars, lang fr-FR). ✅
+  - **Test fallback (Q1 sans audioFr)** : Sur Q1 (intersection Kaloum, pas de audioFr), même interception → utterance capturée contient le concat par défaut (220 chars : "Regardez la vidéo. À cet intersection... Option A: Le véhicule venant de droite..."). ✅
+  - **Console** : 0 erreur, 0 warning, juste logs HMR normaux.
+  - **Vidéos** : readyState=4 (HAVE_ENOUGH_DATA) pour toutes les vidéos testées.
+
+Stage Summary:
+- **5 nouvelles vidéos** Ken Burns générées (moto, animaux, école-approche, giratoire-nuit, travaux) — portant l'inventaire à 13 vidéos.
+- **5 nouvelles questions vidéo** ajoutées dans le seed → total questions passe de 74 à 79, dont 16 questions vidéo (11 + 5).
+- **Feature `audioFr` opérationnelle** : champ existant dans le schéma mais non-wiré jusqu'à présent. Maintenant intégré dans le `TTSPlayer` du mode examen (pratique et officiel). Si `audioFr` est défini → TTS lit la narration enrichie (description du scénario + options), sinon → fallback sur le concat texte+options.
+- **5 narrations `audioFr` ajoutées** à des questions variées (1 sign, 1 scenario, 3 video, 647-692 chars chacune) via script idempotent `scripts/add-audio-narrations.ts`.
+- **Captures d'écran** dans `/home/z/my-project/download/screenshots/` :
+  - phase19-video-exam-q1.png — mode vidéo, 16 questions, Q1 chargée
+  - phase19-q12-moto-video.png — Q12 moto (nouvelle vidéo Phase 19)
+  - phase19-q13-animaux-video.png — Q13 animaux (nouvelle vidéo Phase 19)
+  - phase19-q16-travaux-video.png — Q16 travaux (nouvelle vidéo Phase 19)
+  - phase19-q12-moto-with-audiofr.png — Q12 moto avec TTSPlayer visible (utilise audioFr)
+- **Build/lint/tests** : tous verts (38/38 pages, 0 erreur TS dans src/, 197/197 tests).
+
+Inventaire final multimédia (toutes phases confondues) :
+- **Panneaux** : 17 (10 originaux + 7 Phase 17)
+- **Scénarios** : 20 (15 originaux + 5 Phase 17)
+- **Vidéos** : 13 (8 originales + 5 Phase 19)
+- **Covers cours** : 6 (3 originaux + 3 Phase 17)
+- **Questions totales** : 79 (41 originales + 15 Phase 17 + 18 texte pur existantes + 5 Phase 19)
+  - dont questions avec média : 60 / 79 (76%)
+  - dont questions vidéo : 16
+  - dont questions avec audioFr : 5
+- **Cours** : 6 (3 originaux + 3 Phase 17)
+- **Leçons** : 35 (17 originales + 18 Phase 17)

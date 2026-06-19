@@ -59,6 +59,13 @@ make_kb_video "$SCEN/route-pluie.png" "$VIDS/scenario-pluie.mp4" "Route sous la 
 make_kb_video "$SCEN/zone-scolaire-dixinn.png" "$VIDS/scenario-ecole.mp4" "Zone scolaire - Dixinn"
 make_kb_video "$SCEN/carrefour-feux.png" "$VIDS/scenario-feux.mp4" "Carrefour a feux - Conakry"
 
+# ── Phase 19: 5 nouveaux scénarios (qui n'étaient que des images) ──
+make_kb_video "$SCEN/moto-circulation-conakry.png" "$VIDS/scenario-moto.mp4" "Motos dans le trafic - Conakry"
+make_kb_video "$SCEN/animaux-nuit.png" "$VIDS/scenario-animaux.mp4" "Animaux sur route rurale de nuit"
+make_kb_video "$SCEN/zone-scolaire-approche.png" "$VIDS/scenario-ecole-approche.mp4" "Approche zone scolaire"
+make_kb_video "$SCEN/carrefour-giratoire-nuit.png" "$VIDS/scenario-giratoire-nuit.mp4" "Giratoire de nuit - Conakry"
+make_kb_video "$SCEN/panneau-travaux.png" "$VIDS/scenario-travaux.mp4" "Chantier sur route nationale"
+
 echo ""
 echo "▶ Done. Final video inventory:"
 ls -lh $VIDS/*.mp4 2>/dev/null | awk '{printf "  %-50s %s\n", $9, $5}'

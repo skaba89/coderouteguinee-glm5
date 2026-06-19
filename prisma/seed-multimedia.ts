@@ -1,7 +1,12 @@
 // ============================================================
-// CodeRoute Guinée — Multimedia Enrichment Seed (Phase 17)
+// CodeRoute Guinée — Multimedia Enrichment Seed (Phase 17 + 19)
 // ============================================================
 // ADDS new media-rich questions, 3 new courses, and new lessons.
+// Phase 17: 15 new questions (signs, scenarios, videos) + 3 courses.
+// Phase 19: 5 new VIDEO questions using newly generated Ken Burns
+//           videos (scenario-moto, scenario-animaux,
+//           scenario-ecole-approche, scenario-giratoire-nuit,
+//           scenario-travaux).
 // Idempotent: uses upserts / checks existence by (texte, categorie).
 // Does NOT touch existing data — existing accounts, courses,
 // lessons and questions remain intact.
@@ -28,6 +33,7 @@ type NewQuestion = {
   signImage?: string;
   scenarioImage?: string;
   videoUrl?: string;
+  audioFr?: string; // narration française (texte lu par TTS navigateur)
   explication: string;
   points?: number;
   tempsEstime?: number;
@@ -289,6 +295,93 @@ const newQuestions: NewQuestion[] = [
     explication: "Après un dépassement, ne reprenez votre voie que lorsque vous voyez entièrement le véhicule dépassé dans votre rétroviseur intérieur. Cela garantit une distance latérale suffisante. Mettez le clignotant droit, vérifiez l'angle mort, et rabattez-vous en douceur.",
     tempsEstime: 30,
     tags: ["conduite", "dépassement", "rétroviseur", "vidéo"]
+  },
+
+  // ── Phase 19: 5 nouvelles questions vidéo (Ken Burns des nouveaux scénarios) ──
+  {
+    texte: "Dans cette vidéo, des motos circulent entre les véhicules à Conakry. Quelle attitude adoptez-vous ?",
+    options: [
+      "Conserver ma trajectoire, vérifier mes angles morts avant tout changement de voie",
+      "Klaxonner pour écarter les motos",
+      "Accélérer pour les distancer",
+      "Freiner brutalement pour les surprendre"
+    ],
+    bonneReponse: 0,
+    categorie: "Conduite",
+    difficulte: "moyen",
+    mediaType: "video",
+    videoUrl: "/videos/scenario-moto.mp4",
+    scenarioImage: "/scenarios/moto-circulation-conakry.png",
+    explication: "À Conakry, les motos slaloment fréquemment entre les véhicules. Restez prévisible : conservez votre trajectoire, vérifiez vos angles morts avant tout changement de voie et laissez de l'espace. Le klaxon agressif ou le freinage brusque peuvent provoquer une chute de motard.",
+    tempsEstime: 25,
+    tags: ["conduite", "moto", "Conakry", "trafic urbain", "vidéo"]
+  },
+  {
+    texte: "Dans cette vidéo de nuit, des bovins traversent la route. Quelle est la bonne conduite ?",
+    options: [
+      "Ralentir, s'arrêter si nécessaire, feux de croisement",
+      "Accélérer en klaxonnant fort",
+      "Éteindre les feux pour ne pas effrayer les animaux",
+      "Forcer le passage à basse vitesse"
+    ],
+    bonneReponse: 0,
+    categorie: "Sécurité",
+    difficulte: "difficile",
+    mediaType: "video",
+    videoUrl: "/videos/scenario-animaux.mp4",
+    scenarioImage: "/scenarios/animaux-nuit.png",
+    explication: "Sur les routes rurales guinéennes de nuit, les animaux peuvent surgir sans préavis. Ralentissez, arrêtez-vous si nécessaire, conservez les feux de croisement (les pleins phares aveuglent les animaux). Ne reprenez la route que lorsque la voie est totalement libre.",
+    tempsEstime: 30,
+    tags: ["sécurité", "animaux", "nuit", "route rurale", "vidéo"]
+  },
+  {
+    texte: "Dans cette vidéo, vous approchez d'une zone scolaire. À quelle vitesse maximale devez-vous rouler ?",
+    options: ["30 km/h maximum", "50 km/h, comme en ville", "60 km/h", "La vitesse que je veux"],
+    bonneReponse: 0,
+    categorie: "Sécurité",
+    difficulte: "facile",
+    mediaType: "video",
+    videoUrl: "/videos/scenario-ecole-approche.mp4",
+    scenarioImage: "/scenarios/zone-scolaire-approche.png",
+    explication: "Aux abords des écoles en Guinée, la vitesse est limitée à 30 km/h. Les enfants peuvent surgir imprévisiblement entre deux véhicules. Soyez particulièrement vigilant aux heures d'entrée et de sortie (7-8h, 12-13h, 17-18h).",
+    tempsEstime: 20,
+    tags: ["sécurité", "école", "vitesse", "30", "vidéo"]
+  },
+  {
+    texte: "Dans cette vidéo de nuit, vous approchez d'un carrefour giratoire à Conakry. Comment procéder ?",
+    options: [
+      "Ralentir, céder le passage aux véhicules dans le giratoire, utiliser le clignotant",
+      "Forcer le passage car j'arrive à droite",
+      "Accélérer pour passer avant les autres",
+      "M'arrêter complètement à l'entrée"
+    ],
+    bonneReponse: 0,
+    categorie: "Priorités",
+    difficulte: "moyen",
+    mediaType: "video",
+    videoUrl: "/videos/scenario-giratoire-nuit.mp4",
+    scenarioImage: "/scenarios/carrefour-giratoire-nuit.png",
+    explication: "De nuit comme de jour, les véhicules circulant dans le giratoire ont la priorité. Ralentissez à l'approche, cédez le passage à gauche, entrez prudemment et signalez votre sortie avec le clignotant droit. Vérifiez l'éclairage de vos phares régulièrement.",
+    tempsEstime: 25,
+    tags: ["priorité", "giratoire", "nuit", "Conakry", "vidéo"]
+  },
+  {
+    texte: "Dans cette vidéo, vous approchez d'un chantier sur route nationale. Quelle est la conduite à tenir ?",
+    options: [
+      "Ralentir, respecter la signalisation temporaire, céder aux ouvriers",
+      "Maintenir ma vitesse pour ne pas bloquer le trafic",
+      "Klaxonner pour prévenir les ouvriers",
+      "Contourner le chantier par la voie de gauche"
+    ],
+    bonneReponse: 0,
+    categorie: "Conduite",
+    difficulte: "facile",
+    mediaType: "video",
+    videoUrl: "/videos/scenario-travaux.mp4",
+    scenarioImage: "/scenarios/panneau-travaux.png",
+    explication: "À l'approche d'un chantier, ralentissez, respectez la signalisation temporaire (panneaux orange, cônes) et cédez le passage aux ouvriers et engins. Une amende est prévue en cas de non-respect de la signalisation de chantier.",
+    tempsEstime: 20,
+    tags: ["conduite", "travaux", "signalisation temporaire", "vidéo"]
   }
 ];
 
@@ -525,6 +618,7 @@ async function main() {
         signImage: q.signImage || null,
         scenarioImage: q.scenarioImage || null,
         videoUrl: q.videoUrl || null,
+        audioFr: q.audioFr || null,
         explication: q.explication,
         points: q.points ?? 1,
         tempsEstime: q.tempsEstime ?? 20,
@@ -592,7 +686,7 @@ async function main() {
   console.log('   📁 Media inventory:');
   console.log('      Signs:    17 (10 original + 7 new)');
   console.log('      Scenarios: 20 (15 original + 5 new)');
-  console.log('      Videos:    8');
+  console.log('      Videos:    13 (8 original + 5 new Phase 19)');
   console.log('      Covers:    6 (3 original + 3 new)');
 }
 

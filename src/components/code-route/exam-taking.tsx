@@ -578,9 +578,15 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
-                {/* TTS compact player for question */}
+                {/* TTS compact player for question.
+                    If q.audioFr is set, the question has a dedicated narration
+                    (more descriptive, useful for visually impaired candidates).
+                    Otherwise, fall back to the default concat: texte + options. */}
                 <TTSPlayer
-                  text={`${q.texte}. ${q.options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`}
+                  text={
+                    q.audioFr ||
+                    `${q.texte}. ${q.options.map((o, i) => `Option ${String.fromCharCode(65 + i)}: ${o}`).join('. ')}`
+                  }
                   language={'fr'}
                   compact
                   showLanguageBadge={false}
