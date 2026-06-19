@@ -698,3 +698,77 @@ Stage Summary:
   - phase17-q19-travaux-scenario.png — Q19 nouveau scenario chantier
   - phase17-q20-taxi-video.png — Q20 nouvelle question vidéo taxi
 - **Build/lint/tests** : tous verts (Next.js build 38/38 pages, 0 erreur TS dans src/).
+
+---
+Task ID: Phase 18 — Fix sign PNG display + Media revision mode + UI polish
+Agent: Main Agent
+Task: Continuer l'enrichissement multimédia après Phase 17. Trois améliorations identifiées : (1) Bug visuel majeur — RoadSignDisplay convertit toujours les paths PNG en SVGs génériques, masquant les nouveaux panneaux générés. (2) Ajouter un mode "Révision par média" pour s'entraîner sur un type spécifique. (3) Polir l'UI pour gérer un nombre variable de questions.
+
+Work Log:
+- **Bug critique Phase 18-1 : RoadSignDisplay ne montrait jamais les vrais PNGs** :
+  - Symptôme : Pour toute question avec `signImage='/signs/*.png'`, le composant `RoadSignDisplay` (utilisé dans `exam-taking.tsx` et `courses-page.tsx`) convertissait le path en `signKey` (ex: `vitesse-90.png` → `'vitesse-limitee'`) puis rendait un SVG générique `VitesseLimiteeSign`. Les nouveaux panneaux générés en Phase 17 (vitesse-30, vitesse-90, rond-point-obligatoire, fin-interdiction-depasser, danger) n'étaient JAMAIS affichés comme PNGs réels — ils apparaissaient comme le SVG standard "vitesse limitée".
+  - Fix : Avant le mapping SVG, vérifier si `signImage` est un vrai fichier image (`/signs/*.png`, `/scenarios/*.png`, `/courses/*.png`). Si oui, rendre directement `<img src={signImage} alt={...} className="object-contain drop-shadow-md" />`. Le texte alternatif est généré depuis le nom de fichier (ex: `/signs/vitesse-30.png` → `"Vitesse 30"`).
+  - Bénéfice secondaire : Les 3 panneaux manquants référencés dans le seed original (`danger.png`, `interdiction-stationner.png`, `obligation-droite.png`) — qui affichaient auparavant un fallback gris "icône point d'interrogation" car le `signKey` n'existait pas — sont maintenant affichés correctement comme PNGs réels.
+  - Compatibilité : Le SVG fallback reste pour les cas où `signImage` n'est PAS un fichier image (par ex. valeurs null ou paths non-standards), préserver la rétro-compatibilité avec le code existant.
+
+- **Phase 18-2 : Mode "Révision par média" dans l'examen d'entraînement** :
+  - API `/api/questions` étendue : nouveau paramètre `mediaType` accepte `text | sign | scenario | video | media | all`. La valeur spéciale `media` filtre toutes les questions AVEC média (`sign | scenario | video | sign+scenario`), excluant le texte pur.
+  - UI `exam-taking.tsx` : ajout d'un sélecteur de mode révision (5 boutons) visible UNIQUEMENT en mode practice (`isPractice=true`), caché en mode examen officiel pour préserver l'aléatoire réglementaire.
+  - 5 modes disponibles :
+    - **Toutes** (défaut, '#1A2332') : tirage aléatoire standard parmi 74 questions
+    - **Avec média** ('#7C3AED') : uniquement questions avec image/scénario/vidéo (42 questions)
+    - **Panneaux** ('#2563EB') : uniquement questions de signalisation (14 questions)
+    - **Scénarios** ('#9333EA') : uniquement questions avec image de scénario (17 questions)
+    - **Vidéos** ('#EA580C') : uniquement questions avec vidéo (11 questions)
+  - Chaque mode affiche une description textuelle expliquant ce qui est filtré.
+  - State management : `mediaMode` est un état local, le `useEffect` de chargement des questions dépend de `[isPractice, mediaMode, targetQuestionCount]` → rechargement automatique quand l'utilisateur change de mode (avant de commencer l'examen).
+
+- **Phase 18-2 (suite) : Gestion d'un nombre variable de questions** :
+  - Problème : Avant cette phase, `totalQuestions = 20` (constante). En mode vidéo avec seulement 11 questions disponibles, l'UI affichait "Question 1/20" mais l'utilisateur ne pouvait naviguer que sur 11 questions — incohérence visuelle.
+  - Fix :
+    - Renommé la constante en `targetQuestionCount` (20 practice, 40 examen)
+    - Ajouté `const totalQuestions = examQuestions.length || targetQuestionCount` (fallback à la target pendant le chargement initial)
+    - Ajouté `const passingScore = Math.round((targetPassingScore * totalQuestions) / targetQuestionCount)` — scale proportionnel au nombre réel de questions. Exemple : 14 × 11/20 = 8 (au lieu de 14 impossible).
+  - Bénéfice : En mode vidéo (11 questions), l'header affiche correctement "Question 1/11", la grille de navigation a 11 boutons (pas 20), et le score requis est 8/11.
+
+- **Phase 18-3 : TTS audio — Skipped** :
+  - Décision : Le `TTSPlayer` utilise déjà `window.speechSynthesis` (synthèse vocale native du navigateur, gratuite, pas d'API externe). Le champ `audioFr` dans le schéma Prisma n'est utilisé nulle part dans l'UI actuelle.
+  - Générer des fichiers audio TTS via `z-ai tts` nécessiterait d'abord d'ajouter un nouveau composant pour les lire (et de modifier `TTSPlayer` ou d'en créer un nouveau). Trop de travail pour un bénéfice marginal vs. la synthèse vocale navigateur déjà fonctionnelle.
+  - Conclusion : Pas d'action. Le champ `audioFr` reste disponible dans le schéma pour un futur développement.
+
+- **Vérifications statiques** :
+  - `npx tsc --noEmit` → 0 erreur dans `src/` (seules erreurs pré-existantes dans `skills/` et `examples/`).
+  - `npx next build` → ✓ Compiled successfully in 8.3s, 38/38 pages.
+  - `npx eslint` sur les 3 fichiers modifiés → 0 erreur, 0 warning.
+  - `npx jest` → 197/197 tests passent (9 suites).
+
+- **Test live via agent-browser** (candidat@demo.gn / Candidat@2026) :
+  - **Test Phase 18-1 (RoadSignDisplay fix)** :
+    - Onglet "Cours" → ouverture leçon "Pression des pneus et entretien" → vraie image PNG `limitation-50.png` affichée (alt="Limitation 50") au lieu du SVG. ✅
+    - Onglet "Entraînement" → Q1 "panneau triangulaire rouge" → vraie image `/signs/danger.png` (alt="Danger"). ✅
+    - Q2 "panneau avec croix rouge" → vraie image `/signs/interdiction-stationner.png` (alt="Interdiction Stationner"). ✅
+    - Q19 "zone 30 km/h" → vraie image `/signs/vitesse-30.png` (alt="Vitesse 30"). ✅
+    - Q20 "carrefour giratoire nuit" → vraie image `/scenarios/carrefour-giratoire-nuit.png`. ✅
+  - **Test Phase 18-2 (mode média)** :
+    - Mode "Toutes" → Q1 est mixte (sign/scenario/text/video aléatoire). ✅
+    - Mode "Panneaux" → Q1 à Q5 toutes avec sign PNG (stop, sens-interdit, cedezer-passage, priorite-droite, limitation-50). Header affiche "Question 6/14" (14 = nombre réel de questions sign). ✅
+    - Mode "Scénarios" → Q1 à Q5 toutes avec scenario PNG. ✅
+    - Mode "Vidéos" → Q1 à Q8 toutes avec vidéo (hasVideo=true). Header affiche "Question 9/11" (11 = nombre réel de questions video). ✅
+    - Mode "Avec média" → Q1 sign, Q2-Q5 scenario — mixte sans texte pur. ✅
+  - **Console** : 0 erreur, 0 warning, juste logs HMR normaux.
+
+Stage Summary:
+- **Bug critique résolu** : `RoadSignDisplay` affiche maintenant les vrais PNGs générés en Phase 17 au lieu de toujours convertir en SVGs génériques. Bénéficie aussi aux 3 panneaux manquants du seed original (`danger`, `interdiction-stationner`, `obligation-droite`) qui affichaient un fallback gris.
+- **Nouvelle fonctionnalité UX** : Mode "Révision par média" avec 5 filtres (Toutes / Avec média / Panneaux / Scénarios / Vidéos). Permet aux candidats de cibler leur révision sur un type de média spécifique — utile pour les apprenants qui ont des difficultés avec les vidéos, par exemple.
+- **Robustesse UI** : `totalQuestions` et `passingScore` scale dynamiquement avec le nombre réel de questions chargées (utile quand le filtre média retourne moins que la cible de 20).
+- **Captures d'écran** dans `/home/z/my-project/download/screenshots/` :
+  - phase18-sign-png-real-display.png — vraie PNG dans leçon cours
+  - phase18-sign-mode-real-png-rendered.png — Q1 sign mode avec PNG
+  - phase18-q19-vitesse-30-real-png.png — Q19 avec nouveau panneau vitesse-30
+  - phase18-q20-giratoire-nuit.png — Q20 avec nouveau scenario giratoire nuit
+  - phase18-pre-exam-with-media-mode.png — écran pré-exam avec sélecteur mode
+  - phase18-media-mode-default-all.png — mode Toutes sélectionné
+  - phase18-media-mode-sign-selected.png — mode Panneaux sélectionné
+  - phase18-media-mode-scenario-selected.png — mode Scénarios sélectionné
+  - phase18-media-mode-video-selected.png — mode Vidéos sélectionné
+- **Build/lint/tests** : tous verts (38/38 pages, 0 erreur TS dans src/, 197/197 tests).

@@ -48,16 +48,33 @@ interface ExamTakingProps {
   preselectedLanguage?: NationalLanguage;
 }
 
+// ─── Media filter modes for practice ─────────────────────
+// 'all' (default): mix of all question types
+// 'sign': only sign questions (panneaux)
+// 'scenario': only scenario image questions
+// 'video': only video questions
+// 'media': any question with media (sign OR scenario OR video)
+type MediaMode = 'all' | 'sign' | 'scenario' | 'video' | 'media';
+
 // ─── Main Exam Taking Component ──────────────────────────────
 export default function ExamTaking({ isPractice = false, onViewChange, onExamComplete, preselectedLanguage }: ExamTakingProps) {
   const { user } = useAuth();
-  const totalQuestions = isPractice ? 20 : 40;
+  // Target question count (may be smaller than this if media filter returns fewer questions)
+  const targetQuestionCount = isPractice ? 20 : 40;
   const timeMinutes = isPractice ? 15 : 30;
-  const passingScore = isPractice ? 14 : 35;
+  // Target passing score — scaled down to actual questions count if media filter
+  // returns fewer questions than the target (e.g. only 8 video questions).
+  const targetPassingScore = isPractice ? 14 : 35;
 
   // Language always French for now — local languages temporarily disabled
   const examLanguage: NationalLanguage = 'fr';
   const [examQuestions, setExamQuestions] = useState<Question[]>([]);
+  // Actual question count — falls back to target during initial load before questions arrive
+  // (prevents division by zero and keeps UI stable while loading)
+  const totalQuestions = examQuestions.length || targetQuestionCount;
+  // Scale passing score proportionally if we have fewer questions than expected
+  // (e.g. video mode returns 8 questions → passing score = 14 × 8/20 = 6)
+  const passingScore = Math.round((targetPassingScore * totalQuestions) / targetQuestionCount);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [flagged, setFlagged] = useState<boolean[]>([]);
@@ -69,6 +86,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showSignModal, setShowSignModal] = useState(false);
   const [showScenarioModal, setShowScenarioModal] = useState(false);
+  const [mediaMode, setMediaMode] = useState<MediaMode>('all');
 
   const autoSubmitRef = useRef(false);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -77,8 +95,17 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
   useEffect(() => {
     async function loadQuestions() {
       try {
-        const count = isPractice ? 20 : 40;
-        const res = await fetch(`/api/questions?random=true&count=${count}&actif=true`);
+        const count = targetQuestionCount;
+        // Build URL with optional media filter
+        const params = new URLSearchParams({
+          random: 'true',
+          count: String(count),
+          actif: 'true',
+        });
+        if (isPractice && mediaMode !== 'all') {
+          params.set('mediaType', mediaMode);
+        }
+        const res = await fetch(`/api/questions?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
           setExamQuestions(data.questions);
@@ -95,7 +122,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
       } catch {
         // Fallback to mock data
         const { getRandomQuestions } = await import('@/lib/mock-data');
-        const count = isPractice ? 20 : 40;
+        const count = targetQuestionCount;
         const selected = getRandomQuestions(count);
         setExamQuestions(selected);
         setAnswers(new Array(count).fill(null));
@@ -103,7 +130,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
       }
     }
     loadQuestions();
-  }, [isPractice]);
+  }, [isPractice, mediaMode, targetQuestionCount]);
 
   // Timer
   useEffect(() => {
@@ -326,6 +353,58 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                     <p className="text-xs text-orange-700 font-medium">Lecture vocale</p>
                   </div>
                 </div>
+
+                {/* Media revision mode (practice only) */}
+                {isPractice && (
+                  <div className="mb-6 text-left">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Film className="w-4 h-4" style={{ color: '#009460' }} />
+                      <span className="font-semibold text-sm" style={{ color: '#1A2332' }}>
+                        Mode de révision
+                      </span>
+                      <span className="text-xs text-gray-400">(filtrer par type de média)</span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      {([
+                        { value: 'all', label: 'Toutes', icon: null, color: '#1A2332' },
+                        { value: 'media', label: 'Avec média', icon: ImageIcon, color: '#7C3AED' },
+                        { value: 'sign', label: 'Panneaux', icon: ImageIcon, color: '#2563EB' },
+                        { value: 'scenario', label: 'Scénarios', icon: Eye, color: '#9333EA' },
+                        { value: 'video', label: 'Vidéos', icon: Video, color: '#EA580C' },
+                      ] as const).map((mode) => {
+                        const Icon = mode.icon;
+                        const isActive = mediaMode === mode.value;
+                        return (
+                          <button
+                            key={mode.value}
+                            type="button"
+                            onClick={() => setMediaMode(mode.value)}
+                            className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
+                              isActive
+                                ? 'border-transparent shadow-md text-white'
+                                : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                            }`}
+                            style={isActive ? { backgroundColor: mode.color } : {}}
+                          >
+                            {Icon && <Icon className="w-4 h-4" />}
+                            <span className="text-xs font-medium">{mode.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {mediaMode === 'all'
+                        ? 'Tirage aléatoire parmi toutes les questions disponibles.'
+                        : mediaMode === 'media'
+                        ? 'Uniquement les questions avec image, scénario ou vidéo (exclut le texte pur).'
+                        : mediaMode === 'sign'
+                        ? 'Uniquement les questions sur les panneaux de signalisation.'
+                        : mediaMode === 'scenario'
+                        ? 'Uniquement les questions avec scénario image (situations réelles).'
+                        : 'Uniquement les questions avec vidéo — idéal pour s\'entraîner à l\'observation.'}
+                    </p>
+                  </div>
+                )}
 
                 {!isPractice && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-left">

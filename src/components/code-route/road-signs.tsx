@@ -502,6 +502,30 @@ export function RoadSignDisplay({
     xl: 'w-48 h-48',
   };
 
+  // ──── Priority 1: real PNG/JPG image file ──────────────
+  // If signImage points to an actual image asset (/signs/*.png, /scenarios/*.png, /courses/*.png),
+  // render the real photo instead of the generic SVG. The PNGs were generated with z-ai image
+  // and reflect real-world Guinean road signs with much more realism than the SVG illustrations.
+  if (signImage && /\.(png|jpe?g|webp|svg)$/i.test(signImage) && /^\/(signs|scenarios|courses)\//.test(signImage)) {
+    // Determine human-readable alt text from filename for accessibility
+    const alt = signImage
+      .split('/')
+      .pop()
+      ?.replace(/\.(png|jpe?g|webp|svg)$/i, '')
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase()) || 'Panneau de signalisation';
+
+    return (
+      <img
+        src={signImage}
+        alt={alt}
+        className={`${sizeClasses[size]} ${className || ''} object-contain drop-shadow-md`}
+        loading="lazy"
+      />
+    );
+  }
+
+  // ──── Priority 2: SVG fallback via path-based key mapping ────
   const signKey = getSignKey(signImage);
 
   if (!signKey) {
