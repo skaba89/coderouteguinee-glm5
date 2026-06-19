@@ -2104,12 +2104,12 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                         </div>
                         <div className="p-3 rounded-lg border" style={{ borderColor: '#E8B123' }}>
                           <p className="text-xs font-semibold" style={{ color: '#E8B123' }}>MTN Mobile Money</p>
-                          <p className="text-[10px] text-gray-400">Prefixes: 626, 627, 628</p>
+                          <p className="text-[10px] text-gray-400">Prefixes: 623, 624, 625</p>
                           <p className="text-[10px] text-gray-400">USSD: *156*1#</p>
                         </div>
                         <div className="p-3 rounded-lg border" style={{ borderColor: '#00A0E3' }}>
                           <p className="text-xs font-semibold" style={{ color: '#00A0E3' }}>Celcom Money</p>
-                          <p className="text-[10px] text-gray-400">Prefixes: 623, 624, 625</p>
+                          <p className="text-[10px] text-gray-400">Prefixes: 626, 627, 628</p>
                           <p className="text-[10px] text-gray-400">USSD: *400*1#</p>
                         </div>
                       </div>
