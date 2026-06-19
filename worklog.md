@@ -1125,3 +1125,164 @@ Comptes de test disponibles (tous validés et fonctionnels) :
 - auto-ecole : autoecole@demo.gn / AutoEcole@2026 (nouveau Phase 22)
 - candidat : candidat@demo.gn / Candidat@2026
 - candidats supplémentaires : aicha@demo.gn, ousmane@demo.gn, cheick009@gmail.com, moussa.kaba@gmail.com (tous / Candidat@2026)
+
+---
+Task ID: Phase 23 — Fonctionnalités admin complètes : CRUD Questions, CRUD Cours, Création d'utilisateurs, Notifications, Mobile Money
+Agent: Main Agent
+Task: L'utilisateur a demandé "oui continuer sur les prochaines étapes" — continuer à faire fonctionner toutes les fonctionnalités et comptes après Phase 22.
+
+Work Log:
+- **Phase 23a : CRUD Questions (API + UI)** :
+  - GET /api/admin/questions (liste avec filtres : catégorie, difficulté, mediaType, actif, search, pagination)
+  - POST /api/admin/questions (création — existait déjà, ajouté logAudit QUESTION_CREATE)
+  - PATCH /api/admin/questions/[id] (modification — existait déjà, ajouté logAudit QUESTION_UPDATE)
+  - DELETE /api/admin/questions/[id] (NOUVEAU — soft-delete si la question est utilisée dans des réponses, hard-delete sinon, logAudit QUESTION_DELETE)
+  - Composant `src/components/code-route/admin/questions-manager.tsx` (535 lignes) :
+    - Table avec colonnes : #, texte, catégorie, difficulté, type, statut, actions
+    - Filtres : recherche texte, catégorie, difficulté, type de média
+    - Bouton "Nouvelle question" → modal complet (texte, 2-6 options avec radio pour bonne réponse, catégorie, difficulté, type, points, temps estimé, tags, explication)
+    - Actions par ligne : Modifier (modal pré-rempli), Activer/Désactiver (toggle), Supprimer (modal confirmation avec info soft-delete)
+    - Pagination
+
+- **Phase 23b : CRUD Cours + Leçons (API + UI)** :
+  - GET /api/admin/courses (liste avec filtres : status, categorie, search, inclut _count lessons)
+  - POST /api/admin/courses (création avec titre, description, catégorie, statut, durée)
+  - GET /api/admin/courses/[id] (détail avec leçons)
+  - PATCH /api/admin/courses/[id] (modification)
+  - DELETE /api/admin/courses/[id] (suppression cascade leçons, logAudit COURSE_DELETE)
+  - GET /api/admin/courses/[id]/lessons (liste leçons)
+  - POST /api/admin/courses/[id]/lessons (création leçon avec auto-ordre si non fourni, recalcul dureeTotale)
+  - PATCH /api/admin/courses/[id]/lessons/[lessonId] (modification leçon)
+  - DELETE /api/admin/courses/[id]/lessons/[lessonId] (suppression + recalcul dureeTotale)
+  - Composant `src/components/code-route/admin/courses-manager.tsx` (435 lignes) :
+    - Liste des cours avec statut (brouillon/publie/archive), catégorie, nb leçons, durée totale
+    - Bouton expand pour voir les leçons d'un cours (chargement async)
+    - Bouton "Nouveau cours" → modal (titre, description, catégorie, statut, durée)
+    - Bouton "Ajouter une leçon" dans la section expand → modal (titre, description, type, contenu, durée)
+    - Actions : Modifier/Supprimer sur cours et leçons, modals de confirmation
+
+- **Phase 23c : Création de comptes par admin (API + UI)** :
+  - POST /api/admin/users (NOUVEAU — création user avec rôle spécifique par admin)
+    - Rôles autorisés : candidat, auto-ecole, centre-agree, administration (super-admin réservé au seed)
+    - Règle : seul super-admin peut créer un compte administration
+    - Génération de numeroUnique avec préfixe par rôle : GN-CODE (candidat), GN-AE (auto-ecole), GN-CA (centre-agree), GN-AD (administration)
+    - Vérification unicité email + numeroIdentite
+    - Hash password bcrypt
+    - logAudit USER_CREATE
+  - Composant `src/components/code-route/admin/create-user-modal.tsx` (200 lignes) :
+    - Modal complet avec tous les champs (rôle, prénom, nom, email, téléphone, mot de passe, date naissance, n° identité, région, ville, catégorie permis si candidat)
+    - Validation : email format, password ≥ 8 chars, champs requis
+    - Messages succès/erreur
+    - Auto-close après 2s sur succès + refresh liste
+  - Bouton "Nouvel utilisateur" ajouté dans l'onglet Utilisateurs (header)
+
+- **Phase 23d : Dashboard Notifications admin** :
+  - GET /api/admin/notifications (existait — liste avec filtres status)
+  - GET /api/admin/notifications/status (NOUVEAU — config + compteurs) :
+    - Config email (SMTP configuré ? mode smtp/http-api/console, hôte, from)
+    - Config SMS (provider configuré ? console/orange/mtn/celcom, senderId)
+    - Stats : totalSent, totalFailed, last24h, byTemplate
+  - POST /api/admin/notifications/status (NOUVEAU — envoi notification test) :
+    - Choisir canal (email/sms) + destinataire
+    - Envoie template welcome avec variables test
+    - Log en base (NotificationLog)
+  - Composant `src/components/code-route/admin/notifications-manager.tsx` (290 lignes) :
+    - 2 cartes config (Email + SMS) avec statut configuré/console + détails
+    - Carte statistiques (3 KPIs : envoyés/échoués/24h + breakdown par template)
+    - Formulaire envoi test (canal + destinataire + bouton Envoyer)
+    - Table historique (date, type, destinataire, template, statut, provider)
+    - Filtre par statut + bouton actualiser
+
+- **Phase 23e : Mobile Money — Panel admin transactions** :
+  - GET /api/admin/payments (NOUVEAU — liste bookings avec payment info + stats agrégées) :
+    - Filtres : statutPaiement, search (réf, candidat, n° MoMo)
+    - Include candidat + centre
+    - Stats agrégées : total, confirmed, pending, failed, refunded, revenue, byMethod
+  - POST /api/admin/payments/[id]/refund (NOUVEAU — rembourssement) :
+    - Réservé super-admin
+    - Vérifie statutPaiement === 'confirme'
+    - Marque comme 'rembourse' + logAudit PAYMENT_FAIL (warning severity)
+  - Composant `src/components/code-route/admin/payments-manager.tsx` (300 lignes) :
+    - 4 cartes stats : Revenu total, Confirmés, En attente, Échoués/Remboursés
+    - Carte "Paiements par méthode" (Mobile Money / Cash / Carte)
+    - Table transactions : date, candidat, centre, méthode, montant, référence, statut, action Rembourser (si confirme et super-admin)
+    - Modal de remboursement avec raison + warning mode sandbox
+    - Pagination
+
+- **Phase 23f : Intégration dans admin-dashboard.tsx** :
+  - Imports des 4 nouveaux composants
+  - Sidebar admin étendue (11 sections pour super-admin) :
+    - Vue d'ensemble, Analyses, Anti-fraude, Centres, Réservations, Paiements, Utilisateurs, Banque questions, Cours, Notifications, Journal d'audit, Système, Paramètres
+  - 3 nouvelles TabsContent : payments, questions, courses, notifications
+  - État `createUserModalOpen` + modal intégré
+
+- **Phase 23g : Étension AuditEventType** :
+  - Ajout des types : QUESTION_DELETE, COURSE_CREATE, COURSE_UPDATE, COURSE_DELETE, LESSON_CREATE, LESSON_UPDATE, LESSON_DELETE
+  - USER_CREATE avait déjà un type, utilisé pour la création admin
+  - Mapping getDefaultSeverity étendu : USER_CREATE, COURSE_DELETE, QUESTION_DELETE, LESSON_DELETE → warning
+
+- **Phase 23h : Tests live via agent-browser (super-admin)** :
+  - Login super-admin (admin@coderoute-gn.org / Admin@2026) → admin dashboard 13 sections visibles dans sidebar (Paiements, Banque questions, Cours, Notifications en plus). ✅
+  - **Onglet Banque questions** : 130 questions listées, filtres catégorie/difficulté/type fonctionnels. ✅
+    - Création question #171 "Quel est le risque principal d'un dépassement à l'approche d'un virage sans visibilité ?" (Signalisation, facile, 4 options, option 2 = bonne réponse). ✅
+    - Question apparue en tête de liste (tri par id desc). ✅
+  - **Onglet Cours** : 9 cours listés avec badges statut/catégorie/nb leçons/durée. ✅
+    - Cours expandables pour voir les leçons (testé sur 1er cours). ✅
+    - Boutons Nouveau cours + Ajouter une leçon visibles. ✅
+  - **Onglet Paiements** : 4 cartes stats (Revenu 100 000 GNF, Confirmés 1, En attente 6, Échoués 0/Remboursés 0). ✅
+    - Table transactions avec colonnes Date/Candidat/Centre/Méthode/Montant/Référence/Statut. ✅
+    - Filtre par statut + recherche. ✅
+  - **Onglet Notifications** : 2 cartes config (Email/SMS en mode console). ✅
+    - Carte stats (7 envoyés, 0 échoué, 5 dernières 24h). ✅
+    - Envoi notification test à test-admin@coderoute-gn.org → succès "Notification email envoyée". ✅
+    - Historique mis à jour avec la nouvelle entrée. ✅
+  - **Onglet Utilisateurs** : bouton "Nouvel utilisateur" ajouté. ✅
+    - Modal création complet avec rôle/prénom/nom/email/téléphone/mot de passe/etc. ✅
+    - Création user "Centre TestPhase23" (centre-phase23@demo.gn / Centre@2026) → compte créé. ✅
+    - User apparait en tête de liste. ✅
+  - **Login avec nouveau compte** : centre-phase23@demo.gn / Centre@2026 → Centre agréé dashboard affiché correctement (4 sections : Vue d'ensemble, Réservations, Planning, Statistiques). ✅
+  - 0 erreur, 0 warning en console sur tous les tests. ✅
+
+- **Vérifications statiques finales** :
+  - `npx tsc --noEmit` → 0 erreur dans `src/`.
+  - `npx next build` → ✓ Compiled successfully in 8.4s, 56 routes (avec 13 nouvelles routes admin API).
+  - `npx eslint src/` → 0 erreur, 0 warning.
+  - `npx jest` → 197/197 tests passent (9 suites).
+
+Stage Summary:
+- **4 nouvelles sections admin** ajoutées au dashboard super-admin : Banque questions, Cours, Notifications, Paiements.
+- **11 nouveaux endpoints API** : GET/POST /api/admin/questions (existant + nouveau GET), DELETE /api/admin/questions/[id] (nouveau), POST /api/admin/users (nouveau), GET/POST/DELETE /api/admin/courses, GET/POST/DELETE /api/admin/courses/[id]/lessons, GET/POST /api/admin/notifications/status (nouveau), GET /api/admin/payments (nouveau), POST /api/admin/payments/[id]/refund (nouveau).
+- **4 nouveaux composants React** : QuestionsManager (535 lignes), CoursesManager (435 lignes), NotificationsManager (290 lignes), PaymentsManager (300 lignes), CreateUserModal (200 lignes).
+- **Audit log étendu** : 7 nouveaux types d'événements (QUESTION_DELETE, COURSE_CREATE/UPDATE/DELETE, LESSON_CREATE/UPDATE/DELETE).
+- **Sidebar super-admin étendue** : 9 → 13 sections (ajout : Paiements, Banque questions, Cours, Notifications).
+- **Création de comptes admin** : super-admin peut maintenant créer des comptes candidat / auto-ecole / centre-agree / administration via UI (au lieu de devoir passer par seed scripts). Chaque compte a un numeroUnique avec préfixe par rôle.
+- **Mobile Money panel** : vue consolidée de toutes les transactions avec stats par méthode (MoMo/Cash/Carte), statut, et capacité de remboursement (super-admin only).
+- **Notifications visibles** : admin peut voir config (console fallback si SMTP vide), stats, envoyer notification test, et consulter l'historique complet.
+- **Captures d'écran** dans `/home/z/my-project/download/screenshots/phase23-*.png` (8 images) :
+  - phase23-questions.png — banque questions avec filtres
+  - phase23-question-created.png — question #171 créée via UI
+  - phase23-courses.png — liste des 9 cours
+  - phase23-payments.png — panel transactions avec stats
+  - phase23-notifications.png — config email/SMS + stats
+  - phase23-notif-test-sent.png — notification test envoyée
+  - phase23-users.png — table utilisateurs avec bouton Nouvel utilisateur
+  - phase23-create-user-modal.png — modal création user
+  - phase23-user-created.png — user Centre TestPhase23 créé
+  - phase23-users-roles-fixed.png — rôles corrigés dans la table
+  - phase23-new-user-login.png — login réussi avec nouveau compte centre-agree
+
+Comptes de test (tous validés) :
+- super-admin : admin@coderoute-gn.org / Admin@2026
+- administration : inspecteur@coderoute-gn.org / Inspect@2026
+- centre-agree (existant) : centre@coderoute-gn.org / Centre@2026
+- centre-agree (nouveau Phase 23) : centre-phase23@demo.gn / Centre@2026
+- auto-ecole : autoecole@demo.gn / AutoEcole@2026
+- candidat : candidat@demo.gn / Candidat@2026
+- candidats supplémentaires : aicha@demo.gn, ousmane@demo.gn, cheick009@gmail.com, moussa.kaba@gmail.com (tous / Candidat@2026)
+
+DB stats après Phase 23 :
+- 10 utilisateurs (1 nouveau centre-agree)
+- 130 questions (1 nouvelle créée via UI)
+- 9 cours / 55 leçons
+- 7 réservations / 7 centres
+- 8 notifications loggées (1 test envoyé)

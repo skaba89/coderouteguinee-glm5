@@ -56,7 +56,6 @@ import {
   LayoutDashboard,
   FileDown,
   ChevronDown,
-  Bell,
   Loader2,
   UserCog,
   CalendarCheck,
@@ -69,7 +68,17 @@ import {
   Gavel,
   FileSearch,
   ShieldOff,
+  FileQuestion,
+  BookOpen,
+  UserPlus,
+  Bell,
+  Wallet,
 } from 'lucide-react';
+import { QuestionsManager } from './admin/questions-manager';
+import { CoursesManager } from './admin/courses-manager';
+import { CreateUserModal } from './admin/create-user-modal';
+import { NotificationsManager } from './admin/notifications-manager';
+import { PaymentsManager } from './admin/payments-manager';
 
 // ─── Color Palette ──────────────────────────────────────
 const COLORS = {
@@ -397,7 +406,11 @@ function getSidebarItems(role: string) {
     { id: 'fraud', label: 'Anti-fraude', icon: AlertOctagon, roles: ['super-admin', 'administration'] },
     { id: 'centers', label: 'Centres', icon: Building2, roles: ['super-admin', 'administration'] },
     { id: 'bookings', label: 'Reservations', icon: CalendarCheck, roles: ['super-admin', 'administration'] },
+    { id: 'payments', label: 'Paiements', icon: Wallet, roles: ['super-admin', 'administration'] },
     { id: 'users', label: 'Utilisateurs', icon: UserCog, roles: ['super-admin', 'administration'] },
+    { id: 'questions', label: 'Banque questions', icon: FileQuestion, roles: ['super-admin', 'administration'] },
+    { id: 'courses', label: 'Cours', icon: BookOpen, roles: ['super-admin', 'administration'] },
+    { id: 'notifications', label: 'Notifications', icon: Bell, roles: ['super-admin', 'administration'] },
     { id: 'audit', label: 'Journal d\'audit', icon: FileSearch, roles: ['super-admin'] },
     { id: 'system', label: 'Système', icon: Activity, roles: ['super-admin'] },
     { id: 'settings', label: 'Parametres', icon: Settings, roles: ['super-admin', 'administration'] },
@@ -471,6 +484,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
     open: false, title: '', onConfirm: () => {},
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
 
   // ─── Fetch dashboard data ─────────────────────────────
   const fetchDashboardData = useCallback(async () => {
@@ -1766,6 +1780,11 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
               </Card>
             </TabsContent>
 
+            {/* ═══════ TAB: Paiements ═══════ */}
+            <TabsContent value="payments" className="space-y-4">
+              <PaymentsManager canRefund={userRole === 'super-admin'} />
+            </TabsContent>
+
             {/* ═══════ TAB: Utilisateurs ═══════ */}
             <TabsContent value="users" className="space-y-4">
               <Card className="border-0 shadow-sm bg-white">
@@ -1801,6 +1820,10 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                       <Button variant="outline" size="sm" className="h-7 text-xs gap-1" style={{ borderColor: COLORS.green, color: COLORS.green }} onClick={() => exportCSV(usersData as unknown as Record<string, unknown>[], 'utilisateurs')}>
                         <Download className="w-3 h-3" />
                         Export
+                      </Button>
+                      <Button size="sm" className="h-7 text-xs gap-1" style={{ background: COLORS.green, color: 'white' }} onClick={() => setCreateUserModalOpen(true)}>
+                        <UserPlus className="w-3 h-3" />
+                        Nouvel utilisateur
                       </Button>
                     </div>
                   </div>
@@ -1901,6 +1924,21 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* ═══════ TAB: Banque de questions ═══════ */}
+            <TabsContent value="questions" className="space-y-4">
+              <QuestionsManager />
+            </TabsContent>
+
+            {/* ═══════ TAB: Cours ═══════ */}
+            <TabsContent value="courses" className="space-y-4">
+              <CoursesManager />
+            </TabsContent>
+
+            {/* ═══════ TAB: Notifications ═══════ */}
+            <TabsContent value="notifications" className="space-y-4">
+              <NotificationsManager />
             </TabsContent>
 
             {/* ═══════ TAB: Journal d'audit ═══════ */}
@@ -2183,6 +2221,12 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
         title={notesModal.title}
         onConfirm={notesModal.onConfirm}
         onCancel={() => setNotesModal({ open: false, title: '', onConfirm: () => {} })}
+      />
+      <CreateUserModal
+        open={createUserModalOpen}
+        onClose={() => setCreateUserModalOpen(false)}
+        onCreated={() => fetchUsers()}
+        canCreateAdmin={userRole === 'super-admin'}
       />
     </div>
   );

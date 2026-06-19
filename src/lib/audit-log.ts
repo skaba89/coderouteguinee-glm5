@@ -38,6 +38,13 @@ export type AuditEventType =
   | 'FRAUD_DISMISS'
   | 'QUESTION_CREATE'
   | 'QUESTION_UPDATE'
+  | 'QUESTION_DELETE'
+  | 'COURSE_CREATE'
+  | 'COURSE_UPDATE'
+  | 'COURSE_DELETE'
+  | 'LESSON_CREATE'
+  | 'LESSON_UPDATE'
+  | 'LESSON_DELETE'
   | 'AUTO_ECOLE_STUDENT_REGISTERED'
   | 'ADMIN_ACTION'
   | 'ROLE_ACCESS_DENIED'
@@ -145,9 +152,13 @@ function getDefaultSeverity(eventType: AuditEventType): AuditSeverity {
   const warningEvents: AuditEventType[] = [
     'AUTH_PASSWORD_RESET_REQUEST',
     'USER_ROLE_CHANGE',
+    'USER_CREATE',
     'BOOKING_REJECT',
     'PAYMENT_FAIL',
     'DATA_EXPORT',
+    'COURSE_DELETE',
+    'QUESTION_DELETE',
+    'LESSON_DELETE',
   ]
 
   if (criticalEvents.includes(eventType)) return 'critical'
