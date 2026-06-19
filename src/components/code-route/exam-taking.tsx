@@ -54,7 +54,8 @@ interface ExamTakingProps {
 // 'scenario': only scenario image questions
 // 'video': only video questions
 // 'media': any question with media (sign OR scenario OR video)
-type MediaMode = 'all' | 'sign' | 'scenario' | 'video' | 'media';
+// 'audio': only questions with a French narration (audioFr not null)
+type MediaMode = 'all' | 'sign' | 'scenario' | 'video' | 'media' | 'audio';
 
 // ─── Main Exam Taking Component ──────────────────────────────
 export default function ExamTaking({ isPractice = false, onViewChange, onExamComplete, preselectedLanguage }: ExamTakingProps) {
@@ -87,6 +88,9 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
   const [showSignModal, setShowSignModal] = useState(false);
   const [showScenarioModal, setShowScenarioModal] = useState(false);
   const [mediaMode, setMediaMode] = useState<MediaMode>('all');
+  // Auto-play the audio narration when each question loads.
+  // Accessibility feature for visually impaired candidates — practice only.
+  const [autoPlayAudio, setAutoPlayAudio] = useState(false);
 
   const autoSubmitRef = useRef(false);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -364,13 +368,14 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                       </span>
                       <span className="text-xs text-gray-400">(filtrer par type de média)</span>
                     </div>
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                       {([
                         { value: 'all', label: 'Toutes', icon: null, color: '#1A2332' },
                         { value: 'media', label: 'Avec média', icon: ImageIcon, color: '#7C3AED' },
                         { value: 'sign', label: 'Panneaux', icon: ImageIcon, color: '#2563EB' },
                         { value: 'scenario', label: 'Scénarios', icon: Eye, color: '#9333EA' },
                         { value: 'video', label: 'Vidéos', icon: Video, color: '#EA580C' },
+                        { value: 'audio', label: 'Avec audio', icon: Volume2, color: '#0D9488' },
                       ] as const).map((mode) => {
                         const Icon = mode.icon;
                         const isActive = mediaMode === mode.value;
@@ -401,8 +406,29 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                         ? 'Uniquement les questions sur les panneaux de signalisation.'
                         : mediaMode === 'scenario'
                         ? 'Uniquement les questions avec scénario image (situations réelles).'
-                        : 'Uniquement les questions avec vidéo — idéal pour s\'entraîner à l\'observation.'}
+                        : mediaMode === 'video'
+                        ? 'Uniquement les questions avec vidéo — idéal pour s\'entraîner à l\'observation.'
+                        : 'Uniquement les questions avec narration audio enrichie (accessibilité malvoyants).'}
                     </p>
+
+                    {/* Auto-play audio toggle (practice only) — accessibility feature */}
+                    <label className="mt-4 flex items-center gap-3 p-3 rounded-lg border-2 border-teal-100 bg-teal-50/50 cursor-pointer hover:bg-teal-50 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={autoPlayAudio}
+                        onChange={(e) => setAutoPlayAudio(e.target.checked)}
+                        className="w-4 h-4 accent-teal-600 cursor-pointer"
+                      />
+                      <Volume2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium text-teal-900">
+                          Lecture automatique de la narration audio
+                        </p>
+                        <p className="text-xs text-teal-700 mt-0.5">
+                          Lit automatiquement la question à l&apos;affichage — idéal pour les candidats malvoyants ou en situation d&apos;apprentissage auditif.
+                        </p>
+                      </div>
+                    </label>
                   </div>
                 )}
 
@@ -576,6 +602,16 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                 }}>
                   {q.difficulte}
                 </Badge>
+                {q.audioFr && (
+                  <Badge variant="outline" className="text-xs flex items-center gap-1" style={{
+                    borderColor: '#0D9488',
+                    color: '#0D9488',
+                    backgroundColor: '#F0FDFA',
+                  }} title="Cette question possède une narration audio enrichie (accessibilité)">
+                    <Volume2 className="w-3 h-3" />
+                    Audio
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {/* TTS compact player for question.
@@ -590,6 +626,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                   language={'fr'}
                   compact
                   showLanguageBadge={false}
+                  autoPlay={autoPlayAudio}
                 />
                 <Button
                   variant="ghost"
@@ -760,7 +797,16 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
               {Array.from({ length: totalQuestions }, (_, i) => (
                 <button
                   key={i}
-                  className={`w-8 h-8 rounded-md text-xs font-medium flex-shrink-0 transition-all ${
+                  style={i === currentQuestion ? { backgroundColor: '#009460' } : {}}
+                  onClick={() => setCurrentQuestion(i)}
+                  title={
+                    examQuestions[i]?.audioFr
+                      ? `Question ${i+1} (avec audio${examQuestions[i]?.mediaType !== 'text' ? ' et média' : ''})`
+                      : examQuestions[i]?.mediaType !== 'text'
+                      ? `Question ${i+1} (avec image)`
+                      : `Question ${i+1}`
+                  }
+                  className={`relative w-8 h-8 rounded-md text-xs font-medium flex-shrink-0 transition-all ${
                     i === currentQuestion
                       ? 'ring-2 ring-green-500 text-white'
                       : flagged[i]
@@ -771,11 +817,15 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
                       ? 'bg-blue-50 text-blue-600'
                       : 'bg-gray-100 text-gray-500'
                   }`}
-                  style={i === currentQuestion ? { backgroundColor: '#009460' } : {}}
-                  onClick={() => setCurrentQuestion(i)}
-                  title={examQuestions[i]?.mediaType !== 'text' ? `Question ${i+1} (avec image)` : `Question ${i+1}`}
                 >
                   {examQuestions[i]?.mediaType === 'sign' ? <ImageIcon className="w-3.5 h-3.5" /> : examQuestions[i]?.mediaType === 'scenario' ? <Eye className="w-3.5 h-3.5" /> : examQuestions[i]?.mediaType === 'video' ? <Play className="w-3.5 h-3.5" /> : i + 1}
+                  {examQuestions[i]?.audioFr && (
+                    <span
+                      className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border border-white"
+                      style={{ backgroundColor: '#0D9488' }}
+                      aria-label="Cette question a une narration audio"
+                    />
+                  )}
                 </button>
               ))}
             </div>
@@ -783,6 +833,7 @@ export default function ExamTaking({ isPractice = false, onViewChange, onExamCom
               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-green-100"></div> Répondu</span>
               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-yellow-100"></div> Marqué</span>
               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-blue-50"></div> Avec média</span>
+              <span className="flex items-center gap-1"><div className="w-3 h-3 rounded" style={{ backgroundColor: '#F0FDFA', border: '1px solid #0D9488' }}></div> Avec audio</span>
             </div>
           </div>
         </div>

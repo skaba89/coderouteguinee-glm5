@@ -93,6 +93,27 @@ export default function TTSPlayer({
     };
   }, []);
 
+  // When the text prop changes (e.g. user navigated to a new question),
+  // cancel any ongoing speech. This is critical for autoPlay to work
+  // correctly across question changes — otherwise the new autoPlay would
+  // call speak() while isPlaying is still true from the previous question,
+  // and speak() would pause instead of playing the new text.
+  //
+  // State resets (isPlaying/isPaused/isLoading) are NOT done here to avoid
+  // the react-hooks/set-state-in-effect lint rule. Instead, the speech
+  // synthesis callbacks (onstart, onend, onerror) will sync the state
+  // naturally — when we cancel() the previous utterance, its onend fires
+  // and resets isPlaying to false.
+  const previousTextRef = useRef(text);
+  useEffect(() => {
+    if (previousTextRef.current !== text) {
+      previousTextRef.current = text;
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    }
+  }, [text]);
+
   const speak = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
 

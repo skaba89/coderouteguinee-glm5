@@ -851,3 +851,75 @@ Inventaire final multimédia (toutes phases confondues) :
   - dont questions avec audioFr : 5
 - **Cours** : 6 (3 originaux + 3 Phase 17)
 - **Leçons** : 35 (17 originales + 18 Phase 17)
+
+---
+Task ID: Phase 20 — Audio filter + Audio badge + Auto-play + 15 narrations
+Agent: Main Agent
+Task: Continuer l'enrichissement multimédia après Phase 19. Trois améliorations identifiées à la fin de Phase 19 : (1) Ajouter un filtre "Avec audio" au sélecteur de mode média. (2) Ajouter un badge visuel "Audio" sur les questions qui ont une narration audioFr. (3) Ajouter une option "Lecture auto audio" pour l'accessibilité. Bonus : (4) Étendre à 15 le nombre de questions avec audioFr.
+
+Work Log:
+- **Phase 20-1 : Filtre "Avec audio" dans le sélecteur de mode média** :
+  - API `/api/questions` étendue : le paramètre `mediaType=audio` filtre maintenant les questions avec `audioFr NOT NULL` (clause Prisma `where.audioFr = { not: null }`).
+  - UI `exam-taking.tsx` : type `MediaMode` étendu avec `'audio'`. Le sélecteur de mode (5 boutons → 6 boutons) affiche maintenant "Avec audio" en teal (#0D9488) avec l'icône Volume2. La grille passe de `grid-cols-5` à `grid-cols-3 sm:grid-cols-6` pour gérer le 6e bouton en responsive (3 cols sur mobile, 6 sur desktop).
+  - Description contextuelle mise à jour : "Uniquement les questions avec narration audio enrichie (accessibilité malvoyants)."
+
+- **Phase 20-2 : Badge visuel "Audio" et indicateur de navigation** :
+  - Badge "Audio" ajouté dans le header de question (à côté des badges catégorie et difficulté) — visible uniquement si `q.audioFr` est défini. Style teal (#0D9488 border, #F0FDFA bg) avec icône Volume2 et texte "Audio". Tooltip : "Cette question possède une narration audio enrichie (accessibilité)".
+  - Indicateur visuel dans la grille de navigation : petit point teal (w-2.5 h-2.5) en haut-droite de chaque bouton de navigation pour les questions qui ont audioFr. Permet au candidat de voir en un coup d'œil quelles questions ont une narration enrichie.
+  - Tooltip de navigation enrichi : "Question X (avec audio)" ou "Question X (avec audio et média)" si la question a aussi un média, au lieu de l'ancien "Question X (avec image)".
+  - Légende en bas de la grille de navigation mise à jour avec un 4e élément : point teal "Avec audio" (à côté de Répondu / Marqué / Avec média).
+
+- **Phase 20-3 : Option "Lecture auto audio" pour l'accessibilité** :
+  - Nouvel état local `autoPlayAudio: boolean` (false par défaut) dans `exam-taking.tsx`.
+  - Checkbox teal dans l'écran de setup (practice mode only) avec label "Lecture automatique de la narration audio" et description "Lit automatiquement la question à l'affichage — idéal pour les candidats malvoyants ou en situation d'apprentissage auditif."
+  - La prop `autoPlay={autoPlayAudio}` est passée au `TTSPlayer` compact dans le header de question.
+  - Bug fix dans `tts-player.tsx` : ajout d'un `useEffect` qui détecte le changement de `text` prop (navigation entre questions) et appelle `speechSynthesis.cancel()` pour stopper la narration précédente. Sans ce fix, le `speak()` appelé par autoPlay voyait `isPlaying=true` (de la question précédente) et déclenchait un pause au lieu de lire la nouvelle question.
+  - Lint rule `react-hooks/set-state-in-effect` respectée : on n'appelle PAS `setState` directement dans l'effect, on utilise un `useRef` pour tracker la valeur précédente et on laisse les callbacks `onend`/`onerror` de l'utterance resetter `isPlaying` naturellement.
+
+- **Phase 20-4 : 10 narrations audioFr supplémentaires** :
+  - Script `scripts/add-audio-narrations.ts` étendu : 5 narrations existantes (Phase 19) + 10 nouvelles (Phase 20) = 15 total.
+  - Sélection équilibrée :
+    - 3 questions sign (id 42, 46, 101) : panneau STOP, panneau vitesse, panneau 30 km/h
+    - 9 questions scenario (id 50, 51, 52, 53, 54, 55, 56, 58, 107) : intersection Kaloum, rond-point Kankan, passage piétons marché, dépassement camion, nuit Conakry, pluie, zone scolaire Dixinn, péage RN1, animaux nuit
+    - 3 questions video (id 63, 113, 116) : rond-point Kankan, pluie intense, motos Conakry
+  - Coverage par catégorie : 3 Signalisation + 4 Priorités + 4 Conduite + 4 Sécurité
+  - Longueur moyenne : 624 chars (vs ~200 chars pour le concat texte+options par défaut)
+  - Idempotence vérifiée : re-run du script ne modifie que les mêmes 15 questions.
+
+- **Vérifications statiques** :
+  - `npx tsc --noEmit` → 0 erreur dans `src/`.
+  - `npx next build` → ✓ Compiled successfully in 8.0s, 38/38 pages.
+  - `npx eslint` sur les 4 fichiers modifiés (`exam-taking.tsx`, `tts-player.tsx`, `questions/route.ts`, `add-audio-narrations.ts`) → 0 erreur après fix du `react-hooks/set-state-in-effect`.
+  - `npx jest` → 197/197 tests passent (9 suites).
+
+- **Test live via agent-browser** (candidat@demo.gn / Candidat@2026) :
+  - **Test Phase 20-1 (filtre audio)** : Onglet "Entraînement" → clic "Avec audio" → 15 questions chargées (au lieu de 20 défaut). Toutes les 15 ont `audioFr` défini. ✅
+  - **Test Phase 20-2 (badge + indicateur)** : Header de Q1 contient le badge "Audio" teal avec icône Volume2. 15 indicateurs (petits points teals) visibles sur les boutons de navigation. Tooltips affichent "Question X (avec audio et média)". ✅
+  - **Test Phase 20-3 (auto-play)** : Checkbox "Lecture automatique" cochée dans l'écran de setup. Intercepteur `speechSynthesis.speak` installé. Démarrage de l'examen → Q1 lue automatiquement (texte de 138 chars = concat par défaut car Q1 sans audioFr). Clic sur "Suivant" → Q2 (avec audioFr) lue automatiquement avec la narration enrichie de 551 chars ("Voici une image montrant une intersection à Kaloum..."). ✅
+  - **Vérification de l'absence de doublon** : Une seule utterance capturée par question → confirme que le `cancel()` du useEffect empêche la narration précédente de continuer. ✅
+  - **Console** : 0 erreur, 0 warning, juste logs HMR normaux.
+
+Stage Summary:
+- **Filtre "Avec audio"** opérationnel dans le sélecteur de mode média (6e bouton, teal #0D9488). Permet aux candidats de s'entraîner spécifiquement sur les questions à narration enrichie — utile pour les malvoyants ou l'apprentissage auditif.
+- **Badge "Audio"** dans le header de question + indicateur visuel (point teal) dans la grille de navigation. Visibilité immédiate pour le candidat des questions qui ont une narration enrichie.
+- **Auto-play audio** : checkbox practice-only qui lit automatiquement la question à l'affichage. Bug fix critique dans `tts-player.tsx` (reset speech on text change) pour que l'auto-play fonctionne correctement à travers les changements de questions.
+- **15 narrations audioFr** au total (5 Phase 19 + 10 Phase 20), couvrant 4 catégories et 3 types de médias. Longueur moyenne 624 chars (3x plus riche que le concat par défaut).
+- **Captures d'écran** dans `/home/z/my-project/download/screenshots/` :
+  - phase20-practice-setup.png — écran setup avec 6 modes + checkbox auto-play
+  - phase20-audio-mode-selected.png — mode "Avec audio" sélectionné
+  - phase20-audio-exam-q1.png — Q1 avec badge Audio et 15 indicateurs de navigation
+  - phase20-autoplay-enabled.png — checkbox auto-play cochée
+  - phase20-q2-audiofr-autoplay.png — Q2 (avec audioFr) lue automatiquement
+- **Build/lint/tests** : tous verts (38/38 pages, 0 erreur TS, 0 erreur ESLint, 197/197 tests).
+
+Inventaire multimédia final (toutes phases confondues) :
+- **Panneaux** : 17 (10 originaux + 7 Phase 17)
+- **Scénarios** : 20 (15 originaux + 5 Phase 17)
+- **Vidéos** : 13 (8 originales + 5 Phase 19)
+- **Covers cours** : 6 (3 originaux + 3 Phase 17)
+- **Questions totales** : 79 (41 originales + 15 Phase 17 + 18 texte pur + 5 Phase 19)
+  - dont questions avec média : 60 / 79 (76%)
+  - dont questions vidéo : 16
+  - dont questions avec audioFr : 15 (5 Phase 19 + 10 Phase 20)
+- **Cours** : 6 (3 originaux + 3 Phase 17)
+- **Leçons** : 35 (17 originales + 18 Phase 17)

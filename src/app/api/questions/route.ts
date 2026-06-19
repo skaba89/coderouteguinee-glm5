@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const actif = searchParams.get('actif')
     const countParam = searchParams.get('count')
     const random = searchParams.get('random')
-    const mediaType = searchParams.get('mediaType') // text | sign | scenario | video | media
+    const mediaType = searchParams.get('mediaType') // text | sign | scenario | video | media | audio
 
     // Build where clause
     const where: Record<string, unknown> = {}
@@ -20,8 +20,11 @@ export async function GET(request: NextRequest) {
     }
     // Media filter — 'media' is a special value meaning "any question with media"
     // (sign, scenario, or video — excludes plain text questions)
+    // 'audio' is a special value meaning "any question with a French narration (audioFr not null)"
     if (mediaType === 'media') {
       where.mediaType = { in: ['sign', 'scenario', 'video', 'sign+scenario'] }
+    } else if (mediaType === 'audio') {
+      where.audioFr = { not: null }
     } else if (mediaType && mediaType !== 'all') {
       where.mediaType = mediaType
     }
