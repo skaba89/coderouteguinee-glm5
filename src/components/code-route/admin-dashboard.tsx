@@ -407,7 +407,7 @@ function getSidebarItems(role: string) {
 
 // ─── Component ──────────────────────────────────────────
 export default function AdminDashboard({ onViewChange }: { onViewChange?: (view: ViewType) => void }) {
-  const { user } = useAuth();
+  const { user, apiFetch } = useAuth();
   const userRole = user?.role || 'administration';
   const sidebarItems = getSidebarItems(userRole);
   const [activeTab, setActiveTab] = useState(sidebarItems[0]?.id || 'overview');
@@ -625,7 +625,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
     setPasswordChangeLoading(true);
     setPasswordChangeMessage(null);
     try {
-      const res = await fetch('/api/auth/change-password', {
+      const res = await apiFetch('/api/auth/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword, newPassword }),
@@ -677,7 +677,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   const toggleUserActive = async (userId: string, currentActif: boolean) => {
     setActionLoading(userId);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await apiFetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actif: !currentActif }),
@@ -697,7 +697,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   const changeUserRole = async (userId: string, newRole: string) => {
     setActionLoading(userId);
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await apiFetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole }),
@@ -717,7 +717,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   const toggleCentreActive = async (centreId: string, currentActif: boolean) => {
     setActionLoading(centreId);
     try {
-      const res = await fetch(`/api/admin/centres/${centreId}`, {
+      const res = await apiFetch(`/api/admin/centres/${centreId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actif: !currentActif }),
@@ -734,7 +734,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   const suspendCentre = async (centreId: string) => {
     setActionLoading(centreId);
     try {
-      const res = await fetch(`/api/admin/centres/${centreId}`, {
+      const res = await apiFetch(`/api/admin/centres/${centreId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accredStatut: 'suspendu', actif: false }),
@@ -760,7 +760,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   const reactivateCentre = async (centreId: string) => {
     setActionLoading(centreId);
     try {
-      const res = await fetch(`/api/admin/centres/${centreId}`, {
+      const res = await apiFetch(`/api/admin/centres/${centreId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accredStatut: 'actif', actif: true }),
@@ -786,7 +786,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   const updateFraudStatus = async (alertId: string, newStatus: string, notes?: string) => {
     setActionLoading(alertId);
     try {
-      const res = await fetch(`/api/admin/fraud/${alertId}`, {
+      const res = await apiFetch(`/api/admin/fraud/${alertId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus, notes }),
@@ -808,7 +808,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
     try {
       const body: Record<string, unknown> = { statutPaiement };
       if (confirmee !== undefined) body.confirmee = confirmee;
-      const res = await fetch(`/api/admin/bookings/${bookingId}`, {
+      const res = await apiFetch(`/api/admin/bookings/${bookingId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -2149,7 +2149,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                           variant="outline"
                           onClick={async () => {
                             try {
-                              const res = await fetch('/api/admin/backup', { method: 'POST' });
+                              const res = await apiFetch('/api/admin/backup', { method: 'POST' });
                               const data = await res.json();
                               alert(res.ok ? 'Sauvegarde creee avec succes.' : data.error || 'Erreur lors de la sauvegarde.');
                             } catch { alert('Erreur de connexion.'); }

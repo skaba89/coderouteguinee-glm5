@@ -479,3 +479,62 @@ Stage Summary:
 - CSRF réparé : `handleConfirm` et le polling de paiement utilisent désormais `apiFetch()` qui injecte le header `x-csrf-token` automatiquement. La réservation d'examen et le paiement Mobile Money ne sont plus bloqués par "Token CSRF manquant".
 - Hydratation réparée : plus aucun `<button>` imbriqué dans `<button>`. L'option de réponse est un `div role="button"` accessible (clavier + screen reader), le bouton volume reste un vrai `<button>`.
 - Build, lint : tous verts.
+
+---
+Task ID: Phase 14 — Audit CSRF + hydratation sur toute l'app + test live complet
+Agent: Main Agent
+Task: À la suite du fix Phase 13 (CSRF exam-booking + button-in-button exam-taking), auditer systématiquement tous les composants pour détecter d'autres bugs CSRF (fetch() direct au lieu de apiFetch()) et d'autres imbrications HTML illégales, puis tester le flux complet candidat + admin en live.
+
+Work Log:
+- **Audit CSRF (POST/PATCH/PUT/DELETE avec fetch() direct)** :
+  - `exam-booking.tsx` : 3 appels (déjà corrigés en Phase 13) ✓
+  - `admin-dashboard.tsx` : **9 appels problématiques découverts** !
+    - Ligne 628 : `POST /api/auth/change-password` (NOTE : le middleware ne skip PAS cette route — seul login/register/logout/reset-password sont skip)
+    - Lignes 680, 700, 720, 737, 763, 789, 811 : 7× `PATCH /api/admin/{users,centres,fraud,bookings}/[id]`
+    - Ligne 2152 : `POST /api/admin/backup`
+  - `auto-ecole-dashboard.tsx` : utilise déjà apiFetch ✓
+  - `centre-dashboard.tsx` : aucun appel state-changing direct ✓
+  - `app/reset-password/page.tsx` : `PUT /api/auth/reset-password` (dans la skip-list du middleware) ✓
+  - Autres composants : seuls des `GET` (pas de CSRF requis)
+  - **Fix appliqué** : `const { user, apiFetch } = useAuth();` + remplacement des 9 `fetch(...)` → `apiFetch(...)` dans admin-dashboard.tsx
+
+- **Audit hydratation (button-in-button)** :
+  - Script Python custom pour scanner tous les `.tsx` sous `src/` (en stripant les commentaires JSX pour éviter les faux positifs sur le mot `<button>` dans les commentaires)
+  - Résultat : **0 autre imbrication détectée**. Le bug Phase 13 sur exam-taking.tsx était le seul.
+
+- **Vérifications statiques** :
+  - `npx tsc --noEmit` → 0 erreur dans `src/`
+  - `npx next build` → ✓ Compiled successfully in 8.2s, 38/38 pages
+  - `npx eslint` sur les 3 fichiers touchés (admin-dashboard, exam-booking, exam-taking) → exit 0, 0 erreur, 0 warning
+  - `npx jest --silent` → 197/197 tests OK (9 suites), stable après 2 runs
+
+- **Test live complet (candidat@demo.gn / Candidat@2026)** :
+  - Login → 200 ✓
+  - GET /api/auth/csrf → cookie + token générés (token измен à chaque appel, comportement attendu)
+  - POST /api/bookings SANS header `x-csrf-token` → 403 "Token CSRF manquant" ✓ (protection active)
+  - POST /api/bookings AVEC header `x-csrf-token` (token = cookie) → 201 Created, numéro convocation CONV-925312 ✓
+  - POST /api/payments AVEC CSRF → 201, transaction SIM-ORANGE_MONEY-1781878316887, USSD #144*1# ✓
+  - POST /api/payments/verify AVEC CSRF → 200, status pending (sandbox) ✓
+  - GET /api/convocation/[id] avant confirmation paiement → 400 "Le paiement doit être confirmé" (légitime)
+  - Force-confirmation du paiement en DB → GET /api/convocation/[id] → **HTTP 200, application/pdf, 3.4 KB, PDF v1.7** ✓
+  - GET /api/questions?random=true&count=5&actif=true → 5 questions dont 1 scenario image (conduite-nuit-conakry.png) + 2 vidéos (scenario-intersection.mp4 + scenario-depassement.mp4) ✓
+  - HEAD /scenarios/conduite-nuit-conakry.png → 200, image/png ✓
+  - HEAD /videos/scenario-intersection.mp4 → 200, video/mp4, Accept-Ranges: bytes ✓
+  - HEAD /courses/cover-signalisation.png → 200 ✓
+
+- **Test live admin (admin@coderoute-gn.org / Admin@2026)** :
+  - Login → 200, role super-admin ✓
+  - PATCH /api/admin/users/[id] SANS CSRF → 403 "Token CSRF manquant" ✓ (protection active, était bypass avant fix)
+  - PATCH /api/admin/users/[id] AVEC CSRF → 200, user updated ✓
+  - POST /api/admin/backup AVEC CSRF → 500 "Erreur lors de l'exécution de la sauvegarde"
+    - **Root cause** : `scripts/backup-db.sh` appelle `sqlite3` qui n'est pas installé sur l'env dev (`sqlite3: command not found`)
+    - Ce bug est PRÉ-EXISTANT et INDÉPENDANT du fix CSRF — le CSRF est validé (sinon on aurait eu 403), l'erreur vient après, dans le shell script.
+    - Hors scope de la demande utilisateur, laissé en l'état.
+
+Stage Summary:
+- **9 nouveaux bugs CSRF corrigés** dans `admin-dashboard.tsx` (changement de mot de passe, toggle user/centre, suspend/réactive centre, update fraud status, update booking status, backup DB). Avant le fix, toutes ces actions admin étaient silencieusement bloquées par 403 CSRF.
+- **0 autre bug d'hydratation** détecté dans le codebase.
+- Flux candidat complet validé en live : login → réservation → paiement Mobile Money → confirmation → PDF convocation → entraînement avec médias (images scénario + vidéos MP4).
+- Flux admin validé en live : login super-admin → PATCH user (CSRF protégé puis succès).
+- Build, lint, tests : tous verts (197 tests, 0 erreur TS, 0 erreur lint, 38 pages build OK).
+- Note : le bouton "Sauvegarde DB" de l'admin retourne 500 car `sqlite3` n'est pas installé en dev — bug pré-existant hors scope.
