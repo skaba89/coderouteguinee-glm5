@@ -25,6 +25,11 @@ function mockRequest(headers: Record<string, string> = {}) {
   } as any
 }
 
+// ─── Typed aliases (les mocks Prisma ne sont pas typés par défaut) ─
+const auditLogCreate = db.auditLog.create as unknown as jest.Mock
+const auditLogFindMany = db.auditLog.findMany as unknown as jest.Mock
+const auditLogCount = db.auditLog.count as unknown as jest.Mock
+
 beforeEach(() => {
   jest.clearAllMocks()
 })
@@ -58,19 +63,19 @@ describe('Audit Logging', () => {
 
     test.each(criticalEvents)('marque %s comme critical', async (eventType) => {
       await logAudit({ eventType, description: 'test' })
-      const call = db.auditLog.create.mock.calls[0][0]
+      const call = auditLogCreate.mock.calls[0][0]
       expect(call.data.severity).toBe('critical')
     })
 
     test.each(warningEvents)('marque %s comme warning', async (eventType) => {
       await logAudit({ eventType, description: 'test' })
-      const call = db.auditLog.create.mock.calls[0][0]
+      const call = auditLogCreate.mock.calls[0][0]
       expect(call.data.severity).toBe('warning')
     })
 
     test.each(infoEvents)('marque %s comme info', async (eventType) => {
       await logAudit({ eventType, description: 'test' })
-      const call = db.auditLog.create.mock.calls[0][0]
+      const call = auditLogCreate.mock.calls[0][0]
       expect(call.data.severity).toBe('info')
     })
 
@@ -80,7 +85,7 @@ describe('Audit Logging', () => {
         severity: 'critical',
         description: 'login manuel critique',
       })
-      const call = db.auditLog.create.mock.calls[0][0]
+      const call = auditLogCreate.mock.calls[0][0]
       expect(call.data.severity).toBe('critical')
     })
   })
@@ -97,7 +102,7 @@ describe('Audit Logging', () => {
         details: { from: 'candidat', to: 'administration' },
       }, mockRequest({ 'x-forwarded-for': '10.0.0.1', 'user-agent': 'Jest/1.0' }))
 
-      const call = db.auditLog.create.mock.calls[0][0]
+      const call = auditLogCreate.mock.calls[0][0]
       expect(call.data.eventType).toBe('USER_UPDATE')
       expect(call.data.userId).toBe('u-1')
       expect(call.data.userRole).toBe('super-admin')
@@ -115,13 +120,13 @@ describe('Audit Logging', () => {
         { eventType: 'AUTH_LOGIN', description: 'login' },
         mockRequest({ 'x-real-ip': '192.168.0.1' })
       )
-      const call = db.auditLog.create.mock.calls[0][0]
+      const call = auditLogCreate.mock.calls[0][0]
       expect(call.data.ipAddress).toBe('192.168.0.1')
     })
 
     test('met userId à null si non fourni', async () => {
       await logAudit({ eventType: 'AUTH_LOGIN_FAILED', description: 'no user' })
-      const call = db.auditLog.create.mock.calls[0][0]
+      const call = auditLogCreate.mock.calls[0][0]
       expect(call.data.userId).toBeNull()
       expect(call.data.userRole).toBeNull()
       expect(call.data.targetId).toBeNull()
@@ -137,14 +142,14 @@ describe('Audit Logging', () => {
         description: 'Confirmée',
         details: { bookingId: 'b-1', amount: 75000 },
       })
-      const call = db.auditLog.create.mock.calls[0][0]
+      const call = auditLogCreate.mock.calls[0][0]
       expect(typeof call.data.details).toBe('string')
       const parsed = JSON.parse(call.data.details)
       expect(parsed).toEqual({ bookingId: 'b-1', amount: 75000 })
     })
 
     test('survit à une erreur DB (n\'interrompt pas l\'app)', async () => {
-      db.auditLog.create.mockRejectedValueOnce(new Error('DB down'))
+      auditLogCreate.mockRejectedValueOnce(new Error('DB down'))
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {})
 
@@ -212,13 +217,13 @@ describe('Audit Logging', () => {
   describe('queryAuditLogs', () => {
     test('utilise les valeurs par défaut (limit 50, offset 0)', async () => {
       await queryAuditLogs()
-      expect(db.auditLog.findMany).toHaveBeenCalledWith({
+      expect(auditLogFindMany).toHaveBeenCalledWith({
         where: {},
         orderBy: { timestamp: 'desc' },
         take: 50,
         skip: 0,
       })
-      expect(db.auditLog.count).toHaveBeenCalledWith({ where: {} })
+      expect(auditLogCount).toHaveBeenCalledWith({ where: {} })
     })
 
     test('construit le filtre where correctement', async () => {
@@ -232,7 +237,7 @@ describe('Audit Logging', () => {
         offset: 5,
       })
 
-      const where = db.auditLog.findMany.mock.calls[0][0].where
+      const where = auditLogFindMany.mock.calls[0][0].where
       expect(where.eventType).toBe('AUTH_LOGIN')
       expect(where.userId).toBe('u-1')
       expect(where.severity).toBe('info')
@@ -241,19 +246,19 @@ describe('Audit Logging', () => {
         lte: new Date('2026-12-31'),
       })
 
-      expect(db.auditLog.findMany.mock.calls[0][0].take).toBe(10)
-      expect(db.auditLog.findMany.mock.calls[0][0].skip).toBe(5)
+      expect(auditLogFindMany.mock.calls[0][0].take).toBe(10)
+      expect(auditLogFindMany.mock.calls[0][0].skip).toBe(5)
     })
 
     test('omet le filtre timestamp si pas de dates', async () => {
       await queryAuditLogs({ eventType: 'AUTH_LOGOUT' })
-      const where = db.auditLog.findMany.mock.calls[0][0].where
+      const where = auditLogFindMany.mock.calls[0][0].where
       expect(where.timestamp).toBeUndefined()
     })
 
     test('renvoie logs, total, limit, offset', async () => {
-      db.auditLog.findMany.mockResolvedValueOnce([{ id: 'a' }, { id: 'b' }])
-      db.auditLog.count.mockResolvedValueOnce(2)
+      auditLogFindMany.mockResolvedValueOnce([{ id: 'a' }, { id: 'b' }])
+      auditLogCount.mockResolvedValueOnce(2)
 
       const result = await queryAuditLogs({ limit: 5 })
       expect(result).toEqual({

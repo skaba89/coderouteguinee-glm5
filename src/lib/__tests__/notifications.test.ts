@@ -47,6 +47,10 @@ const VARIABLES: Record<string, string> = {
   raison: 'Documents valides',
 }
 
+// ─── Typed aliases (les mocks Prisma ne sont pas typés par défaut) ─
+const notificationLogCreate = db.notificationLog.create as unknown as jest.Mock
+const userFindUnique = db.user.findUnique as unknown as jest.Mock
+
 beforeEach(() => {
   jest.clearAllMocks()
   // Force console provider for both channels
@@ -91,8 +95,8 @@ describe('Notification Service', () => {
         recipient: 'candidat@demo.gn',
         variables: VARIABLES,
       })
-      expect(db.notificationLog.create).toHaveBeenCalledTimes(1)
-      const call = db.notificationLog.create.mock.calls[0][0]
+      expect(notificationLogCreate).toHaveBeenCalledTimes(1)
+      const call = notificationLogCreate.mock.calls[0][0]
       expect(call.data.template).toBe('welcome')
       expect(call.data.type).toBe('email')
       expect(call.data.recipient).toBe('candidat@demo.gn')
@@ -122,7 +126,7 @@ describe('Notification Service', () => {
         recipient: '622123456',
         variables: VARIABLES,
       })
-      const call = db.notificationLog.create.mock.calls[0][0]
+      const call = notificationLogCreate.mock.calls[0][0]
       expect(call.data.type).toBe('sms')
       expect(call.data.subject).toBeNull()
       expect(call.data.body).toContain('15/07/2026')
@@ -204,7 +208,7 @@ describe('Notification Service', () => {
         recipient: 'aicha@demo.gn',
         variables: VARIABLES,
       })
-      const call = db.notificationLog.create.mock.calls[0][0]
+      const call = notificationLogCreate.mock.calls[0][0]
       expect(call.data.userId).toBe('user-123')
     })
 
@@ -215,14 +219,14 @@ describe('Notification Service', () => {
         recipient: 'aicha@demo.gn',
         variables: VARIABLES,
       })
-      const call = db.notificationLog.create.mock.calls[0][0]
+      const call = notificationLogCreate.mock.calls[0][0]
       expect(call.data.userId).toBeNull()
     })
   })
 
   describe('notifyUser — résolution utilisateur', () => {
     test('récupère l\'email depuis l\'utilisateur', async () => {
-      db.user.findUnique.mockResolvedValue({
+      userFindUnique.mockResolvedValue({
         id: 'u-1',
         email: 'via-user@demo.gn',
         telephone: '622000000',
@@ -230,26 +234,26 @@ describe('Notification Service', () => {
 
       const result = await notifyUser('u-1', 'email', 'welcome', VARIABLES)
       expect(result.success).toBe(true)
-      expect(db.user.findUnique).toHaveBeenCalledWith({ where: { id: 'u-1' } })
+      expect(userFindUnique).toHaveBeenCalledWith({ where: { id: 'u-1' } })
 
-      const call = db.notificationLog.create.mock.calls[0][0]
+      const call = notificationLogCreate.mock.calls[0][0]
       expect(call.data.recipient).toBe('via-user@demo.gn')
     })
 
     test('récupère le téléphone pour le canal SMS', async () => {
-      db.user.findUnique.mockResolvedValue({
+      userFindUnique.mockResolvedValue({
         id: 'u-1',
         email: 'via-user@demo.gn',
         telephone: '627111111',
       })
 
       await notifyUser('u-1', 'sms', 'exam_reminder', VARIABLES)
-      const call = db.notificationLog.create.mock.calls[0][0]
+      const call = notificationLogCreate.mock.calls[0][0]
       expect(call.data.recipient).toBe('627111111')
     })
 
     test('échoue si l\'utilisateur n\'existe pas', async () => {
-      db.user.findUnique.mockResolvedValue(null)
+      userFindUnique.mockResolvedValue(null)
       const result = await notifyUser('missing', 'email', 'welcome', VARIABLES)
       expect(result.success).toBe(false)
       expect(result.error).toContain('Utilisateur non trouvé')
@@ -258,7 +262,7 @@ describe('Notification Service', () => {
 
   describe('sendNotification — gestion des erreurs', () => {
     test('survit à une erreur DB et renvoie quand même success', async () => {
-      db.notificationLog.create.mockRejectedValueOnce(new Error('DB down'))
+      notificationLogCreate.mockRejectedValueOnce(new Error('DB down'))
       const result = await sendNotification({
         channel: 'email',
         template: 'welcome',

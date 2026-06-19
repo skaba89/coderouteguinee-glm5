@@ -54,7 +54,7 @@ describe('Rate Limiting', () => {
     test('bloque après dépassement de la limite', () => {
       const request = createMockRequest('192.168.1.101')
       // Make many requests to exceed limit
-      let lastResult = null
+      let lastResult: ReturnType<typeof checkRateLimit> = null
       for (let i = 0; i <= RATE_LIMIT_PRESETS.general.maxRequests + 1; i++) {
         lastResult = checkRateLimit(request, RATE_LIMIT_PRESETS.general)
       }
@@ -64,7 +64,7 @@ describe('Rate Limiting', () => {
 
     test('inclut Retry-After dans la réponse de blocage', () => {
       const request = createMockRequest('192.168.1.102')
-      let blockedResponse = null
+      let blockedResponse: ReturnType<typeof checkRateLimit> = null
       for (let i = 0; i <= RATE_LIMIT_PRESETS.general.maxRequests + 1; i++) {
         const result = checkRateLimit(request, RATE_LIMIT_PRESETS.general)
         if (result) blockedResponse = result
