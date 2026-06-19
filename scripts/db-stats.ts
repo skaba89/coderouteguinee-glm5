@@ -41,7 +41,7 @@ async function main() {
   console.log(`Courses: ${courses}, Lessons: ${lessons}`);
   console.log(`Bookings: ${bookings}`);
   console.log(`Centres: ${centres}, Auto-écoles: ${autoEcoles}`);
-  console.log(`By category:`, mediaStats.map(c => `${c.category}=${c._count}`).join(', '));
+  console.log(`By category:`, mediaStats.map(c => `${c.categorie}=${c._count}`).join(', '));
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
