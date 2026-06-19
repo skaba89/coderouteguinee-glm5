@@ -82,7 +82,7 @@ export async function GET() {
       if (region && regionMap[region]) {
         regionMap[region].exams++
         if (exam.statut === 'reussi') regionMap[region].passed++
-        regionMap[region].revenue += 50000
+        regionMap[region].revenue += 350000 // tarif réservation examen
       }
     }
 

@@ -532,7 +532,7 @@ async function main() {
         failed,
         cancelled: Math.floor(Math.random() * 3),
         avgScore,
-        revenue: exams * 50000,
+        revenue: exams * 350000,
       },
     });
   }

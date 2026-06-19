@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const result = await initiateMobileMoneyPayment({
       bookingId,
       phoneNumber,
-      amount: amount || 50000, // Default: 50,000 GNF
+      amount: amount || 350000, // 350 000 GNF — tarif réservation examen
     })
 
     if (!result.success) {

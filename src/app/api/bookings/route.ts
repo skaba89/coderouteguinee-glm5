@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         heure,
         langue: langue || 'fr',
         categoriePermis: categoriePermis || 'B',
-        montant: montant || 50000,
+        montant: montant || 350000, // 350 000 GNF — tarif réservation examen
         numeroPaiement: numeroPaiement || null,
         numeroConvocation,
         statutPaiement: 'en_attente',

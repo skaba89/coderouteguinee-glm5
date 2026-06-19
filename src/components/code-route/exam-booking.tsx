@@ -50,8 +50,8 @@ const providerInfo: Record<string, { name: string; color: string; ussd: string }
 function detectProvider(phone: string): string | null {
   const cleaned = phone.replace(/[\s\-]/g, '').replace(/^\+224/, '');
   if (/^(622|621|620)/.test(cleaned)) return 'orange_money';
-  if (/^(623|624|625)/.test(cleaned)) return 'celcom_money';
-  if (/^(626|627|628)/.test(cleaned)) return 'mtn_money';
+  if (/^(623|624|625)/.test(cleaned)) return 'mtn_money';
+  if (/^(626|627|628)/.test(cleaned)) return 'celcom_money';
   return null;
 }
 
@@ -235,7 +235,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
           heure: selectedTime,
           langue: 'fr',
           categoriePermis: user?.categoriePermis || 'B',
-          montant: 50000,
+          montant: 350000,
           numeroPaiement: mobileMoneyNumber,
         }),
       });
@@ -259,7 +259,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
         body: JSON.stringify({
           bookingId: newBookingId,
           phoneNumber: mobileMoneyNumber,
-          amount: 50000,
+          amount: 350000,
         }),
       });
 
@@ -474,7 +474,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                     </div>
                     <div>
                       <p className="font-semibold text-sm">{provider.name}</p>
-                      <p className="text-xs text-gray-500">50 000 GNF</p>
+                      <p className="text-xs text-gray-500">350 000 GNF</p>
                     </div>
                   </div>
 
@@ -750,7 +750,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between">
                         <span className="font-semibold" style={{ color: '#1A2332' }}>Frais d&apos;examen</span>
-                        <span className="font-bold text-lg" style={{ color: '#009460' }}>50 000 GNF</span>
+                        <span className="font-bold text-lg" style={{ color: '#009460' }}>350 000 GNF</span>
                       </div>
                     </div>
                   </div>
@@ -871,7 +871,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                   ) : (
                     <>
                       <Smartphone className="w-4 h-4 mr-1" />
-                      Payer 50 000 GNF
+                      Payer 350 000 GNF
                     </>
                   )}
                 </Button>

@@ -84,7 +84,7 @@ async function main() {
       heure: '10:00',
       langue: 'fr',
       categoriePermis: 'B',
-      montant: 50000,
+      montant: 350000,
       moyenPaiement: 'mobile_money',
     }),
   })
@@ -120,7 +120,7 @@ async function main() {
     body: JSON.stringify({
       bookingId,
       phoneNumber: '621000001',
-      amount: 50000,
+      amount: 350000,
     }),
   })
   const payData = await payRes.json()
@@ -202,7 +202,7 @@ async function main() {
       channel: 'sms',
       template: 'payment_confirmation',
       recipient: user.telephone,
-      variables: { montant: '50000', reference: status1.referencePaiement || 'TEST-REF' },
+      variables: { montant: '350000', reference: status1.referencePaiement || 'TEST-REF' },
     })
     console.log('  Payment SMS →', JSON.stringify(n2))
 

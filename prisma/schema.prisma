@@ -171,7 +171,7 @@ model Booking {
   langue          String   @default("fr")
   categoriePermis String   @default("B")
   // Payment
-  montant         Int      @default(50000) // GNF
+  montant         Int      @default(350000) // GNF — tarif réservation examen
   moyenPaiement   String   @default("mobile_money") // mobile_money | cash | carte
   numeroPaiement  String?  // Mobile Money number
   referencePaiement String? // Transaction reference

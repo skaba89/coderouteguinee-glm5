@@ -1,0 +1,886 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useCallback } from 'react';
+     4→import { Card, CardContent } from '@/components/ui/card';
+     5→import { Button } from '@/components/ui/button';
+     6→import { Input } from '@/components/ui/input';
+     7→import { Label } from '@/components/ui/label';
+     8→import {
+     9→  Select,
+    10→  SelectContent,
+    11→  SelectItem,
+    12→  SelectTrigger,
+    13→  SelectValue,
+    14→} from '@/components/ui/select';
+    15→import { useAuth } from '@/lib/auth-context';
+    16→import { ViewType, BookingData } from '@/lib/types';
+    17→import { regions, centres, creneauxHoraires, getUpcomingDates } from '@/lib/mock-data';
+    18→import QRCode from 'qrcode';
+    19→import {
+    20→  MapPin,
+    21→  Building2,
+    22→  Calendar,
+    23→  CreditCard,
+    24→  ChevronRight,
+    25→  ChevronLeft,
+    26→  Check,
+    27→  Clock,
+    28→  Smartphone,
+    29→  QrCode,
+    30→  User,
+    31→  AlertTriangle,
+    32→  Loader2,
+    33→  Phone,
+    34→  Shield,
+    35→  RefreshCw,
+    36→} from 'lucide-react';
+    37→
+    38→interface ExamBookingProps {
+    39→  onViewChange: (view: ViewType) => void;
+    40→}
+    41→
+    42→// Provider info for display
+    43→const providerInfo: Record<string, { name: string; color: string; ussd: string }> = {
+    44→  orange_money: { name: 'Orange Money', color: '#FF6600', ussd: '#144*1#' },
+    45→  mtn_money: { name: 'MTN Mobile Money', color: '#FFCC00', ussd: '*156*1#' },
+    46→  celcom_money: { name: 'Celcom Money', color: '#00A651', ussd: '*400*1#' },
+    47→};
+    48→
+    49→// Detect provider from phone number
+    50→function detectProvider(phone: string): string | null {
+    51→  const cleaned = phone.replace(/[\s\-]/g, '').replace(/^\+224/, '');
+    52→  if (/^(622|621|620)/.test(cleaned)) return 'orange_money';
+    53→  if (/^(623|624|625)/.test(cleaned)) return 'celcom_money';
+    54→  if (/^(626|627|628)/.test(cleaned)) return 'mtn_money';
+    55→  return null;
+    56→}
+    57→
+    58→function RealQRCode({ data }: { data: string }) {
+    59→  const [svg, setSvg] = useState<string>('');
+    60→
+    61→  useEffect(() => {
+    62→    QRCode.toString(data, {
+    63→      type: 'svg',
+    64→      width: 120,
+    65→      margin: 1,
+    66→      color: { dark: '#1A2332', light: '#FFFFFF' },
+    67→    }).then(setSvg).catch(console.error);
+    68→  }, [data]);
+    69→
+    70→  if (!svg) {
+    71→    return (
+    72→      <div className="w-[120px] h-[120px] flex items-center justify-center bg-gray-100 rounded">
+    73→        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+    74→      </div>
+    75→    );
+    76→  }
+    77→
+    78→  return <div dangerouslySetInnerHTML={{ __html: svg }} />;
+    79→}
+    80→
+    81→type PaymentStep = 'idle' | 'initiating' | 'pending' | 'verifying' | 'confirmed' | 'failed';
+    82→
+    83→export default function ExamBooking({ onViewChange }: ExamBookingProps) {
+    84→  const { user, apiFetch } = useAuth();
+    85→  const [step, setStep] = useState(1);
+    86→  const [confirmed, setConfirmed] = useState(false);
+    87→  const [selectedRegion, setSelectedRegion] = useState('');
+    88→  const [selectedVille, setSelectedVille] = useState('');
+    89→  const [selectedCentre, setSelectedCentre] = useState('');
+    90→  const [selectedDate, setSelectedDate] = useState('');
+    91→  const [selectedTime, setSelectedTime] = useState('');
+    92→  const [mobileMoneyNumber, setMobileMoneyNumber] = useState('');
+    93→
+    94→  // Real centres fetched from DB (fallback to mock if API fails)
+    95→  const [dbCentres, setDbCentres] = useState<typeof centres>([]);
+    96→  const [dbCentresLoading, setDbCentresLoading] = useState(true);
+    97→  const [dbCentresError, setDbCentresError] = useState(false);
+    98→
+    99→  useEffect(() => {
+   100→    setDbCentresLoading(true);
+   101→    apiFetch('/api/centres')
+   102→      .then(res => res.ok ? res.json() : [])
+   103→      .then((data: Array<{
+   104→        id: string;
+   105→        nom: string;
+   106→        ville: string;
+   107→        region: string;
+   108→        adresse: string;
+   109→        capacite: number;
+   110→        telephone: string;
+   111→        email: string;
+   112→        actif: boolean;
+   113→        accredStatut?: string;
+   114→        equipements?: string[];
+   115→        languesDisponibles?: string[];
+   116→      }>) => {
+   117→        if (Array.isArray(data) && data.length > 0) {
+   118→          // Map DB centres to the local Centre type
+   119→          const mapped: typeof centres = data
+   120→            .filter(c => c.actif && c.accredStatut !== 'suspendu')
+   121→            .map(c => ({
+   122→              id: c.id,
+   123→              nom: c.nom,
+   124→              ville: c.ville,
+   125→              region: c.region,
+   126→              adresse: c.adresse,
+   127→              capacite: c.capacite,
+   128→              telephone: c.telephone,
+   129→              email: c.email,
+   130→              actif: c.actif,
+   131→              accreditation: {
+   132→                dateDebut: '',
+   133→                dateFin: '',
+   134→                statut: (c.accredStatut === 'actif' || c.accredStatut === 'en_renouvellement' || c.accredStatut === 'expire' || c.accredStatut === 'suspendu' ? c.accredStatut : 'actif'),
+   135→                scoreQualite: 0,
+   136→              },
+   137→              equipements: c.equipements || [],
+   138→              languesDisponibles: ['fr'],
+   139→            }));
+   140→          setDbCentres(mapped);
+   141→        }
+   142→        setDbCentresLoading(false);
+   143→      })
+   144→      .catch(() => {
+   145→        // Fallback to mock centres if API fails
+   146→        setDbCentresError(true);
+   147→        setDbCentresLoading(false);
+   148→      });
+   149→  }, [apiFetch]);
+   150→
+   151→  // Payment state
+   152→  const [paymentStep, setPaymentStep] = useState<PaymentStep>('idle');
+   153→  const [paymentError, setPaymentError] = useState('');
+   154→  const [detectedProvider, setDetectedProvider] = useState<string | null>(null);
+   155→  const [transactionRef, setTransactionRef] = useState('');
+   156→  const [ussdCode, setUssdCode] = useState('');
+   157→
+   158→  const availableDates = getUpcomingDates();
+   159→  const currentRegion = regions.find(r => r.id === selectedRegion);
+   160→  const currentVille = currentRegion?.villes.find(v => v.id === selectedVille);
+   161→  // Use DB centres if loaded, otherwise fallback to mock centres (currentVille.centres)
+   162→  const allCentres = dbCentres.length > 0 ? dbCentres : centres;
+   163→  const availableCentres = dbCentres.length > 0
+   164→    ? allCentres.filter(c => c.region === (currentRegion?.nom || '') && c.ville === (currentVille?.nom || ''))
+   165→    : (currentVille?.centres || allCentres.filter(c => c.region === (currentRegion?.nom || '')));
+   166→  const selectedCentreData = allCentres.find(c => c.id === selectedCentre);
+   167→
+   168→  const canProceedStep1 = selectedRegion && selectedVille;
+   169→  const canProceedStep2 = selectedCentre;
+   170→  const canProceedStep3 = selectedDate && selectedTime;
+   171→
+   172→  // Validate Mobile Money number
+   173→  const validatePhoneNumber = useCallback((phone: string): { valid: boolean; error?: string } => {
+   174→    const cleaned = phone.replace(/[\s\-]/g, '').replace(/^\+224/, '');
+   175→    if (cleaned.length < 9) return { valid: false, error: 'Numéro incomplet' };
+   176→    if (!/^\d{9}$/.test(cleaned)) return { valid: false, error: 'Format invalide' };
+   177→    const provider = detectProvider(phone);
+   178→    if (!provider) {
+   179→      return { valid: false, error: 'Préfixe non reconnu. Utilisez Orange (622/621/620), Celcom (623/624/625) ou MTN (626/627/628)' };
+   180→    }
+   181→    return { valid: true };
+   182→  }, []);
+   183→
+   184→  const phoneValidation = mobileMoneyNumber.length >= 3 ? validatePhoneNumber(mobileMoneyNumber) : { valid: false };
+   185→  const canProceedStep4 = mobileMoneyNumber.length >= 9 && phoneValidation.valid;
+   186→
+   187→  // Detect provider as user types
+   188→  useEffect(() => {
+   189→    if (mobileMoneyNumber.length >= 3) {
+   190→      setDetectedProvider(detectProvider(mobileMoneyNumber));
+   191→    } else {
+   192→      setDetectedProvider(null);
+   193→    }
+   194→  }, [mobileMoneyNumber]);
+   195→
+   196→  const steps = [
+   197→    { num: 1, label: 'Région & Ville', icon: MapPin },
+   198→    { num: 2, label: 'Centre', icon: Building2 },
+   199→    { num: 3, label: 'Date & Heure', icon: Calendar },
+   200→    { num: 4, label: 'Paiement', icon: CreditCard },
+   201→  ];
+   202→
+   203→  const [isSubmitting, setIsSubmitting] = useState(false);
+   204→  const [bookingRef, setBookingRef] = useState<string>('');
+   205→  const [bookingId, setBookingId] = useState<string>('');
+   206→
+   207→  // ─── Initiate Mobile Money Payment ────────────────────────
+   208→  const handleConfirm = async () => {
+   209→    setIsSubmitting(true);
+   210→    setPaymentStep('initiating');
+   211→    setPaymentError('');
+   212→
+   213→    try {
+   214→      // Safety guard: ensure selectedCentre is a valid DB centre (Prisma IDs start with "cm")
+   215→      // If dbCentres are loaded but the selected centre is not in them (e.g. stale mock ID),
+   216→      // block the request with a clear error instead of sending an invalid centreId to the API.
+   217→      if (dbCentres.length > 0 && !dbCentres.find(c => c.id === selectedCentre)) {
+   218→        throw new Error('Le centre sélectionné est invalide. Veuillez revenir à l\'étape 2 et sélectionner un centre d\'examen dans la liste.');
+   219→      }
+   220→      if (!selectedCentreData) {
+   221→        throw new Error('Aucun centre sélectionné. Veuillez revenir à l\'étape 2.');
+   222→      }
+   223→
+   224→      // Step 1: Create booking (apiFetch injects the CSRF token automatically)
+   225→      const bookingRes = await apiFetch('/api/bookings', {
+   226→        method: 'POST',
+   227→        headers: { 'Content-Type': 'application/json' },
+   228→        body: JSON.stringify({
+   229→          candidatId: user?.id,
+   230→          centreId: selectedCentre,
+   231→          centreNom: selectedCentreData?.nom || '',
+   232→          region: currentRegion?.nom || '',
+   233→          ville: currentVille?.nom || '',
+   234→          date: selectedDate,
+   235→          heure: selectedTime,
+   236→          langue: 'fr',
+   237→          categoriePermis: user?.categoriePermis || 'B',
+   238→          montant: 50000,
+   239→          numeroPaiement: mobileMoneyNumber,
+   240→        }),
+   241→      });
+   242→
+   243→      if (!bookingRes.ok) {
+   244→        const errData = await bookingRes.json().catch(() => ({}));
+   245→        throw new Error(errData.error || 'Erreur lors de la création de la réservation');
+   246→      }
+   247→
+   248→      const bookingData = await bookingRes.json();
+   249→      const newBookingId = bookingData.id;
+   250→      const newBookingRef = bookingData.numeroConvocation;
+   251→      setBookingId(newBookingId);
+   252→      setBookingRef(newBookingRef);
+   253→
+   254→      // Step 2: Initiate Mobile Money payment (apiFetch injects the CSRF token)
+   255→      setPaymentStep('pending');
+   256→      const paymentRes = await apiFetch('/api/payments', {
+   257→        method: 'POST',
+   258→        headers: { 'Content-Type': 'application/json' },
+   259→        body: JSON.stringify({
+   260→          bookingId: newBookingId,
+   261→          phoneNumber: mobileMoneyNumber,
+   262→          amount: 50000,
+   263→        }),
+   264→      });
+   265→
+   266→      const paymentData = await paymentRes.json();
+   267→
+   268→      if (!paymentRes.ok || !paymentData.success) {
+   269→        throw new Error(paymentData.error || 'Le paiement a échoué');
+   270→      }
+   271→
+   272→      setTransactionRef(paymentData.transactionRef);
+   273→      setUssdCode(paymentData.ussdCode || '');
+   274→
+   275→      // Step 3: Start polling for payment confirmation
+   276→      pollPaymentStatus(paymentData.transactionRef);
+   277→
+   278→    } catch (error) {
+   279→      console.error('Booking/payment error:', error);
+   280→      setPaymentStep('failed');
+   281→      setPaymentError(error instanceof Error ? error.message : 'Une erreur est survenue');
+   282→      // If booking was created but payment failed, still show reference
+   283→      if (bookingRef) {
+   284→        setPaymentError(error instanceof Error ? error.message : 'Le paiement a échoué, mais votre réservation a été créée.');
+   285→      }
+   286→    } finally {
+   287→      setIsSubmitting(false);
+   288→    }
+   289→  };
+   290→
+   291→  // ─── Poll payment status ──────────────────────────────────
+   292→  const pollPaymentStatus = useCallback((ref: string) => {
+   293→    let attempts = 0;
+   294→    const maxAttempts = 20; // 20 * 3s = 60 seconds max
+   295→    const interval = setInterval(async () => {
+   296→      attempts++;
+   297→      try {
+   298→        const res = await apiFetch('/api/payments/verify', {
+   299→          method: 'POST',
+   300→          headers: { 'Content-Type': 'application/json' },
+   301→          body: JSON.stringify({ transactionRef: ref }),
+   302→        });
+   303→        const data = await res.json();
+   304→
+   305→        if (data.status === 'confirmed') {
+   306→          clearInterval(interval);
+   307→          setPaymentStep('confirmed');
+   308→          setConfirmed(true);
+   309→        } else if (data.status === 'failed') {
+   310→          clearInterval(interval);
+   311→          setPaymentStep('failed');
+   312→          setPaymentError('Le paiement a été refusé. Veuillez réessayer.');
+   313→        }
+   314→
+   315→        if (attempts >= maxAttempts) {
+   316→          clearInterval(interval);
+   317→          // In sandbox, auto-confirm after timeout
+   318→          if (process.env.NODE_ENV !== 'production') {
+   319→            setPaymentStep('confirmed');
+   320→            setConfirmed(true);
+   321→          } else {
+   322→            setPaymentStep('failed');
+   323→            setPaymentError('Délai de confirmation dépassé. Veuillez vérifier votre paiement et réessayer.');
+   324→          }
+   325→        }
+   326→      } catch {
+   327→        // Network error — continue polling
+   328→      }
+   329→    }, 3000);
+   330→
+   331→    return () => clearInterval(interval);
+   332→  }, []);
+   333→
+   334→  const bookingData: BookingData = {
+   335→    step1: { region: currentRegion?.nom || '', ville: currentVille?.nom || '' },
+   336→    step2: { centreId: selectedCentre, centreNom: selectedCentreData?.nom || '' },
+   337→    step3: { date: selectedDate, heure: selectedTime },
+   338→    langue: 'fr'
+   339→  };
+   340→
+   341→  // ─── Confirmed View ───────────────────────────────────────
+   342→  if (confirmed) {
+   343→    const qrData = JSON.stringify({
+   344→      ref: bookingRef,
+   345→      candidat: `${user?.prenom} ${user?.nom}`,
+   346→      centre: selectedCentreData?.nom,
+   347→      date: selectedDate,
+   348→      heure: selectedTime,
+   349→      transaction: transactionRef,
+   350→    });
+   351→
+   352→    return (
+   353→      <div className="min-h-screen bg-gray-50">
+   354→        <div className="max-w-2xl mx-auto px-4 py-12">
+   355→          <Card className="border-0 shadow-xl overflow-hidden">
+   356→            <div className="h-2" style={{ background: 'linear-gradient(to right, #CE1126, #FCD116, #009460)' }}></div>
+   357→            <CardContent className="p-8 text-center">
+   358→              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#00946015' }}>
+   359→                <Check className="w-10 h-10" style={{ color: '#009460' }} />
+   360→              </div>
+   361→              <h2 className="text-2xl font-bold mb-2" style={{ color: '#1A2332' }}>Réservation confirmée !</h2>
+   362→              <p className="text-gray-500 mb-6">Votre convocation a été générée et le paiement a été confirmé</p>
+   363→
+   364→              <div className="bg-gray-50 rounded-xl p-6 mb-6 text-left">
+   365→                <div className="flex justify-center mb-6">
+   366→                  <RealQRCode data={qrData} />
+   367→                </div>
+   368→
+   369→                <div className="space-y-3">
+   370→                  <div className="flex justify-between">
+   371→                    <span className="text-gray-500 text-sm">Référence</span>
+   372→                    <span className="font-mono font-bold text-sm" style={{ color: '#009460' }}>{bookingRef}</span>
+   373→                  </div>
+   374→                  <div className="flex justify-between">
+   375→                    <span className="text-gray-500 text-sm">Candidat</span>
+   376→                    <span className="font-medium text-sm">{user?.prenom} {user?.nom}</span>
+   377→                  </div>
+   378→                  <div className="flex justify-between">
+   379→                    <span className="text-gray-500 text-sm">N° unique</span>
+   380→                    <span className="font-mono text-sm">{user?.numeroUnique}</span>
+   381→                  </div>
+   382→                  <div className="flex justify-between">
+   383→                    <span className="text-gray-500 text-sm">Centre</span>
+   384→                    <span className="font-medium text-sm">{bookingData.step2.centreNom}</span>
+   385→                  </div>
+   386→                  <div className="flex justify-between">
+   387→                    <span className="text-gray-500 text-sm">Date</span>
+   388→                    <span className="font-medium text-sm">{new Date(bookingData.step3.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+   389→                  </div>
+   390→                  <div className="flex justify-between">
+   391→                    <span className="text-gray-500 text-sm">Heure</span>
+   392→                    <span className="font-medium text-sm">{bookingData.step3.heure}</span>
+   393→                  </div>
+   394→                  <div className="flex justify-between">
+   395→                    <span className="text-gray-500 text-sm">Catégorie</span>
+   396→                    <span className="font-medium text-sm">Permis {user?.categoriePermis}</span>
+   397→                  </div>
+   398→                  <div className="border-t pt-2">
+   399→                    <div className="flex justify-between">
+   400→                      <span className="text-gray-500 text-sm">Paiement</span>
+   401→                      <span className="font-medium text-sm" style={{ color: '#009460' }}>Confirmé</span>
+   402→                    </div>
+   403→                  </div>
+   404→                  {detectedProvider && providerInfo[detectedProvider] && (
+   405→                    <div className="flex justify-between">
+   406→                      <span className="text-gray-500 text-sm">Opérateur</span>
+   407→                      <span className="font-medium text-sm" style={{ color: providerInfo[detectedProvider].color }}>
+   408→                        {providerInfo[detectedProvider].name}
+   409→                      </span>
+   410→                    </div>
+   411→                  )}
+   412→                </div>
+   413→              </div>
+   414→
+   415→              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-start gap-2">
+   416→                <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+   417→                <p className="text-sm text-yellow-800">
+   418→                  Présentez-vous avec votre pièce d&apos;identité et cette convocation (QR code) au centre d&apos;examen 30 minutes avant l&apos;heure prévue.
+   419→                </p>
+   420→              </div>
+   421→
+   422→              <div className="flex gap-3 justify-center">
+   423→                <Button
+   424→                  className="text-white font-semibold"
+   425→                  style={{ backgroundColor: '#009460' }}
+   426→                  onClick={() => onViewChange('candidate-dashboard')}
+   427→                >
+   428→                  Retour au tableau de bord
+   429→                </Button>
+   430→                <Button
+   431→                  variant="outline"
+   432→                  onClick={() => {
+   433→                    if (bookingId) {
+   434→                      window.open(`/api/convocation/${bookingId}`, '_blank');
+   435→                    }
+   436→                  }}
+   437→                  disabled={!bookingId}
+   438→                >
+   439→                  Telecharger PDF
+   440→                </Button>
+   441→                <Button variant="outline" onClick={() => window.print()}>
+   442→                  Imprimer
+   443→                </Button>
+   444→              </div>
+   445→            </CardContent>
+   446→          </Card>
+   447→        </div>
+   448→      </div>
+   449→    );
+   450→  }
+   451→
+   452→  // ─── Payment Pending View ─────────────────────────────────
+   453→  if (paymentStep === 'pending') {
+   454→    const provider = detectedProvider && providerInfo[detectedProvider];
+   455→    return (
+   456→      <div className="min-h-screen bg-gray-50">
+   457→        <div className="max-w-lg mx-auto px-4 py-12">
+   458→          <Card className="border-0 shadow-xl overflow-hidden">
+   459→            <div className="h-2" style={{ background: 'linear-gradient(to right, #CE1126, #FCD116, #009460)' }}></div>
+   460→            <CardContent className="p-8 text-center">
+   461→              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: '#FCD11615' }}>
+   462→                <Phone className="w-10 h-10 animate-pulse" style={{ color: '#FCD116' }} />
+   463→              </div>
+   464→              <h2 className="text-xl font-bold mb-2" style={{ color: '#1A2332' }}>Confirmez le paiement</h2>
+   465→              <p className="text-gray-500 mb-6">
+   466→                Un SMS de confirmation a été envoyé au <span className="font-semibold">{mobileMoneyNumber}</span>
+   467→              </p>
+   468→
+   469→              {provider && (
+   470→                <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left space-y-3">
+   471→                  <div className="flex items-center gap-3 mb-3">
+   472→                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${provider.color}20` }}>
+   473→                      <Smartphone className="w-5 h-5" style={{ color: provider.color }} />
+   474→                    </div>
+   475→                    <div>
+   476→                      <p className="font-semibold text-sm">{provider.name}</p>
+   477→                      <p className="text-xs text-gray-500">50 000 GNF</p>
+   478→                    </div>
+   479→                  </div>
+   480→
+   481→                  {ussdCode && (
+   482→                    <div className="bg-white border rounded-lg p-3">
+   483→                      <p className="text-xs text-gray-500 mb-1">Code USSD pour confirmer :</p>
+   484→                      <p className="font-mono font-bold text-lg text-center" style={{ color: provider.color }}>
+   485→                        {ussdCode}
+   486→                      </p>
+   487→                    </div>
+   488→                  )}
+   489→                </div>
+   490→              )}
+   491→
+   492→              <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
+   493→                <Loader2 className="w-4 h-4 animate-spin" />
+   494→                Vérification du paiement en cours...
+   495→              </div>
+   496→
+   497→              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-2">
+   498→                <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+   499→                <p className="text-sm text-blue-800 text-left">
+   500→                  Vérifiez votre téléphone et entrez votre code PIN Mobile Money pour confirmer le paiement. La confirmation est automatique.
+   501→                </p>
+   502→              </div>
+   503→
+   504→              <Button
+   505→                variant="outline"
+   506→                className="w-full"
+   507→                onClick={() => {
+   508→                  setPaymentStep('idle');
+   509→                  setPaymentError('');
+   510→                }}
+   511→              >
+   512→                Annuler
+   513→              </Button>
+   514→            </CardContent>
+   515→          </Card>
+   516→        </div>
+   517→      </div>
+   518→    );
+   519→  }
+   520→
+   521→  return (
+   522→    <div className="min-h-screen bg-gray-50">
+   523→      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+   524→        <h1 className="text-2xl font-bold mb-6" style={{ color: '#1A2332' }}>
+   525→          Réserver un examen
+   526→        </h1>
+   527→
+   528→        {/* Steps Indicator */}
+   529→        <div className="flex items-center justify-between mb-8">
+   530→          {steps.map((s, index) => (
+   531→            <React.Fragment key={s.num}>
+   532→              <div className="flex items-center gap-2">
+   533→                <div
+   534→                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+   535→                    step >= s.num ? 'text-white' : 'bg-gray-200 text-gray-500'
+   536→                  }`}
+   537→                  style={step >= s.num ? { backgroundColor: step === s.num ? '#009460' : '#00946099' } : {}}
+   538→                >
+   539→                  {step > s.num ? <Check className="w-5 h-5" /> : s.num}
+   540→                </div>
+   541→                <span className={`hidden sm:block text-sm font-medium ${step >= s.num ? '' : 'text-gray-400'}`} style={step >= s.num ? { color: '#1A2332' } : {}}>
+   542→                  {s.label}
+   543→                </span>
+   544→              </div>
+   545→              {index < steps.length - 1 && (
+   546→                <div className={`flex-1 h-0.5 mx-2 ${step > s.num ? '' : 'bg-gray-200'}`} style={step > s.num ? { backgroundColor: '#009460' } : {}}></div>
+   547→              )}
+   548→            </React.Fragment>
+   549→          ))}
+   550→        </div>
+   551→
+   552→        <Card className="border-0 shadow-lg">
+   553→          <CardContent className="p-6 sm:p-8">
+   554→            {/* Step 1: Region & Ville */}
+   555→            {step === 1 && (
+   556→              <div className="space-y-6">
+   557→                <div className="flex items-center gap-3 mb-6">
+   558→                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#00946015' }}>
+   559→                    <MapPin className="w-5 h-5" style={{ color: '#009460' }} />
+   560→                  </div>
+   561→                  <div>
+   562→                    <h2 className="text-xl font-bold" style={{ color: '#1A2332' }}>Choisir la région et la ville</h2>
+   563→                    <p className="text-gray-500 text-sm">Sélectionnez le lieu où vous souhaitez passer l&apos;examen</p>
+   564→                  </div>
+   565→                </div>
+   566→
+   567→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   568→                  <div className="space-y-2">
+   569→                    <Label>Région *</Label>
+   570→                    <Select value={selectedRegion} onValueChange={(val) => { setSelectedRegion(val); setSelectedVille(''); setSelectedCentre(''); }}>
+   571→                      <SelectTrigger>
+   572→                        <SelectValue placeholder="Sélectionner une région" />
+   573→                      </SelectTrigger>
+   574→                      <SelectContent>
+   575→                        {regions.map(r => (
+   576→                          <SelectItem key={r.id} value={r.id}>{r.nom}</SelectItem>
+   577→                        ))}
+   578→                      </SelectContent>
+   579→                    </Select>
+   580→                  </div>
+   581→                  <div className="space-y-2">
+   582→                    <Label>Ville *</Label>
+   583→                    <Select value={selectedVille} onValueChange={(val) => { setSelectedVille(val); setSelectedCentre(''); }} disabled={!selectedRegion}>
+   584→                      <SelectTrigger>
+   585→                        <SelectValue placeholder="Sélectionner une ville" />
+   586→                      </SelectTrigger>
+   587→                      <SelectContent>
+   588→                        {currentRegion?.villes.map(v => (
+   589→                          <SelectItem key={v.id} value={v.id}>{v.nom}</SelectItem>
+   590→                        ))}
+   591→                      </SelectContent>
+   592→                    </Select>
+   593→                  </div>
+   594→                </div>
+   595→              </div>
+   596→            )}
+   597→
+   598→            {/* Step 2: Centre */}
+   599→            {step === 2 && (
+   600→              <div className="space-y-6">
+   601→                <div className="flex items-center gap-3 mb-6">
+   602→                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#FCD11615' }}>
+   603→                    <Building2 className="w-5 h-5" style={{ color: '#1A2332' }} />
+   604→                  </div>
+   605→                  <div>
+   606→                    <h2 className="text-xl font-bold" style={{ color: '#1A2332' }}>Choisir le centre d&apos;examen</h2>
+   607→                    <p className="text-gray-500 text-sm">{currentRegion?.nom} — {currentVille?.nom}</p>
+   608→                  </div>
+   609→                </div>
+   610→
+   611→                <div className="grid gap-4">
+   612→                  {dbCentresLoading && (
+   613→                    <div className="p-8 rounded-xl border-2 border-dashed border-gray-200 text-center">
+   614→                      <Loader2 className="w-8 h-8 mx-auto animate-spin text-gray-400 mb-2" />
+   615→                      <p className="text-sm text-gray-500">Chargement des centres d&apos;examen disponibles…</p>
+   616→                    </div>
+   617→                  )}
+   618→                  {!dbCentresLoading && availableCentres.length === 0 && (
+   619→                    <div className="p-8 rounded-xl border-2 border-dashed border-gray-200 text-center">
+   620→                      <Building2 className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+   621→                      <p className="text-sm text-gray-500">
+   622→                        {dbCentresError
+   623→                          ? 'Impossible de charger les centres. Réessayez plus tard.'
+   624→                          : 'Aucun centre d\'examen disponible dans cette ville.'}
+   625→                      </p>
+   626→                    </div>
+   627→                  )}
+   628→                  {!dbCentresLoading && availableCentres.map(centre => (
+   629→                    <div
+   630→                      key={centre.id}
+   631→                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+   632→                        selectedCentre === centre.id ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+   633→                      }`}
+   634→                      onClick={() => setSelectedCentre(centre.id)}
+   635→                    >
+   636→                      <div className="flex items-start justify-between">
+   637→                        <div>
+   638→                          <h3 className="font-semibold" style={{ color: '#1A2332' }}>{centre.nom}</h3>
+   639→                          <p className="text-sm text-gray-500 mt-1">{centre.adresse}</p>
+   640→                          <div className="flex items-center gap-4 mt-2">
+   641→                            <span className="text-xs text-gray-500 flex items-center gap-1">
+   642→                              <User className="w-3 h-3" /> Capacité: {centre.capacite}
+   643→                            </span>
+   644→                            <span className="text-xs text-gray-500 flex items-center gap-1">
+   645→                              <Clock className="w-3 h-3" /> {centre.telephone}
+   646→                            </span>
+   647→                          </div>
+   648→                        </div>
+   649→                        {selectedCentre === centre.id && (
+   650→                          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#009460' }}>
+   651→                            <Check className="w-4 h-4 text-white" />
+   652→                          </div>
+   653→                        )}
+   654→                      </div>
+   655→                    </div>
+   656→                  ))}
+   657→                </div>
+   658→              </div>
+   659→            )}
+   660→
+   661→            {/* Step 3: Date & Time */}
+   662→            {step === 3 && (
+   663→              <div className="space-y-6">
+   664→                <div className="flex items-center gap-3 mb-6">
+   665→                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#CE112615' }}>
+   666→                    <Calendar className="w-5 h-5" style={{ color: '#CE1126' }} />
+   667→                  </div>
+   668→                  <div>
+   669→                    <h2 className="text-xl font-bold" style={{ color: '#1A2332' }}>Choisir la date et l&apos;heure</h2>
+   670→                    <p className="text-gray-500 text-sm">{selectedCentreData?.nom}</p>
+   671→                  </div>
+   672→                </div>
+   673→
+   674→                <div className="space-y-2">
+   675→                  <Label>Date *</Label>
+   676→                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+   677→                    {availableDates.map(date => (
+   678→                      <button
+   679→                        key={date}
+   680→                        className={`p-3 rounded-lg border-2 text-center text-sm transition-all ${
+   681→                          selectedDate === date ? 'text-white font-semibold' : 'border-gray-200 hover:border-gray-300'
+   682→                        }`}
+   683→                        style={selectedDate === date ? { backgroundColor: '#009460', borderColor: '#009460' } : {}}
+   684→                        onClick={() => setSelectedDate(date)}
+   685→                      >
+   686→                        <div className="font-medium">{new Date(date).toLocaleDateString('fr-FR', { day: 'numeric' })}</div>
+   687→                        <div className="text-xs opacity-75">{new Date(date).toLocaleDateString('fr-FR', { month: 'short' })}</div>
+   688→                        <div className="text-xs opacity-75">{new Date(date).toLocaleDateString('fr-FR', { weekday: 'short' })}</div>
+   689→                      </button>
+   690→                    ))}
+   691→                  </div>
+   692→                </div>
+   693→
+   694→                <div className="space-y-2">
+   695→                  <Label>Créneau horaire *</Label>
+   696→                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+   697→                    {creneauxHoraires.map(time => (
+   698→                      <button
+   699→                        key={time}
+   700→                        className={`p-2 rounded-lg border-2 text-center text-sm font-medium transition-all ${
+   701→                          selectedTime === time ? 'text-white' : 'border-gray-200 hover:border-gray-300'
+   702→                        }`}
+   703→                        style={selectedTime === time ? { backgroundColor: '#009460', borderColor: '#009460' } : {}}
+   704→                        onClick={() => setSelectedTime(time)}
+   705→                      >
+   706→                        {time}
+   707→                      </button>
+   708→                    ))}
+   709→                  </div>
+   710→                </div>
+   711→              </div>
+   712→            )}
+   713→
+   714→            {/* Step 4: Payment */}
+   715→            {step === 4 && (
+   716→              <div className="space-y-6">
+   717→                <div className="flex items-center gap-3 mb-6">
+   718→                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#FCD11615' }}>
+   719→                    <CreditCard className="w-5 h-5" style={{ color: '#1A2332' }} />
+   720→                  </div>
+   721→                  <div>
+   722→                    <h2 className="text-xl font-bold" style={{ color: '#1A2332' }}>Récapitulatif et paiement</h2>
+   723→                    <p className="text-gray-500 text-sm">Vérifiez les détails et effectuez le paiement Mobile Money</p>
+   724→                  </div>
+   725→                </div>
+   726→
+   727→                <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+   728→                  <h3 className="font-semibold" style={{ color: '#1A2332' }}>Récapitulatif</h3>
+   729→                  <div className="space-y-2">
+   730→                    <div className="flex justify-between text-sm">
+   731→                      <span className="text-gray-500">Candidat</span>
+   732→                      <span className="font-medium">{user?.prenom} {user?.nom}</span>
+   733→                    </div>
+   734→                    <div className="flex justify-between text-sm">
+   735→                      <span className="text-gray-500">Centre</span>
+   736→                      <span className="font-medium">{selectedCentreData?.nom}</span>
+   737→                    </div>
+   738→                    <div className="flex justify-between text-sm">
+   739→                      <span className="text-gray-500">Date</span>
+   740→                      <span className="font-medium">{new Date(selectedDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+   741→                    </div>
+   742→                    <div className="flex justify-between text-sm">
+   743→                      <span className="text-gray-500">Heure</span>
+   744→                      <span className="font-medium">{selectedTime}</span>
+   745→                    </div>
+   746→                    <div className="flex justify-between text-sm">
+   747→                      <span className="text-gray-500">Catégorie</span>
+   748→                      <span className="font-medium">Permis {user?.categoriePermis}</span>
+   749→                    </div>
+   750→                    <div className="border-t pt-2 mt-2">
+   751→                      <div className="flex justify-between">
+   752→                        <span className="font-semibold" style={{ color: '#1A2332' }}>Frais d&apos;examen</span>
+   753→                        <span className="font-bold text-lg" style={{ color: '#009460' }}>50 000 GNF</span>
+   754→                      </div>
+   755→                    </div>
+   756→                  </div>
+   757→                </div>
+   758→
+   759→                {/* Mobile Money Provider Selection */}
+   760→                <div className="space-y-4">
+   761→                  <Label className="text-base font-semibold">Paiement Mobile Money *</Label>
+   762→
+   763→                  {/* Provider badges */}
+   764→                  <div className="grid grid-cols-3 gap-3">
+   765→                    {Object.entries(providerInfo).map(([id, info]) => (
+   766→                      <div
+   767→                        key={id}
+   768→                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+   769→                          detectedProvider === id ? 'bg-gray-50' : 'bg-gray-50 border-transparent opacity-60'
+   770→                        }`}
+   771→                        style={detectedProvider === id ? { borderColor: info.color } : {}}
+   772→                      >
+   773→                        <Smartphone className="w-5 h-5 mx-auto mb-1" style={{ color: info.color }} />
+   774→                        <p className="text-xs font-semibold" style={{ color: info.color }}>{info.name}</p>
+   775→                      </div>
+   776→                    ))}
+   777→                  </div>
+   778→
+   779→                  <div className="space-y-2">
+   780→                    <Label htmlFor="mobile-money-number">Numéro Mobile Money</Label>
+   781→                    <div className="relative">
+   782→                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+   783→                      <Input
+   784→                        id="mobile-money-number"
+   785→                        placeholder="622 00 00 00"
+   786→                        value={mobileMoneyNumber}
+   787→                        onChange={e => {
+   788→                          setMobileMoneyNumber(e.target.value);
+   789→                          setPaymentError('');
+   790→                        }}
+   791→                        className="pl-10"
+   792→                        maxLength={15}
+   793→                      />
+   794→                      {detectedProvider && providerInfo[detectedProvider] && (
+   795→                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+   796→                          <span
+   797→                            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+   798→                            style={{ backgroundColor: `${providerInfo[detectedProvider].color}15`, color: providerInfo[detectedProvider].color }}
+   799→                          >
+   800→                            {providerInfo[detectedProvider].name}
+   801→                          </span>
+   802→                        </div>
+   803→                      )}
+   804→                    </div>
+   805→
+   806→                    {/* Validation feedback */}
+   807→                    {mobileMoneyNumber.length >= 3 && !phoneValidation.valid && phoneValidation.error && (
+   808→                      <p className="text-xs text-red-500">{phoneValidation.error}</p>
+   809→                    )}
+   810→                    {mobileMoneyNumber.length >= 9 && phoneValidation.valid && detectedProvider && (
+   811→                      <p className="text-xs" style={{ color: '#009460' }}>
+   812→                        ✓ {providerInfo[detectedProvider]?.name} détecté — Paiement sécurisé
+   813→                      </p>
+   814→                    )}
+   815→                  </div>
+   816→
+   817→                  {/* Security notice */}
+   818→                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+   819→                    <Shield className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+   820→                    <p className="text-xs text-blue-800">
+   821→                      Votre paiement est sécurisé. Vous recevrez une notification sur votre téléphone pour confirmer la transaction via votre code PIN Mobile Money.
+   822→                    </p>
+   823→                  </div>
+   824→                </div>
+   825→
+   826→                {/* Payment error */}
+   827→                {paymentError && (
+   828→                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+   829→                    <p className="text-sm text-red-700">{paymentError}</p>
+   830→                  </div>
+   831→                )}
+   832→              </div>
+   833→            )}
+   834→
+   835→            {/* Navigation Buttons */}
+   836→            <div className="flex justify-between mt-8 pt-6 border-t">
+   837→              <Button
+   838→                variant="outline"
+   839→                onClick={() => setStep(Math.max(1, step - 1))}
+   840→                disabled={step === 1 || isSubmitting}
+   841→              >
+   842→                <ChevronLeft className="w-4 h-4 mr-1" />
+   843→                Précédent
+   844→              </Button>
+   845→              {step < 4 ? (
+   846→                <Button
+   847→                  className="text-white font-semibold"
+   848→                  style={{ backgroundColor: '#009460' }}
+   849→                  disabled={
+   850→                    (step === 1 && !canProceedStep1) ||
+   851→                    (step === 2 && !canProceedStep2) ||
+   852→                    (step === 3 && !canProceedStep3)
+   853→                  }
+   854→                  onClick={() => setStep(step + 1)}
+   855→                >
+   856→                  Suivant
+   857→                  <ChevronRight className="w-4 h-4 ml-1" />
+   858→                </Button>
+   859→              ) : (
+   860→                <Button
+   861→                  className="text-white font-semibold"
+   862→                  style={{ backgroundColor: '#009460' }}
+   863→                  disabled={!canProceedStep4 || isSubmitting}
+   864→                  onClick={handleConfirm}
+   865→                >
+   866→                  {isSubmitting ? (
+   867→                    <>
+   868→                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+   869→                      Traitement en cours...
+   870→                    </>
+   871→                  ) : (
+   872→                    <>
+   873→                      <Smartphone className="w-4 h-4 mr-1" />
+   874→                      Payer 50 000 GNF
+   875→                    </>
+   876→                  )}
+   877→                </Button>
+   878→              )}
+   879→            </div>
+   880→          </CardContent>
+   881→        </Card>
+   882→      </div>
+   883→    </div>
+   884→  );
+   885→}
+   886→

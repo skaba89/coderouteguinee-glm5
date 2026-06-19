@@ -168,7 +168,7 @@ model Booking {
   heure           String
   langue          String   @default("fr")
   categoriePermis String   @default("B")
-  montant         Int      @default(50000)
+  montant         Int      @default(350000) // GNF — tarif réservation examen
   moyenPaiement   String   @default("mobile_money")
   numeroPaiement  String?
   referencePaiement String?
