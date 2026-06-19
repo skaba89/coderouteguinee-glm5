@@ -93,8 +93,11 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
 
   // Real centres fetched from DB (fallback to mock if API fails)
   const [dbCentres, setDbCentres] = useState<typeof centres>([]);
+  const [dbCentresLoading, setDbCentresLoading] = useState(true);
+  const [dbCentresError, setDbCentresError] = useState(false);
 
   useEffect(() => {
+    setDbCentresLoading(true);
     apiFetch('/api/centres')
       .then(res => res.ok ? res.json() : [])
       .then((data: Array<{
@@ -136,9 +139,12 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
             }));
           setDbCentres(mapped);
         }
+        setDbCentresLoading(false);
       })
       .catch(() => {
         // Fallback to mock centres if API fails
+        setDbCentresError(true);
+        setDbCentresLoading(false);
       });
   }, [apiFetch]);
 
@@ -205,6 +211,16 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
     setPaymentError('');
 
     try {
+      // Safety guard: ensure selectedCentre is a valid DB centre (Prisma IDs start with "cm")
+      // If dbCentres are loaded but the selected centre is not in them (e.g. stale mock ID),
+      // block the request with a clear error instead of sending an invalid centreId to the API.
+      if (dbCentres.length > 0 && !dbCentres.find(c => c.id === selectedCentre)) {
+        throw new Error('Le centre sélectionné est invalide. Veuillez revenir à l\'étape 2 et sélectionner un centre d\'examen dans la liste.');
+      }
+      if (!selectedCentreData) {
+        throw new Error('Aucun centre sélectionné. Veuillez revenir à l\'étape 2.');
+      }
+
       // Step 1: Create booking (apiFetch injects the CSRF token automatically)
       const bookingRes = await apiFetch('/api/bookings', {
         method: 'POST',
@@ -593,7 +609,23 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                 </div>
 
                 <div className="grid gap-4">
-                  {availableCentres.map(centre => (
+                  {dbCentresLoading && (
+                    <div className="p-8 rounded-xl border-2 border-dashed border-gray-200 text-center">
+                      <Loader2 className="w-8 h-8 mx-auto animate-spin text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-500">Chargement des centres d&apos;examen disponibles…</p>
+                    </div>
+                  )}
+                  {!dbCentresLoading && availableCentres.length === 0 && (
+                    <div className="p-8 rounded-xl border-2 border-dashed border-gray-200 text-center">
+                      <Building2 className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-500">
+                        {dbCentresError
+                          ? 'Impossible de charger les centres. Réessayez plus tard.'
+                          : 'Aucun centre d\'examen disponible dans cette ville.'}
+                      </p>
+                    </div>
+                  )}
+                  {!dbCentresLoading && availableCentres.map(centre => (
                     <div
                       key={centre.id}
                       className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
