@@ -73,6 +73,9 @@ import {
   UserPlus,
   Bell,
   Wallet,
+  Tags,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { QuestionsManager } from './admin/questions-manager';
 import { CoursesManager } from './admin/courses-manager';
@@ -398,6 +401,149 @@ function NotesModal({ open, title, onConfirm, onCancel }: {
   );
 }
 
+// ─── Tarif row editor (inline editable) ────────────────
+interface TarifRowEditorProps {
+  tarif: {
+    id: string;
+    cle: string;
+    libelle: string;
+    montant: number;
+    categoriePermis: string;
+    actif: boolean;
+    note: string | null;
+    updatedAt: string;
+  };
+  saving: boolean;
+  onSave: (patch: { libelle?: string; montant?: number; categoriePermis?: string; actif?: boolean; note?: string | null }) => void;
+  onDelete: () => void;
+}
+
+function TarifRowEditor({ tarif, saving, onSave, onDelete }: TarifRowEditorProps) {
+  const [editing, setEditing] = useState(false);
+  const [libelle, setLibelle] = useState(tarif.libelle);
+  const [montant, setMontant] = useState(tarif.montant);
+  const [categoriePermis, setCategoriePermis] = useState(tarif.categoriePermis);
+  const [actif, setActif] = useState(tarif.actif);
+  const [note, setNote] = useState(tarif.note || '');
+
+  // Sync when tarif changes externally
+  useEffect(() => {
+    setLibelle(tarif.libelle);
+    setMontant(tarif.montant);
+    setCategoriePermis(tarif.categoriePermis);
+    setActif(tarif.actif);
+    setNote(tarif.note || '');
+  }, [tarif]);
+
+  const handleSave = () => {
+    onSave({ libelle, montant: Number(montant), categoriePermis, actif, note: note || null });
+    setEditing(false);
+  };
+
+  const handleCancel = () => {
+    setLibelle(tarif.libelle);
+    setMontant(tarif.montant);
+    setCategoriePermis(tarif.categoriePermis);
+    setActif(tarif.actif);
+    setNote(tarif.note || '');
+    setEditing(false);
+  };
+
+  const handleToggleActif = () => {
+    const newVal = !actif;
+    setActif(newVal);
+    onSave({ actif: newVal });
+  };
+
+  return (
+    <tr className="border-b border-gray-100 hover:bg-gray-50">
+      <td className="py-2 pr-3">
+        {editing ? (
+          <input
+            type="text"
+            value={libelle}
+            onChange={e => setLibelle(e.target.value)}
+            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+          />
+        ) : (
+          <div>
+            <div className="font-medium text-gray-800">{tarif.libelle}</div>
+            {tarif.note && <div className="text-[10px] text-gray-500 mt-0.5">{tarif.note}</div>}
+          </div>
+        )}
+      </td>
+      <td className="py-2 pr-3">
+        <code className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{tarif.cle}</code>
+      </td>
+      <td className="py-2 pr-3">
+        {editing ? (
+          <select
+            value={categoriePermis}
+            onChange={e => setCategoriePermis(e.target.value)}
+            className="px-2 py-1 border border-gray-300 rounded text-sm"
+          >
+            {['A', 'A1', 'B', 'C', 'D', 'E'].map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-sm text-gray-700">{tarif.categoriePermis}</span>
+        )}
+      </td>
+      <td className="py-2 pr-3 text-right">
+        {editing ? (
+          <input
+            type="number"
+            min={1000}
+            max={10000000}
+            step={1000}
+            value={montant}
+            onChange={e => setMontant(Number(e.target.value))}
+            className="w-28 px-2 py-1 border border-gray-300 rounded text-sm text-right"
+          />
+        ) : (
+          <span className="font-semibold text-gray-800">{tarif.montant.toLocaleString('fr-FR')}</span>
+        )}
+      </td>
+      <td className="py-2 pr-3 text-center">
+        <button
+          onClick={handleToggleActif}
+          disabled={saving}
+          className="inline-flex items-center"
+          title={tarif.actif ? 'Actif — cliquer pour désactiver' : 'Inactif — cliquer pour activer'}
+        >
+          {tarif.actif ? (
+            <ToggleRight className="w-6 h-6" style={{ color: '#16a34a' }} />
+          ) : (
+            <ToggleLeft className="w-6 h-6 text-gray-400" />
+          )}
+        </button>
+      </td>
+      <td className="py-2 pr-3 text-center">
+        {editing ? (
+          <div className="flex justify-center gap-1">
+            <Button size="sm" onClick={handleSave} disabled={saving} style={{ backgroundColor: '#009460', color: 'white', height: '28px', padding: '0 8px' }}>
+              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleCancel} disabled={saving} style={{ height: '28px', padding: '0 8px' }}>
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex justify-center gap-1">
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)} disabled={saving} style={{ height: '28px', padding: '0 8px' }}>
+              <Pencil className="w-3 h-3" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={onDelete} disabled={saving} style={{ height: '28px', padding: '0 8px', color: '#dc2626' }}>
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+}
+
 // ─── Role-based sidebar items ──────────────────────────
 function getSidebarItems(role: string) {
   const baseItems = [
@@ -412,6 +558,7 @@ function getSidebarItems(role: string) {
     { id: 'courses', label: 'Cours', icon: BookOpen, roles: ['super-admin', 'administration'] },
     { id: 'notifications', label: 'Notifications', icon: Bell, roles: ['super-admin', 'administration'] },
     { id: 'audit', label: 'Journal d\'audit', icon: FileSearch, roles: ['super-admin'] },
+    { id: 'tarifs', label: 'Tarifs', icon: Tags, roles: ['super-admin'] },
     { id: 'system', label: 'Système', icon: Activity, roles: ['super-admin'] },
     { id: 'settings', label: 'Parametres', icon: Settings, roles: ['super-admin', 'administration'] },
   ];
@@ -448,6 +595,24 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
     successRate: [] as number[], centres: [] as number[],
   });
   const [fraudBySeverity, setFraudBySeverity] = useState<ApiFraudBySeverity[]>([]);
+
+  // ─── Tarifs state ─────────────────────────────────────
+  interface TarifRow {
+    id: string;
+    cle: string;
+    libelle: string;
+    montant: number;
+    categoriePermis: string;
+    actif: boolean;
+    note: string | null;
+    updatedAt: string;
+  }
+  const [tarifs, setTarifs] = useState<TarifRow[]>([]);
+  const [tarifsLoading, setTarifsLoading] = useState(false);
+  const [tarifsSaving, setTarifsSaving] = useState<string | null>(null); // id en cours de save
+  const [tarifsError, setTarifsError] = useState<string | null>(null);
+  const [newTarif, setNewTarif] = useState({ cle: '', libelle: '', montant: 350000, categoriePermis: 'B', note: '' });
+  const [showNewTarifForm, setShowNewTarifForm] = useState(false);
 
   // ─── Users state ──────────────────────────────────────
   const [usersData, setUsersData] = useState<ApiUser[]>([]);
@@ -680,6 +845,101 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
   useEffect(() => {
     if (activeTab === 'audit') fetchAuditLogs();
   }, [activeTab, fetchAuditLogs]);
+
+  // ─── Tarifs handlers ─────────────────────────────────
+  const fetchTarifs = useCallback(async () => {
+    setTarifsLoading(true);
+    setTarifsError(null);
+    try {
+      const res = await apiFetch('/api/admin/tarifs');
+      if (!res.ok) throw new Error('Échec chargement tarifs');
+      const data = await res.json();
+      setTarifs(Array.isArray(data.tarifs) ? data.tarifs : []);
+    } catch (err) {
+      setTarifsError(err instanceof Error ? err.message : 'Erreur inconnue');
+    } finally {
+      setTarifsLoading(false);
+    }
+  }, [apiFetch]);
+
+  useEffect(() => {
+    if (activeTab === 'tarifs') fetchTarifs();
+  }, [activeTab, fetchTarifs]);
+
+  const saveTarif = async (id: string, patch: Partial<TarifRow>) => {
+    setTarifsSaving(id);
+    setTarifsError(null);
+    try {
+      const res = await apiFetch(`/api/admin/tarifs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Échec sauvegarde');
+      }
+      const data = await res.json();
+      setTarifs(prev => prev.map(t => (t.id === id ? data.tarif : t)));
+    } catch (err) {
+      setTarifsError(err instanceof Error ? err.message : 'Erreur inconnue');
+    } finally {
+      setTarifsSaving(null);
+    }
+  };
+
+  const createTarif = async () => {
+    if (!newTarif.cle || !newTarif.libelle || !newTarif.montant) {
+      setTarifsError('Clé, libellé et montant sont obligatoires');
+      return;
+    }
+    setTarifsSaving('new');
+    setTarifsError(null);
+    try {
+      const res = await apiFetch('/api/admin/tarifs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cle: newTarif.cle,
+          libelle: newTarif.libelle,
+          montant: Number(newTarif.montant),
+          categoriePermis: newTarif.categoriePermis,
+          note: newTarif.note || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Échec création');
+      }
+      const data = await res.json();
+      setTarifs(prev => [...prev, data.tarif]);
+      setNewTarif({ cle: '', libelle: '', montant: 350000, categoriePermis: 'B', note: '' });
+      setShowNewTarifForm(false);
+    } catch (err) {
+      setTarifsError(err instanceof Error ? err.message : 'Erreur inconnue');
+    } finally {
+      setTarifsSaving(null);
+    }
+  };
+
+  const deleteTarif = async (id: string) => {
+    if (!confirm('Désactiver ce tarif ? (action réversible)')) return;
+    setTarifsSaving(id);
+    setTarifsError(null);
+    try {
+      const res = await apiFetch(`/api/admin/tarifs/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Échec désactivation');
+      }
+      const data = await res.json();
+      setTarifs(prev => prev.map(t => (t.id === id ? data.tarif : t)));
+    } catch (err) {
+      setTarifsError(err instanceof Error ? err.message : 'Erreur inconnue');
+    } finally {
+      setTarifsSaving(null);
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -2015,6 +2275,161 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ═══════ TAB: Tarifs (super-admin only) ═══════ */}
+            <TabsContent value="tarifs" className="space-y-4">
+              <Card className="border-0 shadow-sm bg-white">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg font-semibold flex items-center gap-2" style={{ color: COLORS.primaryDark }}>
+                        <Tags className="w-5 h-5" />
+                        Tarification des examens
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Gérez dynamiquement les tarifs de réservation par catégorie de permis.
+                        Les modifications sont prises en compte immédiatement par les candidats (cache 60s).
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => fetchTarifs()} disabled={tarifsLoading}>
+                        <RefreshCw className={`w-4 h-4 mr-1 ${tarifsLoading ? 'animate-spin' : ''}`} />
+                        Actualiser
+                      </Button>
+                      <Button size="sm" onClick={() => setShowNewTarifForm(s => !s)} style={{ backgroundColor: COLORS.green, color: 'white' }}>
+                        {showNewTarifForm ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+                        {showNewTarifForm ? 'Annuler' : 'Nouveau tarif'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {tarifsError && (
+                    <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">
+                      {tarifsError}
+                    </div>
+                  )}
+
+                  {/* ─── Formulaire de création ─── */}
+                  {showNewTarifForm && (
+                    <div className="mb-6 p-4 rounded-lg border border-gray-200 bg-gray-50">
+                      <h4 className="text-sm font-semibold mb-3" style={{ color: COLORS.primaryDark }}>Nouveau tarif</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium text-gray-600">Clé (unique)</label>
+                          <input
+                            type="text"
+                            value={newTarif.cle}
+                            onChange={e => setNewTarif(p => ({ ...p, cle: e.target.value }))}
+                            placeholder="examen_reservation_B"
+                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          />
+                          <p className="text-[10px] text-gray-500 mt-1">Format recommandé : examen_reservation_&lt;CATEGORIE&gt;</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600">Libellé</label>
+                          <input
+                            type="text"
+                            value={newTarif.libelle}
+                            onChange={e => setNewTarif(p => ({ ...p, libelle: e.target.value }))}
+                            placeholder="Réservation examen permis B"
+                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600">Montant (GNF)</label>
+                          <input
+                            type="number"
+                            min={1000}
+                            max={10000000}
+                            step={1000}
+                            value={newTarif.montant}
+                            onChange={e => setNewTarif(p => ({ ...p, montant: Number(e.target.value) }))}
+                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-600">Catégorie de permis</label>
+                          <select
+                            value={newTarif.categoriePermis}
+                            onChange={e => setNewTarif(p => ({ ...p, categoriePermis: e.target.value }))}
+                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          >
+                            {['A', 'A1', 'B', 'C', 'D', 'E'].map(c => (
+                              <option key={c} value={c}>Permis {c}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="text-xs font-medium text-gray-600">Note (optionnel)</label>
+                          <input
+                            type="text"
+                            value={newTarif.note}
+                            onChange={e => setNewTarif(p => ({ ...p, note: e.target.value }))}
+                            placeholder="ex: Tarif officiel — juin 2026"
+                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setShowNewTarifForm(false)}>Annuler</Button>
+                        <Button size="sm" onClick={createTarif} disabled={tarifsSaving === 'new'} style={{ backgroundColor: COLORS.green, color: 'white' }}>
+                          {tarifsSaving === 'new' ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                          Créer le tarif
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── Tableau des tarifs ─── */}
+                  {tarifsLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                    </div>
+                  ) : tarifs.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500 text-sm">
+                      Aucun tarif configuré. Cliquez sur « Nouveau tarif » pour commencer.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200 text-left text-xs text-gray-500 uppercase">
+                            <th className="py-2 pr-3">Libellé</th>
+                            <th className="py-2 pr-3">Clé</th>
+                            <th className="py-2 pr-3">Catégorie</th>
+                            <th className="py-2 pr-3 text-right">Montant (GNF)</th>
+                            <th className="py-2 pr-3 text-center">Statut</th>
+                            <th className="py-2 pr-3 text-center">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tarifs.map(t => (
+                            <TarifRowEditor
+                              key={t.id}
+                              tarif={t}
+                              saving={tarifsSaving === t.id}
+                              onSave={(patch) => saveTarif(t.id, patch)}
+                              onDelete={() => deleteTarif(t.id)}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* ─── Note informative ─── */}
+                  <div className="mt-6 p-4 rounded-md bg-blue-50 border border-blue-200">
+                    <p className="text-xs text-blue-800">
+                      <strong>Comment ça marche :</strong> Le candidat voit le tarif de sa catégorie de permis sur la page de réservation.
+                      Le tarif est lu en base via <code className="px-1 bg-blue-100 rounded">/api/tarifs/current</code> avec un cache de 60 secondes.
+                      Les montants saisis doivent être en GNF (entre 1 000 et 10 000 000).
+                      Si un tarif est désactivé ou absent, le système repli à 350 000 GNF (permis B).
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getCurrentTarif } from '@/lib/tarif'
 
 function generateConvocationReference(): string {
   const code = String(Math.floor(Math.random() * 1000000)).padStart(6, '0')
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
         heure,
         langue: langue || 'fr',
         categoriePermis: categoriePermis || 'B',
-        montant: montant || 350000, // 350 000 GNF — tarif réservation examen
+        montant: montant || (await getCurrentTarif(`examen_reservation_${(categoriePermis || 'B').toUpperCase()}`)).montant,
         numeroPaiement: numeroPaiement || null,
         numeroConvocation,
         statutPaiement: 'en_attente',

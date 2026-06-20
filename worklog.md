@@ -1474,3 +1474,69 @@ Stage Summary:
 - Captures d'écran : `/home/z/my-project/download/screenshots/phase25/02-reservation-350000.png`
 - Comptes de test : candidat@demo.gn / Candidat@2024 (réinitialisé)
 - 197 tests unitaires OK, 0 erreur TypeScript sur src/
+
+---
+Task ID: 26
+Agent: main
+Task: Étapes suite au passage du tarif à 350 000 GNF — uniformiser historique, vérifier notifications, ajouter panneau admin du tarif dynamique
+
+Work Log:
+- **1. Uniformisation historique DB** : `UPDATE Booking SET montant = 350000 WHERE montant = 50000` → 8 réservations mises à jour. Toutes les 10 réservations en base sont désormais à 350 000 GNF.
+- **2. Vérification notifications** : inspection `src/lib/notifications.ts` + `src/app/api/payments/webhook/route.ts`. Les templates `payment_confirmation` utilisent bien `${v.montant}` dynamiquement, alimenté par `booking.montant.toString()`. Donc le montant affiché dans les emails/SMS suivra automatiquement le tarif en base.
+- **3. Table TarifConfig en DB** :
+  * Ajout du modèle `TarifConfig` dans `prisma/schema.prisma` et `schema-postgres.prisma` (id, cle unique, libelle, montant, categoriePermis, actif, note, modifiePar, timestamps)
+  * `prisma db push` + `prisma generate` → table créée en SQLite
+  * Seed initial : 4 tarifs (permis A=250k, B=350k, C=450k, reprise B=175k)
+- **4. API CRUD `/api/admin/tarifs`** (super-admin only) :
+  * `GET /api/admin/tarifs` : liste tous les tarifs
+  * `POST /api/admin/tarifs` : crée un tarif (validation clé/libellé/montant 1k-10M/catégorie A-E)
+  * `GET /api/admin/tarifs/[id]` : détail
+  * `PATCH /api/admin/tarifs/[id]` : met à jour (libellé/montant/catégorie/actif/note)
+  * `DELETE /api/admin/tarifs/[id]` : soft delete (désactive)
+  * Audit log sur chaque action : ajout des types `TARIF_CREATE | TARIF_UPDATE | TARIF_DESACTIVATE` à `AuditEventType`
+- **5. API publique `/api/tarifs/current?categorie=B`** : retourne le tarif courant (pas d'auth, lecture seule, avec champ `source: db|cache|fallback`)
+- **6. Helper `src/lib/tarif/index.ts`** :
+  * `getCurrentTarif(cle)` avec cache en mémoire par clé (Map), TTL 60s
+  * `getAllTarifs()` pour admin
+  * `invalidateTarifCache()` appelée après chaque mutation
+  * Repli à 350 000 GNF si DB vide
+- **7. Branchement des APIs existantes** :
+  * `/api/bookings/route.ts` : `montant: montant || (await getCurrentTarif(...)).montant`
+  * `/api/payments/route.ts` : `amount: amount || (await getCurrentTarif(...)).montant`
+- **8. Branchement UI candidat `exam-booking.tsx`** :
+  * Ajout d'un state `tarifMontant` + `tarifFormatted`
+  * `useEffect` qui fetch `/api/tarifs/current?categorie=<user.categoriePermis>` au montage
+  * Remplacement des 5 occurrences codées en dur par les valeurs dynamiques
+  * Repli à 350 000 GNF si l'API échoue
+- **9. Panneau admin `Tarifs` dans `admin-dashboard.tsx`** :
+  * Ajout d'un item "Tarifs" dans la sidebar super-admin (entre "Journal d'audit" et "Système")
+  * State `tarifs/tarifsLoading/tarifsSaving/tarifsError/newTarif/showNewTarifForm`
+  * 3 handlers : `fetchTarifs`, `saveTarif` (PATCH), `createTarif` (POST), `deleteTarif` (DELETE)
+  * Composant `TarifRowEditor` : édition inline (libellé/montant/catégorie/note), toggle actif/inactif, boutons édition/suppression
+  * Formulaire de création avec validation
+  * Note informative expliquant le fonctionnement
+- **10. Tests E2E super-admin** :
+  * Login admin@coderoute-gn.org (mdp réinitialisé à Admin@2024)
+  * Onglet "Tarifs" visible et fonctionnel
+  * 4 tarifs visibles au départ (A=250k, B=350k, C=450k, reprise B=175k)
+  * **Test édition** : modification permis B 350 000 → 400 000 GNF → DB mise à jour ✓ → API publique reflète 400 000 GNF ✓ → restauration à 350 000 ✓
+  * **Test toggle** : désactivation permis A → API retourne fallback (350 000) ✓ → réactivation → API retourne 250 000 ✓
+  * **Test création** : nouveau tarif permis D "Réservation examen permis D (bus)" = 550 000 GNF → DB créée ✓ → audit log `TARIF_CREATE` ✓ → API publique retourne 550 000 GNF ✓
+- **11. Tests E2E candidat** :
+  * Login candidat@demo.gn (mdp Candidat@2024)
+  * Flux réservation complet : Conakry → Conakry → Centre Dixinn → 22 juin → 10h00
+  * Étape paiement affiche « Frais d'examen : 350 000 GNF » et bouton « Payer 350 000 GNF » → tarif récupéré dynamiquement depuis la DB ✓
+- **12. Vérifications finales** :
+  * `npx tsc --noEmit` → 0 erreur sur src/
+  * `npx jest` → 197/197 tests PASS
+  * 5 tarifs en base : A=250k, B=350k, C=450k, D=550k, reprise B=175k
+  * 4 captures d'écran dans `download/screenshots/phase26/`
+
+Stage Summary:
+- Le tarif de réservation d'examen est désormais **dynamique et administrable** depuis le super-admin dashboard
+- 4 endpoints API (1 publique, 3 admin CRUD) + 1 table DB + 1 helper lib + 1 onglet UI admin complet
+- Cache en mémoire 60s avec invalidation automatique après mutation
+- Audit log complet (TARIF_CREATE / TARIF_UPDATE / TARIF_DESACTIVATE)
+- Le candidat voit le tarif de sa catégorie de permis sans modification manuelle
+- Le repli à 350 000 GNF garantit la continuité de service si la DB est vide
+- Comptes de test : admin@coderoute-gn.org / Admin@2024 (réinitialisé), candidat@demo.gn / Candidat@2024

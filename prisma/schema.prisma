@@ -354,3 +354,22 @@ model AuditLog {
   @@index([severity])
   @@index([timestamp])
 }
+
+// ============================================================
+// TarifConfig — Tarification dynamique des examens
+// ============================================================
+model TarifConfig {
+  id              String   @id @default(cuid())
+  cle             String   @unique // "examen_reservation" | "examen_reprise" | ...
+  libelle         String   // Libellé affiché en admin
+  montant         Int      // GNF
+  categoriePermis String   @default("B") // A | A1 | B | C | D | E
+  actif           Boolean  @default(true)
+  note            String?  // Notes admin
+  modifiePar      String?  // userId du super-admin
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([cle])
+  @@index([categoriePermis])
+}

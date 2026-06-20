@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initiateMobileMoneyPayment, validateMobileMoneyNumber, getAllProviders } from '@/lib/mobile-money'
 import { getSessionFromRequest } from '@/lib/session'
+import { getCurrentTarif } from '@/lib/tarif'
 
 // ─── GET: List available Mobile Money providers ────────────
 export async function GET() {
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     const result = await initiateMobileMoneyPayment({
       bookingId,
       phoneNumber,
-      amount: amount || 350000, // 350 000 GNF — tarif réservation examen
+      amount: amount || (await getCurrentTarif('examen_reservation_B')).montant,
     })
 
     if (!result.success) {

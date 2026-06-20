@@ -155,6 +155,22 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
   const [transactionRef, setTransactionRef] = useState('');
   const [ussdCode, setUssdCode] = useState('');
 
+  // Tarif dynamique (récupéré depuis /api/tarifs/current)
+  const [tarifMontant, setTarifMontant] = useState<number>(350000); // repli 350 000 GNF
+  const [tarifFormatted, setTarifFormatted] = useState<string>('350 000 GNF');
+  useEffect(() => {
+    const cat = (user?.categoriePermis || 'B').toUpperCase();
+    fetch(`/api/tarifs/current?categorie=${encodeURIComponent(cat)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && typeof data.montant === 'number') {
+          setTarifMontant(data.montant);
+          setTarifFormatted(data.formatted || `${data.montant.toLocaleString('fr-FR')} GNF`);
+        }
+      })
+      .catch(() => {/* garde le repli */});
+  }, [user?.categoriePermis]);
+
   const availableDates = getUpcomingDates();
   const currentRegion = regions.find(r => r.id === selectedRegion);
   const currentVille = currentRegion?.villes.find(v => v.id === selectedVille);
@@ -235,7 +251,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
           heure: selectedTime,
           langue: 'fr',
           categoriePermis: user?.categoriePermis || 'B',
-          montant: 350000,
+          montant: tarifMontant,
           numeroPaiement: mobileMoneyNumber,
         }),
       });
@@ -259,7 +275,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
         body: JSON.stringify({
           bookingId: newBookingId,
           phoneNumber: mobileMoneyNumber,
-          amount: 350000,
+          amount: tarifMontant,
         }),
       });
 
@@ -474,7 +490,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                     </div>
                     <div>
                       <p className="font-semibold text-sm">{provider.name}</p>
-                      <p className="text-xs text-gray-500">350 000 GNF</p>
+                      <p className="text-xs text-gray-500">{tarifFormatted}</p>
                     </div>
                   </div>
 
@@ -750,7 +766,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between">
                         <span className="font-semibold" style={{ color: '#1A2332' }}>Frais d&apos;examen</span>
-                        <span className="font-bold text-lg" style={{ color: '#009460' }}>350 000 GNF</span>
+                        <span className="font-bold text-lg" style={{ color: '#009460' }}>{tarifFormatted}</span>
                       </div>
                     </div>
                   </div>
@@ -871,7 +887,7 @@ export default function ExamBooking({ onViewChange }: ExamBookingProps) {
                   ) : (
                     <>
                       <Smartphone className="w-4 h-4 mr-1" />
-                      Payer 350 000 GNF
+                      Payer {tarifFormatted}
                     </>
                   )}
                 </Button>

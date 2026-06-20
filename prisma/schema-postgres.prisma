@@ -348,3 +348,22 @@ model AuditLog {
   @@index([severity])
   @@index([timestamp])
 }
+
+// ============================================================
+// TarifConfig — Tarification dynamique des examens
+// ============================================================
+model TarifConfig {
+  id              String   @id @default(cuid())
+  cle             String   @unique
+  libelle         String
+  montant         Int
+  categoriePermis String   @default("B")
+  actif           Boolean  @default(true)
+  note            String?
+  modifiePar      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([cle])
+  @@index([categoriePermis])
+}
