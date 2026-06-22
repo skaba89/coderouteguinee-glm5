@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/command';
 import { useAuth } from '@/lib/auth-context';
 import { NotificationsBell } from './notifications-bell';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
   Car,
   LogOut,
@@ -116,7 +117,7 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-white border-b border-gray-200/80">
+      <nav className="sticky top-0 z-50 bg-background border-b border-border">
         {/* Guinea tricolor stripe */}
         <div className="h-0.5 flex">
           <div className="flex-1" style={{ backgroundColor: '#CE1126' }}></div>
@@ -142,10 +143,10 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#009460' }}>
                   <Car className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-bold text-lg hidden sm:inline" style={{ color: '#1A2332' }}>
+                <span className="font-bold text-lg hidden sm:inline text-foreground">
                   CodeRoute <span style={{ color: '#009460' }}>Guinée</span>
                 </span>
-                <span className="font-bold sm:hidden" style={{ color: '#1A2332' }}>
+                <span className="font-bold sm:hidden text-foreground">
                   CR<span style={{ color: '#009460' }}>G</span>
                 </span>
               </div>
@@ -163,7 +164,7 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
                       className={`text-sm font-medium transition-colors ${
                         isActive
                           ? 'text-white hover:text-white'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                       }`}
                       style={isActive ? { backgroundColor: '#009460' } : {}}
                       onClick={() => onViewChange(item.view)}
@@ -182,12 +183,12 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
               <Button
                 variant="outline"
                 size="sm"
-                className="hidden md:flex items-center gap-2 text-gray-500 bg-gray-50 border-gray-200 hover:bg-gray-100 h-8 px-3"
+                className="hidden md:flex items-center gap-2 text-muted-foreground bg-muted/50 border-border hover:bg-accent h-8 px-3"
                 onClick={() => setSearchOpen(true)}
               >
                 <Search className="w-3.5 h-3.5" />
                 <span className="text-xs">Rechercher</span>
-                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-white px-1.5 font-mono text-[10px] font-medium text-gray-400">
+                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                   <Keyboard className="w-2.5 h-2.5" />K
                 </kbd>
               </Button>
@@ -196,11 +197,14 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
               <Button
                 variant="ghost"
                 size="sm"
-                className="md:hidden text-gray-500"
+                className="md:hidden text-muted-foreground"
                 onClick={() => setSearchOpen(true)}
               >
                 <Search className="w-4 h-4" />
               </Button>
+
+              {/* Theme toggle (dark/light) */}
+              <ThemeToggle />
 
               {/* Notifications bell (admin/super-admin only) */}
               {user && (user.role === 'administration' || user.role === 'super-admin') && (
@@ -210,7 +214,7 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
               {/* User dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-9 hover:bg-gray-100">
+                  <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-9 hover:bg-accent">
                     <Avatar className="h-7 w-7">
                       <AvatarFallback
                         className="text-xs font-bold text-white"
@@ -219,22 +223,22 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
                         {userInitials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium hidden xl:inline" style={{ color: '#1A2332' }}>
+                    <span className="text-sm font-medium hidden xl:inline text-foreground">
                       {user?.prenom}
                     </span>
-                    <ChevronDown className="w-3 h-3 text-gray-400" />
+                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium" style={{ color: '#1A2332' }}>{user?.prenom} {user?.nom}</p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
+                      <p className="text-sm font-medium text-foreground">{user?.prenom} {user?.nom}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
                       <div className="flex items-center gap-1.5 mt-1">
                         <Badge variant="outline" className="text-[10px] px-1.5" style={{ borderColor: '#009460', color: '#009460' }}>
                           {user?.role === 'administration' ? 'Admin' : 'Candidat'}
                         </Badge>
-                        <span className="text-[10px] text-gray-400">{user?.numeroUnique}</span>
+                        <span className="text-[10px] text-muted-foreground">{user?.numeroUnique}</span>
                       </div>
                     </div>
                   </DropdownMenuLabel>
@@ -255,7 +259,7 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40"
                     onClick={logout}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -268,7 +272,7 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
               <Button
                 variant="ghost"
                 size="sm"
-                className="lg:hidden text-gray-500"
+                className="lg:hidden text-muted-foreground"
                 onClick={() => setMobileOpen(!mobileOpen)}
               >
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -279,12 +283,12 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
 
         {/* Admin secondary nav (breadcrumb-like) */}
         {isAdmin && (
-          <div className="border-t border-gray-100 bg-gray-50/50">
+          <div className="border-t border-border bg-muted/30">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-4 h-9 text-xs overflow-x-auto">
-                <span className="text-gray-400 flex-shrink-0">Administration</span>
-                <span className="text-gray-300">/</span>
-                <span className="font-medium text-gray-700 flex-shrink-0">
+                <span className="text-muted-foreground/70 flex-shrink-0">Administration</span>
+                <span className="text-muted-foreground/40">/</span>
+                <span className="font-medium text-muted-foreground flex-shrink-0">
                   {adminNavItems.find(i => i.view === currentView)?.label || 'Vue d\'ensemble'}
                 </span>
               </div>
@@ -294,10 +298,10 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="lg:hidden border-t bg-white">
+          <div className="lg:hidden border-t bg-background">
             <div className="px-4 py-3 space-y-2">
               {user && (
-                <div className="pb-3 mb-3 border-b">
+                <div className="pb-3 mb-3 border-b border-border">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="text-xs font-bold text-white" style={{ backgroundColor: '#1A2332' }}>
@@ -305,8 +309,8 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <span className="font-medium text-sm" style={{ color: '#1A2332' }}>{user.prenom} {user.nom}</span>
-                      <span className="block text-xs text-gray-500">{user.numeroUnique}</span>
+                      <span className="font-medium text-sm text-foreground">{user.prenom} {user.nom}</span>
+                      <span className="block text-xs text-muted-foreground">{user.numeroUnique}</span>
                     </div>
                   </div>
                 </div>
@@ -328,8 +332,8 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
                   </Button>
                 );
               })}
-              <div className="pt-2 border-t">
-                <Button variant="ghost" size="sm" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => { logout(); setMobileOpen(false); }}>
+              <div className="pt-2 border-t border-border">
+                <Button variant="ghost" size="sm" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40" onClick={() => { logout(); setMobileOpen(false); }}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Déconnexion
                 </Button>

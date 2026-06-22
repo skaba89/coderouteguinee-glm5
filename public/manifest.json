@@ -1,0 +1,50 @@
+{
+  "name": "CodeRoute Guinée — Examen du Code de la Route",
+  "short_name": "CodeRoute GN",
+  "description": "Plateforme nationale digitale pour l'examen théorique du permis de conduire en République de Guinée",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#009460",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["education", "government", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Réserver un examen",
+      "short_name": "Réserver",
+      "description": "Planifier une session d'examen du code",
+      "url": "/?action=exam-booking",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mes résultats",
+      "short_name": "Résultats",
+      "description": "Consulter mes résultats d'examen",
+      "url": "/?action=results",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

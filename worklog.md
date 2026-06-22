@@ -1540,3 +1540,133 @@ Stage Summary:
 - Le candidat voit le tarif de sa catégorie de permis sans modification manuelle
 - Le repli à 350 000 GNF garantit la continuité de service si la DB est vide
 - Comptes de test : admin@coderoute-gn.org / Admin@2024 (réinitialisé), candidat@demo.gn / Candidat@2024
+
+---
+Task ID: 27
+Agent: main
+Task: Phase 27 — PWA (Progressive Web App) + Mode sombre + Mode hors-ligne
+
+Work Log:
+- **Audit initial** :
+  * Dev server vérifié sur port 3000 (PID 1043) — répond 200 OK
+  * `next-themes` déjà installé, variables CSS `.dark` déjà présentes dans `globals.css` (l'infrastructure Tailwind v4 `@custom-variant dark` est en place)
+  * Pas de `manifest.json`, pas de service worker, pas de `ThemeProvider`, pas de ThemeToggle → fonctionnalités PWA + dark mode complètement absentes
+
+- **1. ThemeProvider (next-themes)** :
+  * Création `src/components/theme-provider.tsx` (wrapper autour de `next-themes` avec `attribute="class"`, `defaultTheme="system"`, `enableSystem`, `disableTransitionOnChange`)
+  * Update `src/app/layout.tsx` : wrap `<ThemeProvider>` autour de `{children} + <Toaster/> + <PWARegister/>`
+
+- **2. ThemeToggle composant** :
+  * Création `src/components/theme-toggle.tsx` avec icônes `Sun`/`Moon` (lucide-react)
+  * Évite le mismatch d'hydration en utilisant `mounted` state (placeholder stable jusqu'au mount client) + `suppressHydrationWarning`
+  * `aria-label` dynamique ("Activer le mode clair" / "Activer le mode sombre")
+
+- **3. Navigation adaptée au thème** :
+  * Update `src/components/code-route/navigation.tsx` :
+    - `bg-white` → `bg-background`
+    - `bg-gray-50` → `bg-muted/30`
+    - `text-gray-500/600/700` → `text-muted-foreground`
+    - `text-gray-400` → `text-muted-foreground/70`
+    - `border-gray-100/200` → `border-border`
+    - `hover:bg-gray-100` → `hover:bg-accent`
+    - `style={{ color: '#1A2332' }}` → `text-foreground`
+    - `text-red-600 ... hover:bg-red-50` → ajout `dark:hover:bg-red-950/40`
+  * Ajout `<ThemeToggle/>` entre Search button et Notifications bell (visible sur tous les dashboards)
+
+- **4. Landing page adaptée au thème + ThemeToggle flottant** :
+  * Update `src/components/code-route/landing-page.tsx` :
+    - ThemeToggle flottant en haut-droite (fixed top-4 right-4 z-50) avec backdrop-blur
+    - Section "Comment ça marche" : `bg-gray-50` → `bg-muted/40`
+    - Section "Ce qui nous distingue" : `bg-white` → `bg-background`
+    - Section "Comparaison internationale" : `bg-white` → `bg-background`, `bg-gray-50` → `bg-muted/50`, `text-gray-500/600` → `text-muted-foreground`, `style={{ color: '#1A2332' }}` → `text-foreground`
+    - Sections restantes avec gradient/fond foncé (hero, accessibility, CTA, footer) conservent leurs couleurs (visuel identitaire)
+
+- **5. PWA manifest** :
+  * Création `public/manifest.json` (name, short_name, description, start_url=/, scope=/, display=standalone, theme_color=#009460, background_color=#ffffff, lang=fr, 3 icônes any+maskable, 2 raccourcis "Réserver" + "Résultats")
+  * Update `metadata` du `layout.tsx` : `manifest: "/manifest.json"`, `applicationName`, `appleWebApp` (capable, statusBarStyle, title), `icons` (icon 192/512, apple, shortcut)
+  * Update `viewport` : `themeColor` light/dark, `width=device-width`, `initialScale=1`, `maximumScale=5`, `userScalable=true`
+
+- **6. Icônes PWA générées** :
+  * Création `scripts/generate-pwa-icons.py` (PIL)
+  * Rendu : icône carrée arrondie verte, monogramme "CR" blanc, stripe tricolore rouge/jaune/vert en haut
+  * Génération de 5 fichiers dans `public/icons/` :
+    * `icon-192.png` (192×192, "any")
+    * `icon-512.png` (512×512, "any")
+    * `icon-maskable-512.png` (512×512, padding 10% pour safe-zone maskable)
+    * `apple-touch-icon.png` (180×180)
+    * `favicon-32.png` (32×32) + `public/favicon.ico` (32×32 ICO)
+
+- **7. Service Worker** :
+  * Création `public/sw.js` (v1.0.0) avec 3 stratégies :
+    - **HTML navigations** : network-first, fallback page offline cachée
+    - **Static assets** (JS/CSS/fonts/images/manifest) : stale-while-revalidate
+    - **API calls** (`/api/*`) : jamais mis en cache (toujours frais)
+  * Event `install` : pre-cache de `/offline`, `/manifest.json`, `/icons/icon-192.png`, `/icons/icon-512.png`
+  * Event `activate` : suppression des anciens caches (versioning par suffixe `-v1.0.0`)
+  * Event `message` : support `SKIP_WAITING` pour mise à jour immédiate
+
+- **8. Composants PWA client** :
+  * Création `src/components/pwa/pwa-register.tsx` :
+    - Enregistre le SW uniquement en production (en dev : opt-in via `?sw=1` pour éviter conflits avec HMR)
+    - Listen `updatefound` pour logger les mises à jour disponibles
+    - Monte `<InstallPWA/>`
+  * Création `src/components/pwa/install-prompt.tsx` :
+    - Capture l'événement `beforeinstallprompt`
+    - Détecte mode standalone (déjà installé) → ne pas afficher
+    - Persistance du rejet dans localStorage (TTL 7 jours)
+    - Banner fixed bottom-center avec boutons "Installer" / "Plus tard" + bouton fermeture
+
+- **9. Page hors-ligne** :
+  * Création `src/app/offline/page.tsx` (client component) :
+    - Bandeau tricolore Guinée (rouge/jaune/vert)
+    - Icône `WifiOff` dans bg-muted
+    - Titre "Vous êtes hors-ligne"
+    - Message indiquant que les pages déjà visitées restent consultables
+    - Boutons "Réessayer" (reload) et "Page d'accueil" (vers /)
+    - Footer branding "CodeRoute Guinée — Ministère des Transports"
+  * Status HTTP vérifié : 200 OK
+
+- **10. Tests et vérifications finales** :
+  * `npx tsc --noEmit` → 0 erreur sur `src/` (4 erreurs hors projet dans `examples/` et `skills/`)
+  * `npx jest` → **197/197 tests PASS** (9 suites)
+  * Vérification des endpoints HTTP :
+    - `/manifest.json` → 200 ✓
+    - `/sw.js` → 200 ✓ (Content-Type: application/javascript)
+    - `/offline` → 200 ✓
+    - `/icons/icon-192.png` → 200 ✓
+    - `/icons/icon-512.png` → 200 ✓
+    - `/icons/icon-maskable-512.png` → 200 ✓
+    - `/icons/apple-touch-icon.png` → 200 ✓
+    - `/favicon.ico` → 200 ✓
+  * Vérification navigateur (agent-browser) :
+    - Landing page light mode → capture `01-landing-light.png`, `02-landing-light-full.png` ✓
+    - Clic sur ThemeToggle → passage en dark mode ✓ (bouton devient "Activer le mode clair")
+    - Landing page dark mode → capture `03-landing-dark-top.png`, `04-landing-dark-full.png` ✓
+    - Page `/offline` → capture `05-offline-page.png` ✓
+    - Login admin@coderoute-gn.org / Admin@2024 → dashboard admin ✓
+    - ThemeToggle visible dans la navigation du dashboard ✓
+    - Admin dashboard dark mode → capture `06-admin-dashboard-dark.png` ✓
+    - Toggle → admin dashboard light mode → capture `07-admin-dashboard-light.png` ✓
+    - Banner PWA "Installer CodeRoute Guinée" apparu puis dismiss ✓
+    - 0 erreur console, 0 erreur hydration après fix du ThemeToggle
+
+Stage Summary:
+- **3 fonctionnalités livrées** : Mode sombre (toggle + ThemeProvider + classes adaptées), PWA installable (manifest + icônes + install prompt), Mode hors-ligne (service worker + page offline fallback)
+- **9 nouveaux fichiers** :
+  - `src/components/theme-provider.tsx`
+  - `src/components/theme-toggle.tsx`
+  - `src/components/pwa/pwa-register.tsx`
+  - `src/components/pwa/install-prompt.tsx`
+  - `src/app/offline/page.tsx`
+  - `public/manifest.json`
+  - `public/sw.js`
+  - `public/icons/icon-{192,512,maskable-512,apple-touch-icon}.png` + `favicon.ico`
+  - `scripts/generate-pwa-icons.py`
+- **3 fichiers modifiés** : `layout.tsx`, `navigation.tsx`, `landing-page.tsx`
+- **7 captures d'écran** dans `download/screenshots/phase27/` (light/dark/offline/admin dark/admin light)
+- **Stratégie SW** : network-first pour navigations (offline fallback), stale-while-revalidate pour assets statiques, jamais de cache pour `/api/*`
+- **Comportement dev** : SW désactivé par défaut en dev (opt-in via `?sw=1`) pour éviter les conflits HMR
+- **Persistance** : thème sauvegardé dans localStorage (clé `theme`), rejet install prompt persisté 7 jours
+- **Accessibilité** : `aria-label` dynamique sur ThemeToggle, `sr-only` label, `themeColor` media-query (light/dark)
+- **Conformité** : 197/197 tests unitaires OK, 0 erreur TypeScript sur src/, 0 erreur console navigateur
+

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
   Car,
   UserPlus,
@@ -158,6 +159,13 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Floating theme toggle (top-right) */}
+      <div className="fixed top-4 right-4 z-50">
+        <div className="rounded-full bg-background/80 backdrop-blur border border-border shadow-sm">
+          <ThemeToggle />
+        </div>
+      </div>
+
       {/* ═══════════════════════════════════════════════════════
           1. HERO SECTION
           ═══════════════════════════════════════════════════════ */}
@@ -270,13 +278,13 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       {/* ═══════════════════════════════════════════════════════
           2. COMMENT ÇA MARCHE (5 steps)
           ═══════════════════════════════════════════════════════ */}
-      <section className="py-16 sm:py-24 bg-gray-50">
+      <section className="py-16 sm:py-24 bg-muted/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-foreground">
               Comment ça marche
             </h2>
-            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
               Un processus simple et sécurisé en 5 étapes
             </p>
           </div>
@@ -293,13 +301,13 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                     <div className="w-14 h-14 rounded-xl mx-auto mt-4 mb-4 flex items-center justify-center" style={{ backgroundColor: `${step.color}15` }}>
                       <step.icon className="w-7 h-7" style={{ color: step.color }} />
                     </div>
-                    <h3 className="font-bold text-lg mb-2" style={{ color: '#1A2332' }}>{step.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
+                    <h3 className="font-bold text-lg mb-2 text-foreground">{step.title}</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
                   </CardContent>
                 </Card>
                 {/* Arrow between cards */}
                 {index < steps.length - 1 && (
-                  <ChevronRight className="hidden lg:block absolute top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 z-10" style={{ left: `calc(${((index) * 20) + 19}% )` }} />
+                  <ChevronRight className="hidden lg:block absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/40 z-10" style={{ left: `calc(${((index) * 20) + 19}% )` }} />
                 )}
               </React.Fragment>
             ))}
@@ -310,14 +318,14 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       {/* ═══════════════════════════════════════════════════════
           3. CE QUI NOUS DISTINGUE (Nouveautés)
           ═══════════════════════════════════════════════════════ */}
-      <section className="py-16 sm:py-24 bg-white">
+      <section className="py-16 sm:py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#CE1126' }}>Nouveautés</p>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-foreground">
               Ce qui nous distingue
             </h2>
-            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
               Des innovations uniques pour un examen accessible à tous les Guinéens
             </p>
           </div>
@@ -331,8 +339,8 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                   <div className="w-14 h-14 rounded-2xl mb-5 flex items-center justify-center" style={{ backgroundColor: `${item.accent}12` }}>
                     <item.icon className="w-7 h-7" style={{ color: item.accent }} />
                   </div>
-                  <h3 className="font-bold text-xl mb-3" style={{ color: '#1A2332' }}>{item.title}</h3>
-                  <p className="text-gray-500 leading-relaxed">{item.desc}</p>
+                  <h3 className="font-bold text-xl mb-3 text-foreground">{item.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -432,14 +440,14 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       {/* ═══════════════════════════════════════════════════════
           6. COMPARAISON INTERNATIONALE
           ═══════════════════════════════════════════════════════ */}
-      <section className="py-16 sm:py-24 bg-white">
+      <section className="py-16 sm:py-24 bg-background">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <p className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: '#009460' }}>Benchmark</p>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: '#1A2332' }}>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-foreground">
               En avance sur les standards mondiaux
             </h2>
-            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
               CodeRoute Guinée dépasse les plateformes internationales
             </p>
           </div>
@@ -447,31 +455,31 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
           <Card className="border-0 shadow-xl overflow-hidden">
             <CardContent className="p-0">
               {/* Table header */}
-              <div className="grid grid-cols-3 bg-gray-50 border-b border-gray-100">
-                <div className="p-4 sm:p-5 font-semibold text-gray-600 text-sm sm:text-base">Fonctionnalité</div>
+              <div className="grid grid-cols-3 bg-muted/50 border-b border-border">
+                <div className="p-4 sm:p-5 font-semibold text-muted-foreground text-sm sm:text-base">Fonctionnalité</div>
                 <div className="p-4 sm:p-5 font-semibold text-center text-sm sm:text-base" style={{ color: '#009460' }}>
                   <div className="flex items-center justify-center gap-1.5">
                     <Car className="w-4 h-4" />
                     CodeRoute Guinée
                   </div>
                 </div>
-                <div className="p-4 sm:p-5 font-semibold text-center text-gray-400 text-sm sm:text-base">Autres plateformes</div>
+                <div className="p-4 sm:p-5 font-semibold text-center text-muted-foreground/70 text-sm sm:text-base">Autres plateformes</div>
               </div>
 
               {/* Table rows */}
               {comparisons.map((row, index) => (
                 <div
                   key={index}
-                  className={`grid grid-cols-3 items-center ${index !== comparisons.length - 1 ? 'border-b border-gray-50' : ''} hover:bg-gray-50/50 transition-colors`}
+                  className={`grid grid-cols-3 items-center ${index !== comparisons.length - 1 ? 'border-b border-border' : ''} hover:bg-muted/30 transition-colors`}
                 >
-                  <div className="p-4 sm:p-5 text-sm sm:text-base font-medium" style={{ color: '#1A2332' }}>
+                  <div className="p-4 sm:p-5 text-sm sm:text-base font-medium text-foreground">
                     {row.feature}
                   </div>
                   <div className="p-4 sm:p-5 text-center">
                     {row.us === true ? (
                       <CheckCircle className="w-6 h-6 mx-auto" style={{ color: '#009460' }} />
                     ) : (
-                      <span className="text-gray-300">—</span>
+                      <span className="text-muted-foreground/50">—</span>
                     )}
                   </div>
                   <div className="p-4 sm:p-5 text-center">
