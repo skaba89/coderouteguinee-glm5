@@ -1,71 +1,175 @@
 // ============================================================
 // CodeRoute Guinée — Database Schema (PostgreSQL variant)
-// Auto-synced from schema.prisma via scripts/sync-schemas.sh
+// Optimized for PostgreSQL 16+ with native enums, jsonb, citext.
 // To activate: bash scripts/switch-db.sh postgres
+//
+// NOTE: This schema intentionally diverges from schema.prisma (SQLite)
+// at the TYPE level — same models, same fields, but native PG types
+// (enums, jsonb, @db.Text, @db.Timestamptz). The verify-schema-sync.sh
+// script checks MODEL/FIELD name parity only, not types.
 // ============================================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [citext, pgcrypto, pg_trgm]
 }
 
+// ─── Enums (PostgreSQL native) ─────────────────────────────
+// Replaces loose String fields with strict enums. Existing
+// SQLite data must be cast to these enums during migration
+// (handled by scripts/migrate-data.ts).
+
+enum UserRole {
+  candidat
+  auto_ecole
+  centre_agree
+  administration
+  super_admin
+}
+
+enum CentreAccredStatut {
+  actif
+  en_renouvellement
+  expire
+  suspendu
+}
+
+enum QuestionCategorie {
+  Signalisation
+  Priorites
+  Conduite
+  Securite
+  Infractions
+}
+
+enum QuestionDifficulte {
+  facile
+  moyen
+  difficile
+}
+
+enum ExamStatut {
+  programme
+  en_cours
+  passe
+  reussi
+  echoue
+  annule
+}
+
+enum PaymentStatut {
+  en_attente
+  confirme
+  echoue
+  rembourse
+}
+
+enum PaymentMoyen {
+  mobile_money
+  cash
+  carte
+}
+
+enum FraudSeverity {
+  info
+  low
+  medium
+  high
+  critical
+}
+
+enum FraudStatus {
+  active
+  investigating
+  resolved
+  dismissed
+}
+
+enum CourseStatus {
+  brouillon
+  publie
+  archive
+}
+
+enum NotificationType {
+  email
+  sms
+}
+
+enum NotificationStatus {
+  pending
+  sent
+  failed
+}
+
+enum AuditSeverity {
+  info
+  warning
+  critical
+}
+
+// ─── User & Auth ────────────────────────────────────────────
+
 model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  passwordHash    String
-  nom             String
-  prenom          String
-  dateNaissance   String   // ISO date string
-  numeroIdentite  String   @unique
-  telephone       String
-  ville           String
-  region          String   @default("Conakry")
-  categoriePermis String   @default("B")
-  role            String   @default("candidat") // candidat | auto-ecole | centre-agree | administration | super-admin
-  numeroUnique    String   @unique // GN-CODE-YYYY-XXXXXX
-  langueMaternelle String  @default("fr")
-  photo           String?
-  actif           Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String
+  nom              String
+  prenom           String
+  dateNaissance    String // ISO date string (kept as text for portability)
+  numeroIdentite   String   @unique
+  telephone        String
+  ville            String
+  region           String   @default("Conakry")
+  categoriePermis  String   @default("B")
+  role             UserRole @default(candidat)
+  numeroUnique     String   @unique // GN-CODE-YYYY-XXXXXX
+  langueMaternelle String   @default("fr")
+  photo            String?
+  actif            Boolean  @default(true)
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(6)
 
   // Relations
-  examSessions    ExamSession[]
-  bookings        Booking[]
-  fraudAlerts     FraudAlert[]  @relation("FraudCandidate")
+  examSessions ExamSession[]
+  bookings     Booking[]
+  fraudAlerts  FraudAlert[]  @relation("FraudCandidate")
 
   @@index([email])
   @@index([numeroUnique])
   @@index([role])
+  @@index([actif])
 }
 
 // ─── Centre & Region ────────────────────────────────────────
 
 model Centre {
-  id          String   @id @default(cuid())
-  nom         String
-  ville       String
-  region      String
-  adresse     String
-  capacite    Int      @default(30)
-  telephone   String
-  email       String
-  actif       Boolean  @default(true)
+  id                 String             @id @default(cuid())
+  nom                String
+  ville              String
+  region             String
+  adresse            String
+  capacite           Int                @default(30)
+  telephone          String
+  email              String
+  actif              Boolean            @default(true)
   // Accreditation
-  accredDateDebut  String?  // ISO date
-  accredDateFin    String?  // ISO date
-  accredStatut     String   @default("actif") // actif | en_renouvellement | expire | suspendu
-  accredScore      Float    @default(80.0)
-  // Equipements (JSON string)
-  equipements String?
-  // Langues disponibles (JSON string array)
-  languesDisponibles String @default("[\"fr\"]")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  accredDateDebut    String? // ISO date
+  accredDateFin      String? // ISO date
+  accredStatut       CentreAccredStatut @default(actif)
+  accredScore        Float              @default(80.0)
+  // Equipements (native JSON)
+  equipements        Json?
+  // Langues disponibles (native JSON array)
+  languesDisponibles Json               @default("[\"fr\"]")
+  createdAt          DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime           @updatedAt @db.Timestamptz(6)
 
   // Relations
   examSessions ExamSession[]
@@ -74,63 +178,66 @@ model Centre {
 
   @@index([region])
   @@index([ville])
+  @@index([actif])
+  @@index([accredStatut])
 }
 
 // ─── Questions ──────────────────────────────────────────────
 
 model Question {
-  id            Int      @id @default(autoincrement())
-  texte         String
-  options       String   // JSON string array
+  id            Int                @id @default(autoincrement())
+  texte         String             @db.Text
+  options       Json // Array of strings
   bonneReponse  Int
-  categorie     String   // Signalisation | Priorités | Conduite | Sécurité | Infractions
-  difficulte    String   @default("facile") // facile | moyen | difficile
-  mediaType     String   @default("text") // text | sign | scenario | video | sign+scenario
+  categorie     QuestionCategorie
+  difficulte    QuestionDifficulte @default(facile)
+  mediaType     String             @default("text") // text | sign | scenario | video | sign+scenario
   signImage     String?
   scenarioImage String?
   videoUrl      String?
   audioFr       String?
-  explication   String
-  points        Int      @default(1)
-  tempsEstime   Int      @default(20) // seconds
-  tags          String   @default("[]") // JSON string array
-  actif         Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  explication   String             @db.Text
+  points        Int                @default(1)
+  tempsEstime   Int                @default(20) // seconds
+  tags          Json               @default("[]") // Array of strings
+  actif         Boolean            @default(true)
+  createdAt     DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime           @updatedAt @db.Timestamptz(6)
 
   // Relation to exam answers
-  reponses      Reponse[]
+  reponses Reponse[]
 
   @@index([categorie])
   @@index([actif])
+  @@index([difficulte])
 }
 
 // ─── Exam Session ───────────────────────────────────────────
 
 model ExamSession {
-  id              String   @id @default(cuid())
+  id              String     @id @default(cuid())
   candidatId      String
   centreId        String
   centreNom       String
-  date            String   // ISO date
-  heure           String   // HH:mm
-  langue          String   @default("fr")
-  statut          String   @default("programme") // programme | en_cours | passe | reussi | echoue | annule
+  date            String // ISO date
+  heure           String // HH:mm
+  langue          String     @default("fr")
+  statut          ExamStatut @default(programme)
   score           Int?
-  totalQuestions  Int      @default(40)
-  dureeEffective  Int?     // seconds
-  dateInscription DateTime @default(now())
+  totalQuestions  Int        @default(40)
+  dureeEffective  Int? // seconds
+  dateInscription DateTime   @default(now()) @db.Timestamptz(6)
   // Anti-fraud
   ipAdresse       String?
   navigateur      String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(6)
 
   // Relations
-  candidat        User         @relation(fields: [candidatId], references: [id])
-  centre          Centre       @relation(fields: [centreId], references: [id])
-  reponses        Reponse[]
-  fraudAlerts     FraudAlert[]
+  candidat    User         @relation(fields: [candidatId], references: [id])
+  centre      Centre       @relation(fields: [centreId], references: [id])
+  reponses    Reponse[]
+  fraudAlerts FraudAlert[]
 
   @@index([candidatId])
   @@index([centreId])
@@ -144,14 +251,14 @@ model Reponse {
   id            String   @id @default(cuid())
   sessionId     String
   questionId    Int
-  reponseDonnee Int      // index of selected option
+  reponseDonnee Int // index of selected option
   correcte      Boolean
-  tempsReponse  Int?     // seconds taken
-  createdAt     DateTime @default(now())
+  tempsReponse  Int? // seconds taken
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
 
   // Relations
-  session       ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  question      Question    @relation(fields: [questionId], references: [id])
+  session  ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
 
   @@unique([sessionId, questionId])
   @@index([sessionId])
@@ -160,60 +267,61 @@ model Reponse {
 // ─── Booking ────────────────────────────────────────────────
 
 model Booking {
-  id              String   @id @default(cuid())
-  candidatId      String
-  centreId        String
-  centreNom       String
-  region          String
-  ville           String
-  date            String   // ISO date
-  heure           String   // HH:mm
-  langue          String   @default("fr")
-  categoriePermis String   @default("B")
+  id                String        @id @default(cuid())
+  candidatId        String
+  centreId          String
+  centreNom         String
+  region            String
+  ville             String
+  date              String // ISO date
+  heure             String // HH:mm
+  langue            String        @default("fr")
+  categoriePermis   String        @default("B")
   // Payment
-  montant         Int      @default(350000) // GNF — tarif réservation examen
-  moyenPaiement   String   @default("mobile_money") // mobile_money | cash | carte
-  numeroPaiement  String?  // Mobile Money number
+  montant           Int           @default(350000) // GNF
+  moyenPaiement     PaymentMoyen  @default(mobile_money)
+  numeroPaiement    String? // Mobile Money number
   referencePaiement String? // Transaction reference
-  statutPaiement  String   @default("en_attente") // en_attente | confirme | echoue | rembourse
+  statutPaiement    PaymentStatut @default(en_attente)
   // Convocation
   numeroConvocation String? // CONV-XXXXXX
-  qrCodeData      String?  // Data encoded in QR
-  confirmee       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  qrCodeData        String? // Data encoded in QR
+  confirmee         Boolean       @default(false)
+  createdAt         DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @db.Timestamptz(6)
 
   // Relations
-  candidat        User    @relation(fields: [candidatId], references: [id])
-  centre          Centre  @relation(fields: [centreId], references: [id])
+  candidat User   @relation(fields: [candidatId], references: [id])
+  centre   Centre @relation(fields: [centreId], references: [id])
 
   @@index([candidatId])
   @@index([centreId])
   @@index([statutPaiement])
+  @@index([date])
 }
 
 // ─── Fraud Alert ────────────────────────────────────────────
 
 model FraudAlert {
-  id          String   @id @default(cuid())
-  type        String   // Identité suspecte | Comportement anormal | Double inscription | etc.
-  description String
-  severity    String   @default("medium") // info | low | medium | high | critical
-  status      String   @default("active") // active | investigating | resolved | dismissed
+  id          String        @id @default(cuid())
+  type        String
+  description String        @db.Text
+  severity    FraudSeverity @default(medium)
+  status      FraudStatus   @default(active)
   candidatId  String?
   centreId    String?
   sessionId   String?
-  timestamp   DateTime @default(now())
-  details     String?  // JSON string for additional info
-  resolvedAt  DateTime?
-  resolvedBy  String?  // Admin user ID
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  timestamp   DateTime      @default(now()) @db.Timestamptz(6)
+  details     Json?
+  resolvedAt  DateTime?     @db.Timestamptz(6)
+  resolvedBy  String? // Admin user ID
+  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(6)
 
   // Relations
-  candidat    User?       @relation("FraudCandidate", fields: [candidatId], references: [id])
-  centre      Centre?     @relation("FraudCentre", fields: [centreId], references: [id])
-  session     ExamSession? @relation(fields: [sessionId], references: [id])
+  candidat User?        @relation("FraudCandidate", fields: [candidatId], references: [id])
+  centre   Centre?      @relation("FraudCentre", fields: [centreId], references: [id])
+  session  ExamSession? @relation(fields: [sessionId], references: [id])
 
   @@index([status])
   @@index([severity])
@@ -232,8 +340,8 @@ model DailyStat {
   cancelled Int      @default(0)
   avgScore  Float    @default(0)
   revenue   Int      @default(0) // GNF
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
   @@index([date])
   @@index([centreId])
@@ -242,19 +350,19 @@ model DailyStat {
 // ─── Course & Lessons ───────────────────────────────────────
 
 model Course {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   titre       String
-  description String
+  description String       @db.Text
   categorie   String
-  status      String   @default("publie") // brouillon | publie | archive
+  status      CourseStatus @default(publie)
   imageCover  String?
-  dureeTotale Int      @default(0) // minutes
-  nbInscrits  Int      @default(0)
-  rating      Float    @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  dureeTotale Int          @default(0) // minutes
+  nbInscrits  Int          @default(0)
+  rating      Float        @default(0)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(6)
 
-  lessons     Lesson[]
+  lessons Lesson[]
 
   @@index([status])
   @@index([categorie])
@@ -264,18 +372,18 @@ model Lesson {
   id            String   @id @default(cuid())
   courseId      String
   titre         String
-  description   String
+  description   String   @db.Text
   type          String   @default("text") // video | sign | text | quiz | interactive
-  contenu       String
+  contenu       String   @db.Text
   mediaUrl      String?
   signImage     String?
   scenarioImage String?
   duree         Int      @default(5) // minutes
   ordre         Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
 
-  course        Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
   @@index([ordre])
@@ -288,8 +396,8 @@ model PasswordResetToken {
   userId    String
   token     String   @unique
   used      Boolean  @default(false)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  expiresAt DateTime @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([userId])
   @@index([token])
@@ -299,14 +407,14 @@ model PasswordResetToken {
 // ─── Two-Factor Authentication ─────────────────────────────
 
 model TwoFactorSecret {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  secret       String   // Encrypted TOTP secret
-  backupCodes  String   // JSON array of hashed backup codes
-  enabled      Boolean  @default(false)
-  verifiedAt   DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  secret      String // Encrypted TOTP secret
+  backupCodes Json // Array of hashed backup codes
+  enabled     Boolean   @default(false)
+  verifiedAt  DateTime? @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
 
   @@index([userId])
 }
@@ -314,39 +422,40 @@ model TwoFactorSecret {
 // ─── Notification Log ──────────────────────────────────────
 
 model NotificationLog {
-  id          String   @id @default(cuid())
-  userId      String?
-  type        String   // email | sms
-  template    String   // welcome | password_reset | exam_reminder | payment_confirmation
-  recipient   String   // email address or phone number
-  subject     String?
-  body        String
-  status      String   @default("pending") // pending | sent | failed
-  provider    String?  // smtp | orange_sms | mtn_sms | console
-  error       String?
-  sentAt      DateTime?
-  createdAt   DateTime @default(now())
+  id        String             @id @default(cuid())
+  userId    String?
+  type      NotificationType
+  template  String
+  recipient String
+  subject   String?
+  body      String             @db.Text
+  status    NotificationStatus @default(pending)
+  provider  String?
+  error     String?
+  sentAt    DateTime?          @db.Timestamptz(6)
+  createdAt DateTime           @default(now()) @db.Timestamptz(6)
 
   @@index([userId])
   @@index([status])
   @@index([type])
+  @@index([createdAt])
 }
 
 // ─── Audit Log ─────────────────────────────────────────────
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  eventType   String   // AUTH_LOGIN | AUTH_LOGIN_FAILED | USER_UPDATE | etc.
-  severity    String   @default("info") // info | warning | critical
-  userId      String?  // Who performed the action
-  userRole    String?  // Role of the user at time of action
-  targetId    String?  // ID of the affected entity
-  targetType  String?  // User | Centre | Booking | Payment | etc.
-  description String   // Human-readable description
-  details     String?  // JSON string for additional context
+  id          String        @id @default(cuid())
+  eventType   String
+  severity    AuditSeverity @default(info)
+  userId      String?
+  userRole    String?
+  targetId    String?
+  targetType  String?
+  description String        @db.Text
+  details     Json?
   ipAddress   String?
   userAgent   String?
-  timestamp   DateTime @default(now())
+  timestamp   DateTime      @default(now()) @db.Timestamptz(6)
 
   @@index([eventType])
   @@index([userId])
@@ -358,18 +467,20 @@ model AuditLog {
 // ============================================================
 // TarifConfig — Tarification dynamique des examens
 // ============================================================
+
 model TarifConfig {
   id              String   @id @default(cuid())
-  cle             String   @unique // "examen_reservation" | "examen_reprise" | ...
-  libelle         String   // Libellé affiché en admin
-  montant         Int      // GNF
-  categoriePermis String   @default("B") // A | A1 | B | C | D | E
+  cle             String   @unique
+  libelle         String
+  montant         Int // GNF
+  categoriePermis String   @default("B")
   actif           Boolean  @default(true)
-  note            String?  // Notes admin
-  modifiePar      String?  // userId du super-admin
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  note            String?  @db.Text
+  modifiePar      String?
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 
   @@index([cle])
   @@index([categoriePermis])
+  @@index([actif])
 }

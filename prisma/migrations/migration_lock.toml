@@ -1,0 +1,14 @@
+# Prisma migration lock file for PostgreSQL variant.
+# Do not edit — this file is used by `prisma migrate` to detect
+# the active provider. The CodeRoute project keeps SQLite as the
+# default dev DB (`prisma/schema.prisma`) and PostgreSQL as the
+# production DB (`prisma/schema-postgres.prisma`).
+#
+# To run migrations against PostgreSQL:
+#   bash scripts/switch-db.sh postgres
+#   DATABASE_URL=postgresql://... npx prisma migrate deploy
+#
+# To run migrations against SQLite (default dev mode):
+#   bash scripts/switch-db.sh sqlite
+#   npx prisma db push
+provider = "postgresql"

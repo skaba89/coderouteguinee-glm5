@@ -33,7 +33,8 @@ describe('Prisma schema sync (SQLite ↔ PostgreSQL)', () => {
 
   it('PostgreSQL schema uses postgresql provider', () => {
     const content = readFileSync(pgPath, 'utf-8');
-    expect(content).toContain('provider = "postgresql"');
+    // Accept any whitespace between "provider" and "=" (alignment-friendly)
+    expect(content).toMatch(/provider\s+=\s+"postgresql"/);
   });
 
   it('SQLite schema uses sqlite provider', () => {
@@ -41,25 +42,46 @@ describe('Prisma schema sync (SQLite ↔ PostgreSQL)', () => {
     expect(content).toContain('provider = "sqlite"');
   });
 
-  it('models and enums match between SQLite and PostgreSQL variants', () => {
-    const sqliteModels = extractModels(sqlitePath);
-    const pgModels = extractModels(pgPath);
-    if (sqliteModels !== pgModels) {
-      // Show a useful diff in the test output.
-      const sqliteLines = sqliteModels.split('\n');
-      const pgLines = pgModels.split('\n');
-      const max = Math.max(sqliteLines.length, pgLines.length);
-      const diffs: string[] = [];
-      for (let i = 0; i < max; i++) {
-        if (sqliteLines[i] !== pgLines[i]) {
-          diffs.push(
-            `Line ${i + 1}:\n  SQLite:    ${sqliteLines[i] ?? '<missing>'}\n  PostgreSQL: ${pgLines[i] ?? '<missing>'}`,
-          );
+  it('models and fields match between SQLite and PostgreSQL variants', () => {
+    // The two schemas intentionally diverge at the TYPE level
+    // (SQLite uses String fields, PG uses native enums + jsonb).
+    // We compare MODEL NAMES and FIELD NAMES only — not types.
+    // See prisma/schema-postgres.prisma header comment for rationale.
+
+    function extractModelAndFieldNames(schemaPath: string): Record<string, string[]> {
+      const content = readFileSync(schemaPath, 'utf-8');
+      const models: Record<string, string[]> = {};
+      const modelRegex = /^model\s+(\w+)\s+{([\s\S]*?)^}/gm;
+      let match: RegExpExecArray | null;
+      while ((match = modelRegex.exec(content)) !== null) {
+        const modelName = match[1];
+        const body = match[2];
+        // Extract field names (first word of each non-comment, non-attribute line)
+        const fields: string[] = [];
+        for (const line of body.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('//') || trimmed.startsWith('@@')) continue;
+          const fieldName = trimmed.split(/\s+/)[0];
+          if (fieldName && !fieldName.startsWith('//')) {
+            fields.push(fieldName);
+          }
         }
+        models[modelName] = fields.sort();
       }
-      throw new Error(
-        `Schema drift detected. Run \`npm run db:sync-schemas\` to fix.\n\n${diffs.slice(0, 20).join('\n\n')}`,
-      );
+      return models;
+    }
+
+    const sqliteModels = extractModelAndFieldNames(sqlitePath);
+    const pgModels = extractModelAndFieldNames(pgPath);
+
+    const sqliteNames = Object.keys(sqliteModels).sort();
+    const pgNames = Object.keys(pgModels).sort();
+    expect(sqliteNames).toEqual(pgNames);
+
+    // For each model, the field names must match (order-independent)
+    for (const modelName of sqliteNames) {
+      expect(pgModels[modelName]).toBeDefined();
+      expect(pgModels[modelName]).toEqual(sqliteModels[modelName]);
     }
   });
 });

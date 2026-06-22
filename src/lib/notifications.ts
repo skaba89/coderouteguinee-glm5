@@ -5,6 +5,7 @@
 // ============================================================
 
 import { db } from '@/lib/db'
+import { sendOrangeSms } from '@/lib/orange-sms'
 
 // ─── Notification types ────────────────────────────────────
 export type NotificationTemplate =
@@ -320,12 +321,24 @@ async function sendEmail(to: string, subject: string, body: string): Promise<{ s
 }
 
 // ─── Send SMS ──────────────────────────────────────────────
+// Routes to Orange SMS OAuth2 API when provider=orange,
+// otherwise falls back to console logging or generic SMS API.
 async function sendSms(to: string, body: string): Promise<{ success: boolean; error?: string; provider: string }> {
   const config = getSmsConfig()
 
   // Clean phone number (Guinea format: +224 6XX XX XX XX)
   const cleanedPhone = to.replace(/[\s\-()]/g, '')
   const formattedPhone = cleanedPhone.startsWith('+224') ? cleanedPhone : `+224${cleanedPhone.replace(/^0/, '')}`
+
+  // ─── Orange OAuth2 path (Phase 29) ──────────────────────
+  if (config.provider === 'orange') {
+    const result = await sendOrangeSms(to, body)
+    return {
+      success: result.success,
+      error: result.error,
+      provider: result.provider, // 'orange' or 'console' if Orange not configured
+    }
+  }
 
   if (config.provider === 'console') {
     console.log('════════ SMS (console) ════════')
@@ -336,11 +349,8 @@ async function sendSms(to: string, body: string): Promise<{ success: boolean; er
     return { success: true, provider: 'console' }
   }
 
+  // ─── Generic SMS API fallback (MTN, Celcom, etc.) ───────
   try {
-    // Real SMS API integration would go here
-    // Each provider (Orange, MTN, Celcom) has different APIs
-    // For now, we provide a generic HTTP-based interface
-
     const smsApiUrl = process.env.SMS_API_URL
     if (!smsApiUrl) {
       console.log(`[SMS ${config.provider} not configured] To: ${formattedPhone}`)

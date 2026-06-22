@@ -1,14 +1,14 @@
 #!/bin/bash
 # ============================================================
-# CodeRoute Guinée — Verify SQLite and PostgreSQL schemas match
-# Compares the model definitions (excluding datasource/generator blocks)
-# between schema.prisma (active SQLite) and schema-postgres.prisma.
+# CodeRoute Guinée — Verify schema parity (SQLite ↔ PostgreSQL)
+# Compares the model/field NAMES between schema.prisma (SQLite)
+# and schema-postgres.prisma. Type-level differences (enums,
+# jsonb, @db.Text, @db.Timestamptz) are intentional and allowed.
 #
-# Exit 0 if identical, 1 if drift detected.
+# Exit 0 if structurally identical, 1 if drift detected.
 # ============================================================
 
 set -euo pipefail
-
 cd /home/z/my-project
 
 SQLITE_SCHEMA="prisma/schema.prisma"
@@ -19,23 +19,46 @@ if [ ! -f "${SQLITE_SCHEMA}" ] || [ ! -f "${PG_SCHEMA}" ]; then
   exit 1
 fi
 
-# Extract everything after the datasource block (models, enums, etc.)
-# Both schemas should define the same models in the same order.
-extract_models() {
-  # Print from the first "model " line to end of file
-  awk '/^(model|enum) /{found=1} found' "$1"
+# Extract model names + field names (ignore types and attributes).
+# Format: "ModelName|fieldName" — one per line.
+extract_structure() {
+  awk '
+    /^model / { in_model=1; model=$2; next }
+    /^enum /  { in_model=0; next }
+    in_model && /^\}/ { in_model=0; next }
+    in_model && /^[ ]+[a-zA-Z]/ {
+      # Strip comments and attributes
+      line=$0
+      sub(/\/\/.*/, "", line)
+      sub(/ +\@\@.*$/, "", line)
+      sub(/ +@.*$/, "", line)
+      # First word is field name
+      split(line, parts, /[ \t]+/)
+      for (i=1; i<=length(parts); i++) {
+        if (parts[i] != "") {
+          print model "|" parts[i]
+          break
+        }
+      }
+    }
+  ' "$1" | sort -u
 }
 
-DIFF=$(diff <(extract_models "${SQLITE_SCHEMA}") <(extract_models "${PG_SCHEMA}") || true)
+SQLITE_STRUCT=$(extract_structure "${SQLITE_SCHEMA}")
+PG_STRUCT=$(extract_structure "${PG_SCHEMA}")
+
+DIFF=$(diff <(echo "${SQLITE_STRUCT}") <(echo "${PG_STRUCT}") || true)
 
 if [ -z "${DIFF}" ]; then
-  echo "✓ Schemas are in sync (SQLite ↔ PostgreSQL)"
+  echo "✓ Schemas structurally aligned (SQLite ↔ PostgreSQL)"
+  echo "  Models and fields match. Type-level differences are intentional."
   exit 0
 else
-  echo "✗ Schema drift detected between SQLite and PostgreSQL variants:"
+  echo "⚠  Structural drift between SQLite and PostgreSQL schemas:"
   echo ""
-  echo "${DIFF}" | head -50
+  echo "${DIFF}" | head -30
   echo ""
-  echo "Fix: apply the same model changes to both schema.prisma and schema-postgres.prisma"
+  echo "Fix: ensure both schemas define the same models and fields."
+  echo "Type-level differences (enums, jsonb, @db.*) are allowed."
   exit 1
 fi

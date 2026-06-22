@@ -124,5 +124,76 @@ The init script (`scripts/postgres-init/01-init.sql`) enables:
 | `scripts/migrate-sqlite-to-postgres.sh` | Stream SQLite → PG via CSV |
 | `scripts/sync-schemas.sh` | Copy models from SQLite schema → PG schema |
 | `scripts/verify-schema-sync.sh` | Diff the two schemas (CI-friendly) |
+| `scripts/validate-pg-migration.ts` | **NEW** — dry-run validator (enum/date/JSON checks) |
+| `scripts/pg-migrate-all.sh` | **NEW** — one-command orchestrator (validate → switch → migrate → verify) |
 | `src/lib/__tests__/schema-sync.test.ts` | Jest test that fails on schema drift |
 | `docs/POSTGRESQL_MIGRATION.md` | This document |
+
+## New: Dry-run validator (`npm run db:validate-pg`)
+
+Before running the actual migration, validate that your SQLite data is ready:
+
+```bash
+npm run db:validate-pg
+```
+
+Checks performed on each table:
+
+1. **Existence** — confirms the table exists in SQLite (warns if missing — it'll just be empty in PG)
+2. **Row count** — reports the number of rows to migrate
+3. **Enum columns** — verifies every value matches the PG enum (e.g. `User.role` must be one of `candidat`, `auto-ecole`, `centre-agree`, `administration`, `super-admin`)
+4. **JSON columns** — verifies `equipements`, `languesDisponibles`, `details` are parseable JSON
+5. **Date columns** — verifies `createdAt`, `updatedAt`, `timestamp` etc. are parseable dates
+
+Output shows `✓ PASS` / `⚠ WARN` / `✗ FAIL` for each table. Exit code is non-zero if any table has blocking errors.
+
+Sample output:
+```
+  Table                   Rows   Status   Issues
+  ──────────────────────────────────────────────────────────────────────
+  ✓ User                       11   PASS    0 issue(s)
+  ✓ Question                  130   PASS    0 issue(s)
+  ✓ AuditLog                  126   PASS    0 issue(s)
+  ⚠ Region                      0   WARN    1 issue(s)
+  ──────────────────────────────────────────────────────────────────────
+  10 passed, 6 warnings, 0 failures
+```
+
+## New: One-command orchestrator (`npm run db:pg-migrate-all`)
+
+Run the entire pipeline in one command:
+
+```bash
+# Full migration (validate → switch schema → apply → migrate data → verify)
+npm run db:pg-migrate-all
+
+# Just validate (dry-run, no changes)
+npm run db:pg-migrate-all -- --validate
+
+# Apply schema without migrating existing data (fresh PG)
+npm run db:pg-migrate-all -- --skip-data
+```
+
+The orchestrator:
+1. Runs the validator (aborts on failure)
+2. Switches the Prisma schema to PostgreSQL
+3. Backs up `.env` and updates `DATABASE_URL`
+4. Generates the Prisma client
+5. Applies the schema (`prisma migrate deploy` or `db push` fallback)
+6. Runs `scripts/migrate-data.ts` to copy data
+7. Verifies row counts in the new PG database
+8. Prints rollback instructions
+
+## Quick start (with orchestrator)
+
+```bash
+# 1. Start PostgreSQL
+npm run pg:up
+
+# 2. Validate + migrate in one go
+npm run db:pg-migrate-all
+
+# 3. Restart the app
+npm run dev
+```
+

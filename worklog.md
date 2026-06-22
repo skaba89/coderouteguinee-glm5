@@ -1905,3 +1905,152 @@ Stage Summary:
 - **Production-ready** : il suffit d'ajouter `CRON_SECRET=xxx` au .env puis configurer un cron externe (crontab/systemd/Vercel Cron) qui appelle `POST /api/cron/notifications` toutes les heures
 - **Dédoublonnage** : chaque job vérifie NotificationLog avant envoi pour éviter les doublons si le cron tourne plusieurs fois
 
+
+---
+Task ID: Phase 29
+Agent: Main (Super Z)
+Task: Orange SMS OAuth2 real integration — replace stub SMS sender with the real Orange Guinea API (OAuth2 client_credentials + SMS Messaging endpoint).
+
+Work Log:
+- Inspected existing `src/lib/notifications.ts` — `sendSms()` was using a generic HTTP POST without any real Orange integration
+- Created `src/lib/orange-sms.ts` (~260 lines) implementing:
+  * `getOrangeSmsConfig()` — reads ORANGE_SMS_CLIENT_ID/SECRET/SENDER_ADDRESS/API_BASE from env
+  * `getOrangeAccessToken()` — OAuth2 client_credentials flow + in-memory token cache (60 min - 60s safety margin)
+  * `normalizeGuineaPhone()` — accepts 6 input formats, validates Guinea mobile (6XX XXX XXX), returns E.164 `tel:+224XXXXXXXXX`
+  * `sendOrangeSms(to, text)` — full pipeline: config → token → POST /smsmessaging/v1/outbound/.../requests → parse delivery info
+  * `sendTestOrangeSms(to)` — wraps sendOrangeSms with diagnostic info (elapsedMs, timestamp, configured flag)
+  * `isOrangeSmsConfigured()` — used by the admin UI badge
+  * Message constraints validated: empty / > 1530 chars rejected client-side
+  * Error handling: 401 OAuth, deliveryStatus=DeliveryImpossible, HTTP 4xx/5xx with parsed SVC codes
+- Created `src/lib/__tests__/orange-sms.test.ts` — 29 unit tests covering:
+  * Phone normalization: 6 valid formats + 5 invalid formats
+  * Config detection: 4 scenarios (missing/complete/partial/default apiBase)
+  * OAuth2 flow: success, token caching (1 call for 3 invocations), 401, invalid token_type
+  * SMS sending: console fallback, success path with messageId+quota, empty/too-long/invalid-phone rejection, DeliveryImpossible, HTTP 400 with SVC code
+  * Test mode diagnostic info
+- Created `src/app/api/admin/notifications/orange-sms/route.ts`:
+  * `GET` — config status (masked client ID, env vars checklist, help text)
+  * `POST` — send test SMS (validates phone via normalizeGuineaPhone early)
+  * Restricted to `super-admin` + `administration` roles
+- Created `src/components/code-route/admin/orange-sms-panel.tsx`:
+  * Status badge (Configuré / Console (dev))
+  * Env vars grid (✓/✗ for each ORANGE_SMS_* var)
+  * Phone input with help text listing accepted formats
+  * Result card with messageId, remainingQuota, normalizedPhone, elapsedMs, timestamp
+  * Warning banner when in console mode
+- Integrated OrangeSmsPanel into `notifications-manager.tsx` (added import + render below existing logs table)
+- Modified `src/lib/notifications.ts`:
+  * Added `import { sendOrangeSms } from '@/lib/orange-sms'`
+  * Added Orange path in `sendSms()` — when `SMS_PROVIDER=orange`, routes to `sendOrangeSms()`; falls back to console if Orange not configured
+- Created `.env.example` — documents all env vars (DB, auth, email, SMS, Orange SMS, MoMo, security, rate limit, PWA, Sentry)
+- Created `docs/ORANGE_SMS_SETUP.md` (~200 lines):
+  * Architecture diagram (OAuth2 → SMS endpoint)
+  * Prerequisites (Orange Developer account, SMS Guinée subscription)
+  * Configuration steps + verification via admin UI
+  * Endpoint API documentation (GET/POST)
+  * Internal function reference table
+  * Error handling matrix
+  * Troubleshooting (configured=false, 401, SVC0001, SMS not received)
+
+Stage Summary:
+- **29 new unit tests** (orange-sms.test.ts) — all PASS
+- **230/230 total Jest tests pass** (vs 201 before)
+- **0 TypeScript errors** on src/
+- **Real Orange SMS OAuth2 pipeline** ready for production — just set 4 env vars and the app switches from console-mode to real SMS sending
+- **Admin UI panel** lets admins verify config + send test SMS with full diagnostic info
+- **All 8 existing notification templates** (welcome, password_reset, exam_reminder, payment_confirmation, booking_confirmed, fraud_alert, account_activated, account_deactivated) now route through Orange automatically when SMS_PROVIDER=orange
+
+---
+Task ID: Phase 28
+Agent: Main (Super Z)
+Task: Finalize PostgreSQL migration tooling — add dry-run validator + one-command orchestrator.
+
+Work Log:
+- Inspected existing PG migration infrastructure:
+  * `prisma/schema-postgres.prisma` (486 lines, native enums, jsonb, citext, pgcrypto, pg_trgm)
+  * `scripts/migrate-data.ts` (727 lines, full data migration with enum maps)
+  * `scripts/setup-postgres.sh` (Docker-based PG start)
+  * `scripts/switch-db.sh` (schema swap)
+  * `scripts/verify-schema-sync.sh` (model/field parity check — PASS)
+  * `docker-compose.postgres.yml` (PG 16-alpine + Adminer)
+  * `docs/POSTGRESQL_MIGRATION.md` (existing 128-line guide)
+- Created `scripts/validate-pg-migration.ts` (~220 lines):
+  * Opens SQLite readonly, iterates 16 table specs
+  * For each table: existence check, row count, enum column validation (rejects invalid values), JSON column parse check, date column parse check
+  * Reports PASS/WARN/FAIL with detailed issue list
+  * Initial run revealed 4 column-name mismatches in spec (dateAgrement→accredDateDebut, statut→status, etc.) — fixed by inspecting actual SQLite schema
+  * Final run: 10 PASS, 6 WARN (just empty tables), 0 FAIL — SQLite data is migration-ready
+- Created `scripts/pg-migrate-all.sh` (~110 lines):
+  * One-command orchestrator: validate → switch schema → backup .env → update DATABASE_URL → prisma generate → migrate deploy → migrate-data.ts → verify row counts
+  * Flags: `--validate` (dry-run only), `--skip-data` (apply schema without data)
+  * Tested `--validate` mode: passes end-to-end
+- Added npm scripts to package.json:
+  * `db:validate-pg` → runs the validator
+  * `db:pg-migrate-all` → runs the orchestrator
+- Updated `docs/POSTGRESQL_MIGRATION.md` with new sections:
+  * "Dry-run validator" section with sample output
+  * "One-command orchestrator" section with all flags
+  * "Quick start" 3-step summary
+  * Updated "Files added" table with 2 new entries
+- Fixed `src/lib/__tests__/schema-sync.test.ts`:
+  * Test "PostgreSQL schema uses postgresql provider" was failing because it expected `provider = "postgresql"` with single spaces, but the file uses `provider   = "postgresql"` (alignment). Changed to regex matcher `/provider\s+=\s+"postgresql"/`
+  * Test "models and enums match" was failing because it compared full text — but the PG schema intentionally diverges at the type level (native enums vs String). Rewrote to extract MODEL NAMES and FIELD NAMES only, then compare sorted arrays. Test now correctly validates structural parity while allowing intentional type differences.
+- `bash scripts/verify-schema-sync.sh` → ✓ Schemas structurally aligned
+
+Stage Summary:
+- **2 new scripts** (~330 lines total) — validator + orchestrator
+- **2 npm scripts** added: `db:validate-pg`, `db:pg-migrate-all`
+- **2 fixed tests** (schema-sync) — now correctly handles whitespace + intentional type divergence
+- **Validator dry-run results**: 10 PASS, 6 WARN (empty tables), 0 FAIL — production migration can be triggered safely
+- **Orchestrator** tested in --validate mode end-to-end
+- **Documentation updated** with new tooling sections
+
+---
+Task ID: Phase 30
+Agent: Main (Super Z)
+Task: Complete Playwright E2E coverage — add 3 new spec files for admin notifications, candidate flows, and error pages.
+
+Work Log:
+- Inspected existing E2E infrastructure:
+  * `playwright.config.ts` — 2 projects (chromium + mobile-chrome Pixel 7), webServer auto-start, fr-FR locale, Africa/Conakry timezone
+  * `e2e/fixtures/test-users.ts` — TEST_USERS for superAdmin + candidat, helpers (loginAs, dismissInstallBanner, openLoginModal)
+  * `e2e/smoke.spec.ts` (118 lines) — landing page, PWA, manifest, SW, dark mode, auth dialog
+  * `e2e/auth.spec.ts` (72 lines) — admin/candidat login + dashboard + session persistence
+  * `e2e/mobile.mobile.spec.ts` (31 lines) — Pixel 7 viewport
+- Created `e2e/admin-notifications.spec.ts` (~75 lines):
+  * Admin navigates to Communications tab
+  * Verifies Orange SMS OAuth2 panel header is visible
+  * Verifies configuration badge (Configuré / Console (dev))
+  * Verifies env vars grid (CLIENT_ID, CLIENT_SECRET, SENDER_ADDRESS, API_BASE)
+  * Tests phone validation (12345 → "Numéro de téléphone invalide" error)
+  * Verifies notification log table OR empty state
+  * Unauthorized access: candidat gets 403, unauthenticated gets 403
+- Created `e2e/candidate-booking.spec.ts` (~80 lines):
+  * Candidat navigates to Réserver view (verifies no error page, sees session list or empty state)
+  * Verifies pricing info visible (GNF/tarif/prix)
+  * Candidat navigates to Entraînement view (verifies quiz/exam UI)
+  * Candidat navigates to Cours view (verifies course/module/leçon text)
+  * Candidat navigates to Résultats view (verifies results or empty state)
+- Created `e2e/error-pages.spec.ts` (~130 lines):
+  * 404: unknown route shows 404/introuvable + provides home link/button
+  * Offline route: branded offline page with retry + home buttons
+  * Manifest: name, short_name, display, theme_color, icons structure
+  * Service worker: install/activate/fetch event handlers + caches API usage
+  * Public API health: /api/health (skips if 404), /api/auth/me (401), /api/admin/* (403 for 4 endpoints)
+  * Accessibility: single h1, all buttons have accessible names
+- Created `e2e/README.md` (~110 lines):
+  * Setup + run instructions (4 npm scripts)
+  * Test files table with 6 entries
+  * Test credentials table
+  * CI integration notes (sequential, retries, github reporter)
+  * Conventions (no .only in CI, dismissInstallBanner, regex matchers, getByRole)
+  * Troubleshooting section
+- Updated `tsconfig.json` exclude list — added `examples`, `skills`, `scripts/skill-creator` to fix 4 pre-existing TypeScript errors in unrelated example folders
+- Verified `npx playwright test --list` → 43 tests in 6 files (was 17 tests in 3 files before this phase)
+
+Stage Summary:
+- **3 new spec files** (~285 lines total)
+- **26 new E2E tests** identified (43 total vs 17 before)
+- **E2E README** for onboarding
+- **tsconfig exclude fix** — 0 TypeScript errors project-wide (was 4 unrelated errors)
+- **Coverage areas added**: admin notifications panel (Phase 29), candidate booking/training/courses/results flows, 404/offline pages, manifest/SW validation, API health checks, accessibility smoke

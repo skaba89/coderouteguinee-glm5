@@ -9,6 +9,7 @@ import {
   Loader2, RefreshCw, Send, Mail, MessageSquare, CheckCircle,
   XCircle, Clock, AlertCircle, Bell,
 } from 'lucide-react';
+import { OrangeSmsPanel } from './orange-sms-panel';
 
 const COLORS = {
   primaryDark: '#1A2332',
@@ -371,6 +372,9 @@ export function NotificationsManager() {
           )}
         </CardContent>
       </Card>
+
+      {/* Orange SMS OAuth2 panel (Phase 29) */}
+      <OrangeSmsPanel />
     </div>
   );
 }
