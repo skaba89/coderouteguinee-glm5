@@ -82,6 +82,8 @@ import { CoursesManager } from './admin/courses-manager';
 import { CreateUserModal } from './admin/create-user-modal';
 import { NotificationsManager } from './admin/notifications-manager';
 import { PaymentsManager } from './admin/payments-manager';
+import { LiveDashboard } from './live-dashboard';
+import { ScheduledJobsPanel } from './admin/scheduled-jobs-panel';
 
 // ─── Color Palette ──────────────────────────────────────
 const COLORS = {
@@ -1310,6 +1312,9 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
 
             {/* ═══════ TAB: Vue d'ensemble ═══════ */}
             <TabsContent value="overview" className="space-y-4">
+              {/* Live dashboard (KPIs + activity feed, polled every 30s) */}
+              <LiveDashboard />
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Card className="border-0 shadow-sm bg-white lg:col-span-2">
                   <CardHeader className="pb-2">
@@ -2198,6 +2203,7 @@ export default function AdminDashboard({ onViewChange }: { onViewChange?: (view:
 
             {/* ═══════ TAB: Notifications ═══════ */}
             <TabsContent value="notifications" className="space-y-4">
+              <ScheduledJobsPanel />
               <NotificationsManager />
             </TabsContent>
 

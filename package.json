@@ -17,7 +17,16 @@
     "db:seed": "npx tsx prisma/seed.ts",
     "db:use-postgres": "bash scripts/switch-db.sh postgres",
     "db:use-sqlite": "bash scripts/switch-db.sh sqlite",
-    "backup": "bash scripts/backup-db.sh"
+    "db:sync-schemas": "bash scripts/sync-schemas.sh",
+    "db:verify-schemas": "bash scripts/verify-schema-sync.sh",
+    "db:migrate-to-pg": "bash scripts/migrate-sqlite-to-postgres.sh",
+    "pg:up": "docker compose -f docker-compose.postgres.yml up -d",
+    "pg:down": "docker compose -f docker-compose.postgres.yml down",
+    "backup": "bash scripts/backup-db.sh",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-html-report"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -94,6 +103,7 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
