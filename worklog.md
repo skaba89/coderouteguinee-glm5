@@ -2054,3 +2054,121 @@ Stage Summary:
 - **E2E README** for onboarding
 - **tsconfig exclude fix** — 0 TypeScript errors project-wide (was 4 unrelated errors)
 - **Coverage areas added**: admin notifications panel (Phase 29), candidate booking/training/courses/results flows, 404/offline pages, manifest/SW validation, API health checks, accessibility smoke
+
+---
+Task ID: Sprint 1 — Security & Infrastructure
+Agent: Main (Super Z)
+Task: Harden the application for production: remove hardcoded secrets, fail-fast on missing env vars, force HTTPS, secure cookies, add Dockerfile + docker-compose + nginx + backup automation. This is the critical foundation before any production deployment.
+
+Work Log:
+- **1.1 next.config.ts hardening**:
+  * Removed `typescript.ignoreBuildErrors: true` — was masking TypeScript errors at build time (critical security risk)
+  * Removed `eslint.ignoreDuringBuilds` (was not set but documented)
+  * Enabled `reactStrictMode: true` (was false — disables React bug detection)
+  * Added `poweredByHeader: false` (removes X-Powered-By fingerprint)
+  * Added security headers via `headers()`: HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+  * Added `/sw.js` no-cache rule (critical for service worker updates)
+  * Added image optimization (AVIF + WebP, 30-day cache)
+  * Result: `npx tsc --noEmit` → 0 errors project-wide
+
+- **1.2 Env validation module (`src/lib/env.ts`, ~270 lines)**:
+  * 17 env var specs with required/optional/prodOnly flags + validators
+  * Cross-var validation: `SMS_PROVIDER=orange` requires all ORANGE_SMS_* vars
+  * Returns `EnvValidationResult` with errors, warnings, masked config snapshot
+  * `validateEnv({ throwOnError: false })` for graceful dev mode
+  * `logEnvStatus()` prints to console at boot
+
+- **1.3 Boot-time instrumentation (`instrumentation.ts`)**:
+  * Runs once per server boot, before any request
+  * Calls `validateEnv()` non-throwing and logs warnings
+  * In production: logs FATAL warning if errors (lets app start to avoid restart loop, but Sentry will catch it)
+
+- **1.4 Removed hardcoded secrets**:
+  * `src/lib/session.ts`: removed `'coderoute-guinee-session-secret-2024-change-in-production'` fallback
+    - Now uses random dev secret in dev + throws in production (unless NEXT_BUILDING)
+    - Build phase allowed to fall back (Next.js evaluates modules at build time with NODE_ENV=production)
+  * `src/lib/csrf.ts`: same treatment for CSRF_SECRET
+  * Cookie names now use `__Host-` prefix in production (Mozilla-recommended hardening)
+  * Cookie name is now computed by `getSessionCookieName()` / `getCsrfCookieName()` dynamically per request — fixes test isolation
+
+- **1.5 HTTPS enforcement**:
+  * Middleware now redirects HTTP → HTTPS (301) in production by checking `X-Forwarded-Proto`
+  * Session cookies now `secure: isProd()` (dynamic — was static at import time, broke tests)
+  * HSTS header: `max-age=63072000; includeSubDomains; preload`
+
+- **1.6 Secrets generator (`scripts/generate-secrets.sh`)**:
+  * Generates 64-char hex secrets via `openssl rand -hex 32`
+  * Generates 16-char alphanumeric bootstrap admin password
+  * Outputs complete `.env.production` template with all sections documented
+  * Tested: produces valid env file
+
+- **1.7 Secure admin bootstrap (`scripts/bootstrap-admin.ts`, ~150 lines)**:
+  * Idempotent: refuses to run if a super-admin already exists
+  * Refuses to run in development (use `npm run db:seed` instead)
+  * Validates email format + password strength (12+ chars, mixed case, digit, special)
+  * Uses bcrypt with 12 rounds (~250ms — secure)
+  * Prints step-by-step post-install checklist (change password, delete env vars, restart)
+  * Uses `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` env vars (delete after use)
+
+- **1.8 Test credentials hygiene**:
+  * Removed `Admin@2024` and `Candidat@2024` from `e2e/README.md`
+  * Added prominent warning: "NEVER deploy these credentials to production"
+  * Pointed users to `bootstrap-admin.ts` for production admin creation
+
+- **1.9 Production Dockerfile (multi-stage, ~80 lines)**:
+  * Stage 1 `deps`: installs all deps + runs `prisma generate`
+  * Stage 2 `builder`: builds Next.js standalone output (env NEXT_TELEMETRY_DISABLED=1)
+  * Stage 3 `runner`: minimal Alpine image, runs as non-root user `nextjs` (uid 1001)
+  * Uses `tini` as PID 1 for proper signal handling
+  * HEALTHCHECK hits `/api/health` every 30s
+  * Resource limits: 1 GB RAM, 1.5 CPU
+
+- **1.10 docker-compose.production.yml (~110 lines)**:
+  * 4 services: db (PostgreSQL 16), app (Next.js), nginx, backup sidecar
+  * Internal-only `backend` network (db not exposed publicly)
+  * `frontend` network for nginx ↔ app
+  * Resource limits + JSON log rotation on all services
+  * Backup sidecar runs `pg_dump` daily with 30-day retention
+
+- **1.11 nginx config (`nginx/nginx.conf` + `nginx/conf.d/default.conf`, ~150 lines)**:
+  * TLS hardening: TLSv1.2+1.3, Mozilla Intermediate ciphers, OCSP stapling
+  * HTTP → HTTPS 301 redirect (with Let's Encrypt challenge path)
+  * Rate limiting: `zone=api` 10 r/s burst 20, `zone=auth` 5 r/s burst 10
+  * `/api/cron/*` blocked from external (only internal docker network)
+  * Static asset caching: `/_next/static/` 1 year immutable, `/sw.js` no-cache
+  * Proxy headers: `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`
+  * gzip compression for 16+ content types
+  * `client_max_body_size 10M` (file uploads)
+
+- **1.12 Backup automation (`scripts/backup-cron.sh`)**:
+  * Daily `pg_dump --no-owner --no-privileges --clean --if-exists | gzip -9`
+  * Verifies backup > 100 bytes (catches failed dumps)
+  * Prunes backups older than `$BACKUP_RETENTION_DAYS` (default 30)
+  * Sleeps 24h between backups (designed to run as entrypoint in backup container)
+
+- **1.13 Healthcheck endpoint upgrade**:
+  * Added `?quick=true` mode — returns 200 in <5ms (k8s liveness probe)
+  * Default mode still does DB + env + secret checks (k8s readiness probe)
+  * Made `request` parameter optional (backward compat with existing tests)
+
+- **1.14 Bug fixes discovered during build**:
+  * `pdf-lib` package was missing — previously masked by `ignoreBuildErrors: true`. Installed.
+  * Build now succeeds in ~10s with full type-checking enabled.
+
+Stage Summary:
+- **230/230 Jest tests pass** (no regression)
+- **0 TypeScript errors** project-wide
+- **Production build succeeds** (~10s) — was failing before due to missing pdf-lib (masked by ignoreBuildErrors)
+- **Server boots with env validation warnings** in dev — visible feedback to devs
+- **15+ new files**: env.ts, instrumentation.ts, Dockerfile, docker-compose.production.yml, nginx/, scripts/generate-secrets.sh, scripts/bootstrap-admin.ts, scripts/backup-cron.sh, next.config.ts (rewritten)
+- **Critical fixes**:
+  * `ignoreBuildErrors: true` removed (was masking real bugs)
+  * `reactStrictMode: false` → `true`
+  * Hardcoded session/CSRF secrets removed
+  * `__Host-` cookie prefix in production
+  * HTTPS enforcement via middleware
+  * Non-root Docker user
+  * Internal-only DB network
+- **Production readiness**: now possible to build a Docker image and run it behind nginx with real TLS — Sprint 2 (real integrations) can proceed.
+
+Next: Sprint 2 — Real integrations (Orange SMS, MoMo, SMTP, HMAC webhook verification).

@@ -4,6 +4,13 @@ import { validateCsrfRequest, isCsrfRequiredMethod, setCsrfCookie, generateCsrfT
 import { checkRateLimit, RATE_LIMIT_PRESETS } from '@/lib/rate-limit'
 import { logAuditConsole } from '@/lib/audit-log'
 
+// Match the cookie name used in src/lib/session.ts (dynamic per env)
+function getSessionCookieName() {
+  return process.env.NODE_ENV === 'production'
+    ? '__Host-coderoute_session'
+    : 'coderoute_session'
+}
+
 // ─── Route classification ──────────────────────────────────
 const protectedRoutes = [
   '/api/users',
@@ -82,6 +89,17 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ─── 0. Force HTTPS in production ─────────────────────────
+  // If behind a reverse proxy, check X-Forwarded-Proto.
+  if (process.env.NODE_ENV === 'production') {
+    const proto = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '')
+    if (proto === 'http') {
+      const httpsUrl = new URL(request.url)
+      httpsUrl.protocol = 'https:'
+      return NextResponse.redirect(httpsUrl, 301)
+    }
+  }
+
   // ─── 1. Add security headers to all responses ────────────
   // ─── 2. Rate limiting check ──────────────────────────────
   const rateLimitConfig = getRateLimitConfig(pathname)
@@ -136,7 +154,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Verify session token
-  const token = request.cookies.get('coderoute_session')?.value
+  const token = request.cookies.get(getSessionCookieName())?.value
 
   if (!token) {
     if (pathname.startsWith('/api/')) {

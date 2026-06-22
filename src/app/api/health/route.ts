@@ -1,10 +1,15 @@
 // ============================================================
 // CodeRoute Guinée — Health Check Endpoint
 // Public (no auth) — used by monitoring tools and the admin UI
-// Returns DB, env, and uptime status
+// Returns DB, env, and uptime status.
+//
+// Query params:
+//   ?quick=true  — skip DB check, just return 200 if process is alive.
+//                  Use this for k8s liveness probes (cheap, frequent).
+//   ?deep=true   — also check env vars + secrets (default behavior).
 // ============================================================
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +24,17 @@ interface CheckResult {
   message?: string
 }
 
-export async function GET() {
+export async function GET(request?: NextRequest) {
+  // ─── Quick mode: just return 200 (k8s liveness probe) ──
+  const quick = request?.nextUrl.searchParams.get('quick') === 'true'
+  if (quick) {
+    return NextResponse.json({
+      status: 'alive',
+      uptime: Date.now() - START_TIME,
+      timestamp: new Date().toISOString(),
+    })
+  }
+
   const checks: CheckResult[] = []
 
   // ─── Database check ────────────────────────────────────

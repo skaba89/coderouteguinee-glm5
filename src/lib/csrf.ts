@@ -6,8 +6,29 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 
-const CSRF_SECRET = process.env.CSRF_SECRET || 'coderoute-csrf-secret-change-in-production'
-const CSRF_COOKIE_NAME = 'coderoute_csrf'
+// CSRF secret — must be set via env var in production.
+// During `next build` (which evaluates modules with NODE_ENV=production),
+// fall back to a random dev secret. The runtime check is in instrumentation.ts.
+const FALLBACK_DEV_CSRF_SECRET = 'dev-only-csrf-DO-NOT-USE-IN-PROD-' + Math.random().toString(36).slice(2)
+const isBuildPhase = !!process.env.NEXT_BUILDING || process.env.NEXT_PHASE === 'phase-production-build'
+const CSRF_SECRET_STR =
+  process.env.CSRF_SECRET ||
+  (process.env.NODE_ENV === 'production' && !isBuildPhase
+    ? (() => { throw new Error('CSRF_SECRET must be set in production. Generate with: openssl rand -hex 32') })()
+    : FALLBACK_DEV_CSRF_SECRET)
+
+if (!process.env.CSRF_SECRET && (process.env.NODE_ENV !== 'production' || isBuildPhase)) {
+  console.warn('⚠ CSRF_SECRET not set — using random dev-only secret. CSRF tokens will not persist across restarts.')
+}
+
+const CSRF_SECRET = CSRF_SECRET_STR
+// Cookie name: __Host- prefix in production for extra security.
+// Note: CSRF cookie MUST be httpOnly:false (client JS needs to read it for the double-submit pattern).
+function getCsrfCookieName() {
+  return process.env.NODE_ENV === 'production'
+    ? '__Host-coderoute_csrf'
+    : 'coderoute_csrf'
+}
 const CSRF_HEADER_NAME = 'x-csrf-token'
 
 // ─── Convert string to Uint8Array (BufferSource-compatible) ─
@@ -67,7 +88,7 @@ export async function validateCsrfToken(token: string): Promise<boolean> {
 
 // ─── Set CSRF cookie on response ───────────────────────────
 export function setCsrfCookie(response: NextResponse, token: string): void {
-  response.cookies.set(CSRF_COOKIE_NAME, token, {
+  response.cookies.set(getCsrfCookieName(), token, {
     httpOnly: false, // Must be readable by client JS
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -78,7 +99,7 @@ export function setCsrfCookie(response: NextResponse, token: string): void {
 
 // ─── Get CSRF token from cookie ────────────────────────────
 export function getCsrfTokenFromCookie(request: NextRequest): string | null {
-  return request.cookies.get(CSRF_COOKIE_NAME)?.value ?? null
+  return request.cookies.get(getCsrfCookieName())?.value ?? null
 }
 
 // ─── Get CSRF token from request header ────────────────────

@@ -1,0 +1,135 @@
+# ============================================================
+# CodeRoute Guinée — Production docker-compose
+# ============================================================
+# Runs: PostgreSQL 16 + Next.js app + nginx reverse proxy + backup sidecar
+#
+# Usage:
+#   1. Generate secrets:  bash scripts/generate-secrets.sh > .env.production
+#   2. Fill .env.production with real integration creds (DB, SMTP, Orange, MoMo)
+#   3. Build & start:      docker compose -f docker-compose.production.yml up -d --build
+#   4. Bootstrap admin:    docker compose -f docker-compose.production.yml exec app npx tsx scripts/bootstrap-admin.ts
+#   5. Check health:       curl https://localhost/api/health
+# ============================================================
+
+services:
+  # ─── PostgreSQL database ───────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: coderoute-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-coderoute}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+      POSTGRES_DB: ${POSTGRES_DB:-coderoute}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-coderoute} -d ${POSTGRES_DB:-coderoute}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Do NOT expose port 5432 publicly — only the app container can reach it.
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── Next.js app ───────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coderoute-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-coderoute}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-coderoute}?schema=public
+      # All other env vars come from .env.production (env_file directive)
+    env_file:
+      - .env.production
+    # Do NOT publish port 3000 — nginx proxies to it internally.
+    networks:
+      - backend
+      - frontend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.5"
+        reservations:
+          memory: 256M
+
+  # ─── nginx reverse proxy (TLS termination + static caching) ──
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: coderoute-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_certs:/etc/nginx/certs:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - frontend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ─── Backup sidecar (daily pg_dump + retention) ────────
+  backup:
+    image: postgres:16-alpine
+    container_name: coderoute-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-coderoute}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-coderoute}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - ${BACKUP_DIR:-/var/backups/coderoute}:/backups
+      - ./scripts/backup-cron.sh:/backup-cron.sh:ro
+    entrypoint: ["/bin/sh", "/backup-cron.sh"]
+    networks:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+volumes:
+  pg_data:
+  nginx_certs:
+  nginx_logs:
+
+networks:
+  backend:
+    driver: bridge
+    internal: true  # not reachable from outside
+  frontend:
+    driver: bridge

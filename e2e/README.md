@@ -46,8 +46,14 @@ Test users are defined in `e2e/fixtures/test-users.ts`:
 
 | Role | Email | Password |
 |---|---|---|
-| Super Admin | `admin@coderoute-gn.org` | `Admin@2024` |
-| Candidat | `candidat@demo.gn` | `Candidat@2024` |
+| Super Admin | `admin@coderoute-gn.org` | (see `prisma/seed.ts`) |
+| Candidat | `candidat@demo.gn` | (see `prisma/seed.ts`) |
+
+> ⚠️ **NEVER deploy these credentials to production.** The seed script
+> (`prisma/seed.ts`) generates random secure passwords in dev mode and
+> prints them once. In production, use `scripts/bootstrap-admin.ts` to
+> create the first admin via the `BOOTSTRAP_ADMIN_EMAIL` /
+> `BOOTSTRAP_ADMIN_PASSWORD` env vars — those are NOT the seed passwords.
 
 These must exist in the seed data (`prisma/seed.ts`). If you reset the DB, re-seed with `npm run db:seed`.
 

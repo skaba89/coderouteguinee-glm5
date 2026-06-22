@@ -7,12 +7,34 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Session secret — in production, use a strong env variable
-const SESSION_SECRET = new TextEncoder().encode(
-  process.env.SESSION_SECRET || 'coderoute-guinee-session-secret-2024-change-in-production'
-);
+// Session secret — must be set via env var in production.
+// In development OR during `next build` (which evaluates modules
+// with NODE_ENV=production), we fall back to a random dev secret
+// and log a warning. The actual production runtime check is done
+// in instrumentation.ts at server boot.
+const FALLBACK_DEV_SECRET = 'dev-only-DO-NOT-USE-IN-PRODUCTION-' + Math.random().toString(36).slice(2)
+const isBuildPhase = !!process.env.NEXT_BUILDING || process.env.NEXT_PHASE === 'phase-production-build'
+const SESSION_SECRET_STR =
+  process.env.SESSION_SECRET ||
+  (process.env.NODE_ENV === 'production' && !isBuildPhase
+    ? (() => { throw new Error('SESSION_SECRET must be set in production. Generate with: openssl rand -hex 32') })()
+    : FALLBACK_DEV_SECRET)
 
-const SESSION_COOKIE_NAME = 'coderoute_session';
+if (!process.env.SESSION_SECRET && (process.env.NODE_ENV !== 'production' || isBuildPhase)) {
+  console.warn('⚠ SESSION_SECRET not set — using random dev-only secret. Sessions will not persist across restarts.')
+}
+
+const SESSION_SECRET = new TextEncoder().encode(SESSION_SECRET_STR);
+
+// Cookie name: use __Host- prefix in production for extra security.
+// __Host- prefix requires: Secure, path=/, no Domain attribute.
+// See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#cookie_prefixes
+function isProd() {
+  return process.env.NODE_ENV === 'production'
+}
+function getSessionCookieName() {
+  return isProd() ? '__Host-coderoute_session' : 'coderoute_session'
+}
 const SESSION_DURATION = 24 * 60 * 60; // 24 hours in seconds
 
 export interface SessionPayload {
@@ -37,20 +59,22 @@ export async function createSession(payload: SessionPayload): Promise<string> {
 
 // ─── Set session cookie on a response ──────────────────────
 export function setSessionCookie(response: NextResponse, token: string): void {
-  response.cookies.set(SESSION_COOKIE_NAME, token, {
+  response.cookies.set(getSessionCookieName(), token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProd(),
+    // 'strict' would break login links from emails, 'lax' is the safe default.
     sameSite: 'lax',
     maxAge: SESSION_DURATION,
     path: '/',
+    // No `domain` — required for __Host- prefix in production.
   });
 }
 
 // ─── Clear session cookie on logout ────────────────────────
 export function clearSessionCookie(response: NextResponse): void {
-  response.cookies.set(SESSION_COOKIE_NAME, '', {
+  response.cookies.set(getSessionCookieName(), '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProd(),
     sameSite: 'lax',
     maxAge: 0,
     path: '/',
@@ -70,14 +94,14 @@ export async function verifyToken(token: string): Promise<SessionPayload | null>
 // ─── Get current session from cookies (server-side) ────────
 export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const token = cookieStore.get(getSessionCookieName())?.value;
   if (!token) return null;
   return verifyToken(token);
 }
 
 // ─── Get session from a request (middleware/API route) ─────
 export function getSessionFromRequest(request: NextRequest): Promise<SessionPayload | null> {
-  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const token = request.cookies.get(getSessionCookieName())?.value;
   if (!token) return Promise.resolve(null);
   return verifyToken(token);
 }
