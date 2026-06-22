@@ -8,55 +8,40 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { logAudit } from '@/lib/audit-log'
 import { sendNotification } from '@/lib/notifications'
-import { createHmac } from 'crypto'
-
-// ─── Webhook signature verification ────────────────────────
-function verifyWebhookSignature(
-  provider: string,
-  payload: string,
-  signature: string,
-  rawBody: string
-): boolean {
-  const secrets: Record<string, string | undefined> = {
-    orange_money: process.env.ORANGE_MONEY_WEBHOOK_SECRET,
-    mtn_money: process.env.MTN_MONEY_WEBHOOK_SECRET,
-    celcom_money: process.env.CELCOM_MONEY_WEBHOOK_SECRET,
-  }
-
-  const secret = secrets[provider]
-  if (!secret) {
-    // No secret configured — accept in development, reject in production
-    return process.env.NODE_ENV !== 'production'
-  }
-
-  const expectedSignature = createHmac('sha256', secret).update(rawBody).digest('hex')
-  return signature === expectedSignature
-}
+import {
+  verifyWebhookSignature,
+  extractSignatureFromHeaders,
+  identifyProvider,
+  type WebhookProvider,
+} from '@/lib/webhook'
 
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text()
     const body = JSON.parse(rawBody)
 
-    // ─── Identify provider from headers ─────────────────────
-    const providerHeader = request.headers.get('x-provider') ||
-                          request.headers.get('x-source') ||
-                          body.provider ||
-                          'unknown'
+    // ─── Identify provider from headers/body ───────────────
+    const providerHeader = identifyProvider(request.headers, body) as string
 
-    const signature = request.headers.get('x-signature') ||
-                      request.headers.get('x-hub-signature-256') ||
-                      ''
+    // ─── Extract & verify webhook signature (HMAC-SHA256) ──
+    const signature = extractSignatureFromHeaders(request.headers)
+    const verification = verifyWebhookSignature(
+      providerHeader as WebhookProvider,
+      rawBody,
+      signature,
+    )
 
-    // Verify webhook signature
-    if (!verifyWebhookSignature(providerHeader, JSON.stringify(body), signature, rawBody)) {
+    if (!verification.ok) {
       await logAudit({
         eventType: 'PAYMENT_FAIL',
         severity: 'critical',
-        description: `Webhook signature verification failed for provider: ${providerHeader}`,
-        details: { provider: providerHeader },
+        description: `Webhook signature verification failed: ${verification.reason} (provider=${providerHeader})`,
+        details: { provider: providerHeader, reason: verification.reason },
       })
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Invalid signature', reason: verification.reason },
+        { status: 401 },
+      )
     }
 
     // ─── Extract transaction reference and status ──────────

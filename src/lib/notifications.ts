@@ -6,6 +6,8 @@
 
 import { db } from '@/lib/db'
 import { sendOrangeSms } from '@/lib/orange-sms'
+import { sendEmail as sendEmailViaLib } from '@/lib/email'
+import { captureException } from '@/lib/sentry'
 
 // ─── Notification types ────────────────────────────────────
 export type NotificationTemplate =
@@ -230,7 +232,7 @@ export async function sendNotification(req: NotificationRequest): Promise<{ succ
 
   try {
     if (req.channel === 'email') {
-      const result = await sendEmail(req.recipient, subject, body)
+      const result = await sendEmailViaLib(req.recipient, subject, body)
       success = result.success
       error = result.error ?? null
       provider = result.provider
@@ -243,6 +245,11 @@ export async function sendNotification(req: NotificationRequest): Promise<{ succ
   } catch (err: any) {
     error = err.message
     success = false
+    // Capture unexpected errors in Sentry (no-op if not configured)
+    captureException(err, {
+      tags: { channel: req.channel, template: req.template },
+      extra: { recipient: req.recipient },
+    })
   }
 
   // Log to database
@@ -268,57 +275,9 @@ export async function sendNotification(req: NotificationRequest): Promise<{ succ
   return success ? { success: true } : { success: false, error: error || 'Erreur inconnue' }
 }
 
-// ─── Send email ────────────────────────────────────────────
-async function sendEmail(to: string, subject: string, body: string): Promise<{ success: boolean; error?: string; provider: string }> {
-  const config = getEmailConfig()
-
-  if (!config) {
-    // Dev mode: log to console
-    console.log('════════ EMAIL (console) ════════')
-    console.log(`To: ${to}`)
-    console.log(`Subject: ${subject}`)
-    console.log('─'.repeat(50))
-    console.log(body)
-    console.log('════════════════════════════════')
-    return { success: true, provider: 'console' }
-  }
-
-  try {
-    // Use Nodemailer-style SMTP (we'll use the basic approach via fetch to an SMTP API,
-    // or the built-in nodemailer if available)
-    // For simplicity, we use a HTTP-based email API (e.g., SendGrid, Mailgun)
-    // Here we provide a generic implementation that works with any SMTP-over-HTTP gateway
-
-    const emailApiUrl = process.env.EMAIL_API_URL
-    if (emailApiUrl) {
-      const response = await fetch(emailApiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.EMAIL_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: `${config.fromName} <${config.fromEmail}>`,
-          to,
-          subject,
-          text: body,
-        }),
-      })
-
-      if (!response.ok) {
-        const errText = await response.text()
-        return { success: false, error: `Email API error: ${errText}`, provider: 'http-api' }
-      }
-      return { success: true, provider: 'http-api' }
-    }
-
-    // Fallback: log to console
-    console.log(`[EMAIL SMTP not configured] To: ${to} | Subject: ${subject}`)
-    return { success: true, provider: 'console' }
-  } catch (err: any) {
-    return { success: false, error: err.message, provider: 'http-api' }
-  }
-}
+// ─── Send email (delegated to src/lib/email.ts) ────────────
+// The actual SMTP / HTTP API / console logic lives in @/lib/email.
+// This wrapper is kept only for backwards compat with existing call sites.
 
 // ─── Send SMS ──────────────────────────────────────────────
 // Routes to Orange SMS OAuth2 API when provider=orange,

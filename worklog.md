@@ -2197,3 +2197,72 @@ Stage Summary:
 - **Prochaine étape** : Sprint 2 — Intégrations réelles (Orange SMS credentials, Orange Money/MTN/Celcom credentials, SMTP credentials, HMAC webhook verification, Sentry).
 
 Next: Sprint 2 — Real integrations.
+
+---
+Task ID: Sprint 2
+Agent: main (continuation)
+Task: Sprint 2 — Intégrations réelles (SMTP nodemailer, Sentry, HMAC webhook, health endpoint)
+
+Work Log:
+- Audit de l'existant : découvert que `mobile-money.ts` faisait déjà des appels API réels quand `apiKey` est configurée, et que le webhook route vérifiait déjà HMAC. Mais 4 trous identifiés : pas de SMTP réel (seulement HTTP API), pas de Sentry, la fonction HMAC était privée (non réutilisable), et pas de tests HMAC.
+
+- **Créé `src/lib/webhook.ts`** (170 lignes) — Helper HMAC-SHA256 réutilisable :
+  * `verifyWebhookSignature(provider, rawBody, signature)` avec timing-safe comparison
+  * Supporte 5 providers : orange_money, mtn_money, celcom_money, orange_sms, generic
+  * Supporte 3 formats de signature : `sha256=<hex>` (GitHub), `v1=<hex>` (Stripe), `<hex>` (raw)
+  * Fail-closed en production (reject si secret manquant), fail-open en dev (accept avec warning)
+  * `extractSignatureFromHeaders()` — check 6 noms de headers courants
+  * `identifyProvider()` — détection via header explicite, body, ou user-agent sniffing
+  * Garde-fou : secret doit faire ≥32 chars en production
+
+- **Refactorisé `src/app/api/payments/webhook/route.ts`** : utilise désormais `@/lib/webhook` au lieu d'une fonction privée. La logique de vérification HMAC est maintenant centralisée et testable.
+
+- **Installé `nodemailer@7.0.13` + `@types/nodemailer`** : vrai support SMTP (pas seulement HTTP API comme avant).
+
+- **Créé `src/lib/email.ts`** (200 lignes) — Intégration SMTP réelle :
+  * `sendEmail(to, subject, body)` — route vers HTTP API (si EMAIL_API_URL set) → SMTP (si SMTP_HOST set) → console (dev fallback)
+  * Transporter nodemailer mis en cache (singleton, pool de 5 connexions)
+  * Timeouts défensifs (10s connection, 30s socket)
+  * `verifySmtpConnection()` — utilisé par le health check
+  * `_resetTransporterCacheForTests()` — pour isolation des tests
+
+- **Créé `src/lib/sentry.ts`** (140 lignes) — Wrapper Sentry avec dégradation gracieuse :
+  * `isSentryConfigured()` — true si SENTRY_DSN est une URL https://
+  * `captureException(error, context)` — no-op si non configuré, console.error en dev, Sentry en prod
+  * `captureMessage(message, level, context)` — pour événements business importants
+  * `startSpan(name, op)` — pour performance monitoring
+  * Dynamic `require('@sentry/nextjs')` — pas besoin d'installer le package en dev
+
+- **Mis à jour `src/lib/notifications.ts`** : délègue désormais l'envoi d'emails à `@/lib/email` (au lieu d'avoir sa propre fonction `sendEmail` privée). Ajout de `captureException()` dans le catch block pour remonter les erreurs inattendues à Sentry.
+
+- **Créé `src/app/api/admin/health/route.ts`** (180 lignes) — Health check complet :
+  * Vérifie 11 composants en parallèle : Database, SMTP, SMS, MoMo, Sentry, 4 webhook secrets, 3 crypto secrets
+  * Retourne `{ overall: 'ok'|'warning'|'error', checks: [...] }` avec latence pour chaque check
+  * Auth : super-admin ou administration uniquement
+  * Utilisable par UptimeRobot pour monitoring externe
+
+- **Créé `src/lib/__tests__/webhook.test.ts`** (260 lignes, 22 tests) :
+  * Couverture complète : valid sig, sha256= prefix, v1= prefix, invalid sig, tampered body, missing sig, empty sig, fail-closed in prod, fail-open in dev, weak secret, non-hex sig, per-provider isolation, getWebhookSecret, extractSignatureFromHeaders (6 headers), identifyProvider (8 scénarios)
+
+- **Créé `src/lib/__tests__/email.test.ts`** (130 lignes, 12 tests) :
+  * Couverture : getEmailConfig (3 scénarios), sendEmail routing (5 scénarios : console, HTTP API success/failure/network error, SMTP), verifySmtpConnection (2 scénarios)
+
+- **Créé `src/lib/__tests__/sentry.test.ts`** (180 lignes, 16 tests) :
+  * Couverture : isSentryConfigured (4 scénarios), captureException (6 scénarios dont non-Error objects et graceful degradation), captureMessage (3 scénarios), startSpan (3 scénarios)
+
+- **Réparé `src/lib/__tests__/session.test.ts`** : test "rejette un token avec une signature falsifiée" était flaky car le dernier char d'une signature base64url peut avoir des bits de padding ignorés. Désormais on tamper le PREMIER char (toujours un bit significatif).
+
+Stage Summary:
+- **0 erreurs TypeScript** (`npx tsc --noEmit` clean)
+- **286/286 tests Jest passent** (14 suites, 2.5s) — +56 tests vs Sprint 1 (230 → 286)
+- **4 nouveaux modules livrés** : webhook.ts, email.ts, sentry.ts, /api/admin/health
+- **1 module refactorisé** : notifications.ts délègue désormais à @/lib/email
+- **1 module refactorisé** : payments/webhook/route.ts utilise @/lib/webhook
+- **Sécurité renforcée** :
+  * Webhook HMAC désormais timing-safe (avant : string comparison vulnérable aux timing attacks)
+  * Fail-closed en production si secret webhook manquant (avant : fail-open partout)
+  * Secrets webhook doivent faire ≥32 chars en production
+- **Observabilité** : endpoint /api/admin/health permet monitoring uptime + debugging intégrations
+- **Prochaine étape** : Sprint 3 — Tests & conformité (Playwright install + run, load testing, documentation légale RGPD/décret, pen-test).
+
+Next: Sprint 3 — Testing & compliance.

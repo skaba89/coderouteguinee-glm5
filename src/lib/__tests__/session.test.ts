@@ -124,11 +124,12 @@ describe('Session Management', () => {
 
     test('rejette un token avec une signature falsifiée', async () => {
       const token = await createSession(PAYLOAD)
-      // Modifier le dernier caractère de la signature
+      // Tamper the FIRST character of the signature (more reliable than
+      // the last char, which can have ignored padding bits in base64url)
       const parts = token.split('.')
+      const sig = parts[2]
       const tamperedSig =
-        parts[2].slice(0, -1) +
-        (parts[2].endsWith('A') ? 'B' : 'A')
+        (sig[0] === 'A' ? 'B' : 'A') + sig.slice(1)
       const tamperedToken = `${parts[0]}.${parts[1]}.${tamperedSig}`
       const result = await verifyToken(tamperedToken)
       expect(result).toBeNull()
