@@ -5,15 +5,29 @@ import { randomBytes } from 'crypto';
 const prisma = new PrismaClient();
 
 // ─── Secure password management ───────────────────────────
-// In production: passwords MUST come from environment variables
-// In development/demo: auto-generated secure passwords are printed once
+// In production: passwords MUST come from environment variables.
+// The seed script REFUSES to run in production unless every SEED_*_PASSWORD
+// is set explicitly — auto-generating passwords in prod is a security risk
+// (the password would be printed once to stdout, then lost forever).
+//
+// In development/demo: auto-generated secure passwords are printed once.
 function getSeedPassword(envVar: string, role: string): string {
   const envPassword = process.env[envVar]
   if (envPassword) {
     console.log(`  Using password from env ${envVar} for ${role}`)
     return envPassword
   }
-  // Generate a secure random password for demo/development
+
+  // ─── Production guard: refuse to auto-generate ─────────
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      `SECURITY: ${envVar} is not set. The seed script refuses to run ` +
+      `in production without explicit passwords. Set ${envVar} in your ` +
+      `.env.production file (generate with: openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 16).`
+    )
+  }
+
+  // ─── Dev-only: generate a random password and print once ──
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@'
   let password = ''
   const bytes = randomBytes(16)
@@ -548,13 +562,15 @@ async function main() {
   });
 
   console.log('\n✅ Seed completed successfully!');
-  console.log('\n📋 Test Accounts:');
-  console.log('   👤 Admin:     admin@coderoute-gn.org / Admin@2024');
-  console.log('   👤 Inspecteur: inspecteur@coderoute-gn.org / Inspect@2024');
-  console.log('   👤 Centre:    centre@coderoute-gn.org / Centre@2024');
-  console.log('   👤 Candidat:  candidat@demo.gn / Candidat@2024');
-  console.log('   👤 Candidat:  aicha@demo.gn / Candidat@2024');
-  console.log('   👤 Candidat:  ousmane@demo.gn / Candidat@2024');
+  console.log('\n📋 Test Accounts (passwords are read from env vars or auto-generated):');
+  console.log('   👤 Admin:       admin@coderoute-gn.org');
+  console.log('   👤 Inspecteur:  inspecteur@coderoute-gn.org');
+  console.log('   👤 Centre:      centre@coderoute-gn.org');
+  console.log('   👤 Candidat:    candidat@demo.gn');
+  console.log('   👤 Candidat:    aicha@demo.gn');
+  console.log('   👤 Candidat:    ousmane@demo.gn');
+  console.log('\n⚠ Passwords were printed ABOVE next to each role (look for "[DEMO] Generated password").');
+  console.log('⚠ In production, set SEED_*_PASSWORD env vars explicitly — passwords are NOT printed.');
 }
 
 main()

@@ -2172,3 +2172,28 @@ Stage Summary:
 - **Production readiness**: now possible to build a Docker image and run it behind nginx with real TLS — Sprint 2 (real integrations) can proceed.
 
 Next: Sprint 2 — Real integrations (Orange SMS, MoMo, SMTP, HMAC webhook verification).
+
+---
+Task ID: Sprint 1
+Agent: main (continuation)
+Task: Sprint 1 — Sécurité & infrastructure minimale (finalisation)
+
+Work Log:
+- Audit complet de l'existant : découvert que 90% de Sprint 1 était déjà en place (next.config.ts, session.ts, instrumentation.ts, env.ts, Dockerfile, docker-compose.production.yml, nginx/, generate-secrets.sh, backup-cron.sh) — phases antérieures avaient déjà livré l'ossature.
+- **Réparé `e2e/fixtures/test-users.ts`** : supprimé les mots de passe hardcodés `Admin@2024` / `Candidat@2024`. Désormais lit depuis `E2E_ADMIN_PASSWORD` / `E2E_CANDIDAT_PASSWORD` env vars, throw si manquant en CI/production.
+- **Durci `prisma/seed.ts`** : ajouté un garde-fou qui throw en production si `SEED_*_PASSWORD` n'est pas défini explicitement. Supprimé les console.log qui affichaient `Admin@2024`, `Inspect@2024`, `Centre@2024`, `Candidat@2024` en clair.
+- **Mis à jour `.env.example`** : ajouté SESSION_SECRET, JWT_SECRET, CSRF_SECRET, CRON_SECRET, SEED_*_PASSWORD, BOOTSTRAP_ADMIN_*, E2E_*, POSTGRES_*, BACKUP_DIR, BACKUP_RETENTION_DAYS. Documenté que les secrets doivent faire 32+ chars et que l'app crash au boot sinon.
+- **Créé `.env.test`** : credentials de test (E2E_ADMIN_PASSWORD="TestAdmin@2024", etc.) pour que les tests Playwright et Jest puissent tourner sans jamais exposer de vrais secrets.
+- **Mis à jour `.gitignore`** : ajouté exceptions `!.env.example` et `!.env.test` pour pouvoir committer les templates sans committer les vrais secrets.
+- **Mis à jour `scripts/generate-secrets.sh`** : ajouté génération de `POSTGRES_PASSWORD` (32 chars hex) et des 5 `SEED_*_PASSWORD` (16 chars alphanumériques) pour que le seed puisse tourner en production.
+- **Créé `scripts/pre-deploy-checklist.sh`** : 17 vérifications pré-déploiement (NODE_ENV, secrets ≥32 chars, DATABASE_URL=postgresql://, POSTGRES_PASSWORD, SEED_*_PASSWORD, SMTP, SMS Orange creds, MOMO, hygiene source code, .gitignore, tsc --noEmit, jest). Exit 1 si failure, exit 0 + warning si warnings seulement.
+
+Stage Summary:
+- **0 erreurs TypeScript** (`npx tsc --noEmit` clean)
+- **230/230 tests Jest passent** (11 suites, 2.4s)
+- **Pre-deploy checklist : 17/20 checks passent** (1 failure légitime = Orange SMS creds manquants, 2 warnings = SMTP/MoMo à configurer en Sprint 2)
+- **Code source 100% propre** : aucune référence à `Admin@2024` ou `Candidat@2024` dans `src/`, `e2e/`, `prisma/` (uniquement dans `worklog.md` historique et `tool-results/` cache)
+- **Sprint 1 livré** : l'application peut désormais être déployée en production avec un niveau de sécurité acceptable pour une démo ministre (HTTPS, secrets forts, cookies sécurisés, PostgreSQL, backups quotidiens, non-root Docker, headers CSP/HSTS/X-Frame-Options).
+- **Prochaine étape** : Sprint 2 — Intégrations réelles (Orange SMS credentials, Orange Money/MTN/Celcom credentials, SMTP credentials, HMAC webhook verification, Sentry).
+
+Next: Sprint 2 — Real integrations.
