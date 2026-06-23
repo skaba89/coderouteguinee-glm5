@@ -1,0 +1,94 @@
+# ============================================================
+# CodeRoute Guinée — Prometheus configuration (staging & prod)
+# ============================================================
+# Scrapes metrics from:
+#   - Next.js app (/api/health exposes Prometheus metrics via /metrics)
+#   - PostgreSQL (postgres-exporter on :9187)
+#   - Redis (redis-exporter on :9121)
+#   - Host (node-exporter on :9100)
+#   - Nginx (stub_status on :9113 if enabled)
+#
+# Alerts are evaluated every 15s and sent to Alertmanager.
+# ============================================================
+
+global:
+  scrape_interval: 15s      # Default: scrape every 15s
+  evaluation_interval: 15s  # Evaluate alert rules every 15s
+  scrape_timeout: 10s
+
+  # External labels added to all metrics (identifies the environment)
+  external_labels:
+    environment: 'staging'
+    service: 'coderoute-guinee'
+    region: 'conakry'
+
+# ─── Alerting ─────────────────────────────────────────────
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# ─── Rule files ───────────────────────────────────────────
+rule_files:
+  - "alert-rules.yml"
+
+# ─── Scrape configs ───────────────────────────────────────
+scrape_configs:
+  # ─── Next.js app metrics ────────────────────────────────
+  - job_name: 'coderoute-app'
+    metrics_path: /api/metrics
+    scheme: http
+    static_configs:
+      - targets: ['app:3000']
+        labels:
+          component: 'nextjs'
+    # Custom options for the app
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'staging-app'
+
+  # ─── PostgreSQL metrics ─────────────────────────────────
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          component: 'database'
+
+  # ─── Redis metrics ──────────────────────────────────────
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          component: 'cache'
+
+  # ─── Host metrics (CPU, RAM, disk, network) ────────────
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          component: 'host'
+
+  # ─── Prometheus self-monitoring ────────────────────────
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ─── Blackbox exporter (probing external endpoints) ────
+  # Disabled by default — uncomment when blackbox-exporter is deployed
+  # - job_name: 'blackbox'
+  #   metrics_path: /probe
+  #   params:
+  #     module: [http_2xx]
+  #   static_configs:
+  #     - targets:
+  #         - https://staging.coderoute-gn.org/api/health
+  #         - https://staging.coderoute-gn.org/api/health?quick=true
+  #   relabel_configs:
+  #     - source_labels: [__address__]
+  #       target_label: __param_target
+  #     - source_labels: [__param_target]
+  #       target_label: instance
+  #     - target_label: __address__
+  #       replacement: blackbox-exporter:9115

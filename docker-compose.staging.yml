@@ -1,0 +1,383 @@
+# ============================================================
+# CodeRoute Guinée — Staging docker-compose (Sprint 12)
+# ============================================================
+# Full staging stack mirroring production architecture:
+#   - PostgreSQL 16 (primary)
+#   - Redis 7 (sessions, rate limit, locks)
+#   - Next.js app (Docker image built from source)
+#   - Nginx reverse proxy
+#   - Prometheus (metrics scraping)
+#   - Grafana (dashboards)
+#   - Loki + Promtail (log aggregation)
+#   - Alertmanager (alert routing)
+#   - Backup sidecar (daily dump)
+#
+# Differences from production:
+#   - Single app container (no rolling update needed in staging)
+#   - Smaller resource limits
+#   - Exposed monitoring ports (9100, 3001) — firewalled to admin IPs only
+#   - Self-signed TLS via Caddy (instead of Let's Encrypt)
+#   - No DR replica (single PostgreSQL instance)
+#
+# Usage:
+#   1. Generate staging secrets:
+#        bash scripts/generate-secrets.sh --env staging > .env.staging
+#   2. Fill .env.staging with staging integration creds (test API keys)
+#   3. Build & start:
+#        docker compose -f docker-compose.staging.yml up -d --build
+#   4. Bootstrap admin:
+#        docker compose -f docker-compose.staging.yml exec app npx tsx scripts/bootstrap-admin.ts
+#   5. Seed test data:
+#        docker compose -f docker-compose.staging.yml exec app npm run db:seed
+#   6. Verify:
+#        curl https://localhost/api/health
+#        open http://localhost:3001 (Grafana, admin/admin — CHANGE IMMEDIATELY)
+#
+# Tear down:
+#   docker compose -f docker-compose.staging.yml down -v
+# ============================================================
+
+services:
+  # ─── PostgreSQL database ───────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: staging-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-coderoute}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.staging}
+      POSTGRES_DB: ${POSTGRES_DB:-coderoute}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    volumes:
+      - staging_pg_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init:/docker-entrypoint-initdb.d:ro
+      - ./monitoring/postgres-exporter:/pg-exporter:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-coderoute} -d ${POSTGRES_DB:-coderoute}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - staging-backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Resource limits (staging is smaller than prod)
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # ─── Redis cache ───────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: staging-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.staging}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+    volumes:
+      - staging_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - staging-backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ─── Next.js app ───────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: staging-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-coderoute}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-coderoute}?schema=public&sslmode=disable
+      REDIS_URL: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Secrets (must be 32+ chars in staging too)
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET (32+ chars) in .env.staging}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (32+ chars) in .env.staging}
+      CSRF_SECRET: ${CSRF_SECRET:?Set CSRF_SECRET (32+ chars) in .env.staging}
+      CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET (32+ chars) in .env.staging}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:?Set BACKUP_ENCRYPTION_KEY (32+ chars) in .env.staging}
+      # Webhook secrets
+      WEBHOOK_ORANGE_MONEY_SECRET: ${WEBHOOK_ORANGE_MONEY_SECRET:?Set WEBHOOK_ORANGE_MONEY_SECRET (32+ chars) in .env.staging}
+      WEBHOOK_MTN_MONEY_SECRET: ${WEBHOOK_MTN_MONEY_SECRET:-}
+      WEBHOOK_CELCOM_MONEY_SECRET: ${WEBHOOK_CELCOM_MONEY_SECRET:-}
+      WEBHOOK_ORANGE_SMS_SECRET: ${WEBHOOK_ORANGE_SMS_SECRET:-}
+      # Orange Money (sandbox/test keys)
+      ORANGE_CLIENT_ID: ${ORANGE_CLIENT_ID:-}
+      ORANGE_CLIENT_SECRET: ${ORANGE_CLIENT_SECRET:-}
+      # MTN MoMo (sandbox)
+      MOMO_API_KEY: ${MOMO_API_KEY:-}
+      MOMO_SUBSCRIPTION_KEY: ${MOMO_SUBSCRIPTION_KEY:-}
+      # SMTP
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@staging.coderoute-gn.org}
+      # Sentry (staging project)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      # Other
+      NEXT_PUBLIC_APP_URL: https://staging.coderoute-gn.org
+      DPO_NAME: ${DPO_NAME:-DPO Staging}
+      DPO_EMAIL: ${DPO_EMAIL:-dpo@coderoute-gn.org}
+      DPO_PHONE: ${DPO_PHONE:-+224000000000}
+      AGPD_NOTIFICATION_EMAIL: notification@agpd.gov.gn
+    volumes:
+      - ./public:/app/public:ro
+    networks:
+      - staging-backend
+      - staging-frontend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.5'
+    healthcheck:
+      test: ["CMD", "wget", "--no-check-certificate", "--quiet", "--spider", "http://localhost:3000/api/health?quick=true"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ─── Nginx reverse proxy ───────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: staging-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - staging_nginx_certs:/etc/nginx/certs
+      - staging_nginx_logs:/var/log/nginx
+    networks:
+      - staging-frontend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ─── Prometheus (metrics scraper) ──────────────────────
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: staging-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-admin-api'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - staging_prometheus_data:/prometheus
+    ports:
+      - "9090:9090"  # Admin access only (firewall restricts)
+    networks:
+      - staging-backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ─── Alertmanager (alert routing) ──────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: staging-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - staging_alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"  # Admin access only
+    networks:
+      - staging-backend
+
+  # ─── Grafana (dashboards) ──────────────────────────────
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: staging-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env.staging}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3001
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - staging_grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3001"  # Admin access only
+    networks:
+      - staging-backend
+    depends_on:
+      - prometheus
+      - loki
+
+  # ─── Loki (log aggregation) ────────────────────────────
+  loki:
+    image: grafana/loki:3.2.0
+    container_name: staging-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - staging_loki_data:/loki
+    ports:
+      - "3100:3100"  # Admin access only
+    networks:
+      - staging-backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ─── Promtail (log shipper) ────────────────────────────
+  promtail:
+    image: grafana/promtail:3.2.0
+    container_name: staging-promtail
+    restart: unless-stopped
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+    command:
+      - '-config.file=/etc/promtail/promtail.yml'
+    networks:
+      - staging-backend
+    depends_on:
+      - loki
+
+  # ─── Postgres Exporter (DB metrics) ────────────────────
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: staging-postgres-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-coderoute}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-coderoute}?sslmode=disable
+    ports:
+      - "9187:9187"
+    networks:
+      - staging-backend
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ─── Redis Exporter (Redis metrics) ────────────────────
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.67.0
+    container_name: staging-redis-exporter
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "9121:9121"
+    networks:
+      - staging-backend
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ─── Node Exporter (host metrics) ──────────────────────
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: staging-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "9100:9100"
+    networks:
+      - staging-backend
+
+  # ─── Backup sidecar (daily dump) ───────────────────────
+  backup:
+    image: postgres:16-alpine
+    container_name: staging-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER:-coderoute}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-coderoute}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY}
+      BACKUP_RETENTION_DAYS: 7
+    volumes:
+      - staging_backups:/backups
+      - ./scripts/backup-db.sh:/backup-db.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "0 2 * * * /backup-db.sh" > /etc/crontabs/root
+        crond -f -l 8
+    networks:
+      - staging-backend
+
+# ─── Networks ─────────────────────────────────────────────
+networks:
+  staging-backend:
+    driver: bridge
+    internal: false
+  staging-frontend:
+    driver: bridge
+
+# ─── Volumes ──────────────────────────────────────────────
+volumes:
+  staging_pg_data:
+  staging_redis_data:
+  staging_nginx_certs:
+  staging_nginx_logs:
+  staging_prometheus_data:
+  staging_alertmanager_data:
+  staging_grafana_data:
+  staging_loki_data:
+  staging_backups:

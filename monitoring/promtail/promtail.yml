@@ -1,0 +1,72 @@
+# ============================================================
+# CodeRoute Guinée — Promtail configuration (Sprint 12)
+# ============================================================
+# Ships Docker container logs to Loki with labels:
+#   - container_name
+#   - service (coderoute-app, postgres, redis, nginx, ...)
+#   - level (extracted from log line if possible)
+#   - stream (stdout/stderr)
+# ============================================================
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+
+scrape_configs:
+  # ─── Docker container logs ─────────────────────────────
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=coderoute-guinee"]
+    relabel_configs:
+      # Extract container name (strip leading slash)
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container_name'
+      # Extract compose service name
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+      # Extract compose project name
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: 'project'
+      # Mark stderr as error level
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'
+
+    pipeline_stages:
+      # ─── Parse JSON logs (Next.js app) ─────────────────
+      - json:
+          expressions:
+            level: level
+            msg: msg
+            timestamp: timestamp
+            requestId: requestId
+            userId: userId
+          source: ""
+      # ─── Set level label ────────────────────────────────
+      - labels:
+          level:
+          requestId:
+      # ─── Drop debug logs in production ──────────────────
+      - match:
+          selector: '{level="debug"}'
+          action: drop
+      # ─── Set timestamp from log if present ──────────────
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+          fallback_formats:
+            - "2006-01-02T15:04:05Z07:00"

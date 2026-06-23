@@ -1,0 +1,239 @@
+{
+  "annotations": {"list": []},
+  "description": "CodeRoute Guinée — Business KPIs (bookings, payments, exams, fraud alerts, candidates)",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "title": "Total Candidates",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "coderoute_candidates_total", "legendFormat": "", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 100},
+              {"color": "green", "value": 1000}
+            ]
+          }
+        }
+      },
+      "options": {"colorMode": "value", "graphMode": "area"}
+    },
+    {
+      "title": "Bookings Today",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(increase(booking_created_total[24h]))", "legendFormat": "", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 10},
+              {"color": "green", "value": 50}
+            ]
+          }
+        }
+      },
+      "options": {"colorMode": "value", "graphMode": "area"}
+    },
+    {
+      "title": "Revenue Today (GNF)",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(increase(payment_amount_total[24h]))", "legendFormat": "", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyGNF",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 1000000},
+              {"color": "green", "value": 10000000}
+            ]
+          }
+        }
+      },
+      "options": {"colorMode": "value", "graphMode": "area"}
+    },
+    {
+      "title": "Exam Pass Rate (24h)",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "expr": "sum(increase(exam_submission_total{status=\"success\",result=\"pass\"}[24h])) / sum(increase(exam_submission_total{status=\"success\"}[24h])) * 100",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 40},
+              {"color": "green", "value": 60}
+            ]
+          }
+        }
+      },
+      "options": {"colorMode": "value", "graphMode": "area"}
+    },
+    {
+      "title": "Daily Bookings (last 30 days)",
+      "type": "timeseries",
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "expr": "sum by (centre) (increase(booking_created_total[1d]))",
+          "legendFormat": "{{centre}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {"drawStyle": "bars", "lineInterpolation": "smooth", "fillOpacity": 70}
+        }
+      }
+    },
+    {
+      "title": "Daily Revenue (last 30 days, GNF)",
+      "type": "timeseries",
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "expr": "sum by (provider) (increase(payment_amount_total[1d]))",
+          "legendFormat": "{{provider}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyGNF",
+          "custom": {"drawStyle": "bars", "lineInterpolation": "smooth", "fillOpacity": 70}
+        }
+      }
+    },
+    {
+      "title": "Exam Results Distribution (24h)",
+      "type": "piechart",
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 15},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "expr": "sum by (result) (increase(exam_submission_total{status=\"success\"}[24h]))",
+          "legendFormat": "{{result}}",
+          "refId": "A"
+        }
+      ],
+      "options": {"pieType": "donut", "displayLabels": ["percent"]}
+    },
+    {
+      "title": "Fraud Alerts (24h)",
+      "type": "stat",
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 15},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum(increase(fraud_alert_total[24h]))", "legendFormat": "", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 5},
+              {"color": "red", "value": 20}
+            ]
+          }
+        }
+      },
+      "options": {"colorMode": "value", "graphMode": "area"}
+    },
+    {
+      "title": "Payment Success Rate by Provider (24h)",
+      "type": "bargauge",
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 15},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "expr": "sum by (provider) (rate(payment_webhook_total{status=\"success\"}[24h])) / sum by (provider) (rate(payment_webhook_total[24h])) * 100",
+          "legendFormat": "{{provider}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 80},
+              {"color": "green", "value": 95}
+            ]
+          }
+        }
+      },
+      "options": {"orientation": "horizontal", "displayMode": "gradient"}
+    },
+    {
+      "title": "Active Centres by Region",
+      "type": "table",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 25},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "expr": "sum by (region) (coderoute_active_centres)",
+          "legendFormat": "{{region}}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {"Time": true, "__name__": true},
+            "renameByName": {"Value": "Active Centres"}
+          }
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["coderoute", "business"],
+  "time": {"from": "now-7d", "to": "now"},
+  "timezone": "browser",
+  "title": "CodeRoute Guinée — Business Dashboard",
+  "uid": "coderoute-business",
+  "version": 1
+}
