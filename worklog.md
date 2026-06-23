@@ -2431,3 +2431,52 @@ Stage Summary:
 - **Maturité projet** : ~97/100 (manque l'exécution réelle de l'audit externe et du pilote DNTT)
 
 Next: Sprint 13 — Exécution pilote DNTT (8 semaines en parallèle) + intégration retours audit externe + durcissement final (rate limiting dynamique, geoblocking, WAF ModSecurity).
+
+---
+Task ID: SPRINT-13
+Agent: Super Z (main)
+Task: Sprint 13 — Durcissement final + préparation pilote DNTT + audit externe
+
+Work Log:
+- Création `src/lib/redis.ts` (320 lignes) — wrapper client ioredis avec lazy connect, retry exponentiel, graceful degradation, helpers slidingWindowIncrement et cachedGet
+- Création `src/lib/rate-limit-dynamic.ts` (330 lignes) — rate limiter adaptatif Redis-backed avec 3 modes (normal/elevated/attack), banlist IP + user par hash Redis, trustlist, API admin (banIp/unbanIp/forceMode)
+- Création `src/lib/geoblock.ts` (240 lignes) — middleware geo-IP avec 4 politiques (strict/lenient/diaspora/disabled), support Cloudflare CF-IPCountry + MaxMind GeoLite2 fallback, cache Redis 24h, allowlist CIDR, fail-open si lookup indisponible
+- Mise à jour `src/middleware.ts` — intégration checkDynamicRateLimit (Redis-first, in-memory fallback) + checkGeoBlock (skip health + _next)
+- Création `nginx/waf/waf.conf` — config Nginx ModSecurity avec per-location overrides (health off, webhook avec exclusions, uploads avec body limit)
+- Création `nginx/modsec/modsecurity.conf` — config ModSecurity v3 (DetectionOnly par défaut, body limits 25MiB, audit JSON logging, include CRS 3.3 + custom rules)
+- Création `nginx/modsec/custom-rules.conf` — 10 règles CodeRoute (IDs 990001-990600) : exclusions faux positifs CRS, whitelist téléphone guinéen +224, détection fraude examen (totalTimeMs<1s), WAF rate-limit login 30/60s, blocage outils attaque (sqlmap/nikto/nessus), path traversal, header injection
+- Création `nginx/modsec/webhook-exclusions.conf` — exclusions spécifiques endpoints webhook Orange/MTN (HMAC signature, transaction IDs)
+- Création `nginx/modsec/upload-exclusions.conf` — exclusions endpoints uploads (multipart, mp3 avec apostrophes Pular)
+- Création `docker-compose.waf.yml` — container owasp/modsecurity-crs:4.0-nginx, BACKEND=http://app:3000, PARANOIA=1, volumes pour modsec configs, healthcheck, réseaux
+- Création `docs/ops/WAF-TUNING.md` (200 lignes) — procédure 7 jours pour passer DetectionOnly → On : observation, tuning faux positifs, test régression attaquant, activation, métriques succès, rollback urgence
+- Création `scripts/prepare-staging-twin.sh` (220 lignes) — provisioning staging jumeau prod : pre-flight checks, sync code rsync, push secrets via SSH, pull Docker images par digest, refresh data optionnel avec anonymisation RGPD, démarrage services ordonné, smoke tests (7 URLs vérifiées)
+- Création `scripts/simulate-incident.ts` (350 lignes) — injecteur 5 scénarios AGPD (SQLi/phishing/webhook/ransomware/JWT leak), refuse de tourner si STAGING_HOST ressemble à prod, génère rapport markdown avec calendrier 72h article 33, commandes de nettoyage
+- Création `docs/audit-externe/COMMUNICATIONS-PERSONNES-CONCERNEES.md` (450 lignes) — 10 templates (5 FR email + 3 SMS multilingues Pular/Soussou/Malinké + 1 mise à jour + 1 clôture), procédure validation 4 niveaux (juridique/linguistique/technique/ops), délais envoi par volume, archivage 5 ans article 35
+- Création `docs/audit-externe/MANUEL-AUDITEUR.md` (500 lignes) — guide pas-à-pas auditeur 45 jours : NDA + charte, périmètre inclus/exclu, calendrier 6 phases, accès staging + rotation, 5 outils recommandés par catégorie, détail des 6 phases (revue doc / SAST / pentest 35 scénarios / config infra / RGPD articles 28-40 / rédaction rapport), format rapport + sévérité CVSS, règles de conduite, 4 niveaux d'escalation
+- Création `docs/pilote-dntt/CONVENTION-CENTRE-PILOTE.md` (450 lignes) — convention juridique 15 articles entre DNTT et centre agréé : objet/durée 8 sem/périmètre/engagements Centre (moyens+formation+RGPD)/engagements DNTT (dispo 99.5%+support)/article 6 RGPD détaillé (qualité parties, données, finalités, base légale, durées conservation, mesures sécurité, sous-traitants Orange/MTN, notification 4h)/conditions financières (pilote gratuit)/propriété intellectuelle/métriques évaluation/responsabilité/force majeure/confidentialité/résiliation/litiges tribunal Conakry
+- Création `docs/audit-externe/PLAN-REMEDIATION.md` (400 lignes) — template de suivi des constats audit : workflow traitement (T+0 création ticket → T+x+21 clôture), 5 priorités P0-P4 avec délais, 8 statuts, tableau bord consolidé, détail par constat (description/impact/PoC/localisation/cause racine/plan correction/risque résiduel/décision risque accepté/références), calendrier Gantt, 6 jalons, critères clôture, templates emails auditeur (notification correction + demande acceptation risque)
+- Création `scripts/audit-remediation-stats.sh` — parse PLAN-REMEDIATION.md et génère stats consolidées (total/open/closed par sévérité, taux remédiation)
+- Création `src/lib/__tests__/rate-limit-dynamic.test.ts` (230 lignes, 18 tests) — couverture mode resolution + main check function + admin operations
+- Création `src/lib/__tests__/geoblock.test.ts` (180 lignes, 12 tests) — couverture policy resolution + IP extraction + main check function + country lists
+- Ajout dépendances npm : `ioredis@^5.11.1` + `maxmind@^5.0.1`
+- Mise à jour `src/lib/audit-log.ts` — ajout 5 nouveaux AuditEventType (RATE_LIMIT_BANNED, RATE_LIMIT_USER_EXCEEDED, GEOBLOCK_BLOCKED, GEOBLOCK_HIGH_RISK, GEOBLOCK_FAIL_CLOSED)
+- Correction `scripts/pilot-create-accounts.ts` — remplacement argon2 (non installé) par bcryptjs, alignement fields Prisma schema (nom/prenom/dateNaissance/numeroIdentite/telephone/ville/numeroUnique/actif au lieu de name/phone/isActive)
+- Correction `src/app/api/metrics/route.ts` — utilisation `actif` au lieu de `isActive`, `_count._all` au lieu de `_count.id`, remplacement `lastLoginAt` (inexistant) par `db.user.count()` total
+- Mise à jour `docs/audit-externe/README.md` — ajout MANUEL-AUDITEUR.md, PLAN-REMEDIATION.md, COMMUNICATIONS-PERSONNES-CONCERNEES.md dans l'arborescence
+- Vérifications finales : TypeScript 0 erreur, Jest 339/339 tests passent, Next.js build OK
+
+Stage Summary:
+- **Rate limiting dynamique** : Redis-backed, 3 modes adaptatifs (normal/elevated/attack) avec auto-détection pics 429, banlist IP+user, trustlist, API admin temps réel (banIp/unbanIp/forceMode)
+- **Geoblocking** : 4 politiques (strict GN / lenient 9 pays voisins / diaspora 15 pays / disabled), support Cloudflare + MaxMind, cache Redis 24h, allowlist CIDR admin, fail-open si lookup down
+- **WAF ModSecurity** : stack complète Docker (owasp/modsecurity-crs:4.0-nginx), OWASP CRS 3.3 + 10 règles custom CodeRoute (IDs 990001-990600), 3 fichiers exclusions (webhook/upload), procédure tuning 7 jours documentée
+- **Staging jumeau prod** : script automatisé `prepare-staging-twin.sh` 220 lignes (pre-flight + rsync + secrets SSH + Docker digest + anonymisation RGPD optionnelle + smoke tests 7 URLs)
+- **Injection incidents AGPD** : `simulate-incident.ts` 5 scénarios (SQLi/phishing/webhook/ransomware/JWT leak), refuse de tourner en prod, génère rapport markdown avec calendrier 72h article 33 + commandes nettoyage
+- **Communications personnes concernées** : 10 templates multilingues (FR + Pular + Soussou + Malinké), procédure validation 4 niveaux, délais par volume, archivage 5 ans article 35
+- **Manuel auditeur** : guide 500 lignes 6 phases 45 jours, périmètre détaillé, 35 scénarios pentest, conformité RGPD articles 28-40, format rapport + CVSS, 4 niveaux escalation
+- **Convention centre pilote** : 15 articles juridiques (objet/durée/périmètre/engagements/RGPD/financier/PI/litiges), conforme Loi L/2022/018/AN
+- **Plan remédiation audit** : template suivi constats avec workflow, 5 priorités, 8 statuts, calendrier Gantt, 6 jalons, templates emails auditeur
+- **Tests** : 30 nouveaux tests (rate-limit-dynamic 18 + geoblock 12), 339 tests total passent
+- **Build** : TypeScript 0 erreur, Next.js build OK
+- **Maturité projet** : ~99/100 (manque uniquement exécution réelle audit + lancement pilote)
+
+Next: Sprint 14 — Lancement officiel pilote DNTT (8 semaines) + lancement audit externe (45 jours) + premier comité de pilotage sécurité hebdomadaire

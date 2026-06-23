@@ -26,7 +26,7 @@
 // ============================================================
 
 import { db } from '../src/lib/db'
-import { hash } from 'argon2'
+import { hash as bcryptHash } from 'bcryptjs'
 import { randomBytes, randomInt } from 'crypto'
 import { writeFileSync } from 'fs'
 
@@ -101,12 +101,14 @@ async function main() {
     // Create the centre record
     const centreRecord = await db.centre.create({
       data: {
-        name: centre.name,
+        nom: centre.name,
+        ville: centre.region,
         region: centre.region,
-        address: `À compléter — ${centre.region}`,
-        phone: generatePhone(),
-        capacity: centre.capacity,
-        isActive: true,
+        adresse: `À compléter — ${centre.region}`,
+        telephone: generatePhone(),
+        email: `centre-${centre.code.toLowerCase()}@coderoute.gov.gn`,
+        capacite: centre.capacity,
+        actif: true,
       },
     })
 
@@ -114,12 +116,17 @@ async function main() {
     await db.user.create({
       data: {
         email,
-        passwordHash: await hash(password),
+        passwordHash: await bcryptHash(password, 12),
         role: 'centre-agree',
-        name: `Responsable ${centre.name}`,
-        phone: generatePhone(),
-        centreId: centreRecord.id,
-        isActive: true,
+        nom: 'Responsable',
+        prenom: centre.name,
+        dateNaissance: '1980-01-01',
+        numeroIdentite: `ID-${centre.code}-${Date.now()}`,
+        telephone: generatePhone(),
+        ville: centre.region,
+        region: centre.region,
+        numeroUnique: `GN-CODE-2026-${centre.code}-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`,
+        actif: true,
       },
     })
 
@@ -149,11 +156,17 @@ async function main() {
     await db.user.create({
       data: {
         email,
-        passwordHash: await hash(password),
+        passwordHash: await bcryptHash(password, 12),
         role: 'administration',
-        name,
-        phone: generatePhone(),
-        isActive: true,
+        nom: name.split(' ')[1] || name,
+        prenom: name.split(' ')[0],
+        dateNaissance: '1985-01-01',
+        numeroIdentite: `ID-ADMIN-${i + 1}-${Date.now()}`,
+        telephone: generatePhone(),
+        ville: 'Conakry',
+        region: 'Conakry',
+        numeroUnique: `GN-CODE-2026-AD${(i + 1).toString().padStart(3, '0')}-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`,
+        actif: true,
       },
     })
 
@@ -178,11 +191,17 @@ async function main() {
     await db.user.create({
       data: {
         email,
-        passwordHash: await hash(password),
+        passwordHash: await bcryptHash(password, 12),
         role: 'auto-ecole',
-        name,
-        phone: generatePhone(),
-        isActive: true,
+        nom: name,
+        prenom: 'Auto-École',
+        dateNaissance: '1990-01-01',
+        numeroIdentite: `ID-AE-${i + 1}-${Date.now()}`,
+        telephone: generatePhone(),
+        ville: 'Conakry',
+        region: 'Conakry',
+        numeroUnique: `GN-CODE-2026-AE${(i + 1).toString().padStart(3, '0')}-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`,
+        actif: true,
       },
     })
 
@@ -202,11 +221,17 @@ async function main() {
     await db.user.create({
       data: {
         email: superAdminEmail,
-        passwordHash: await hash(password),
+        passwordHash: await bcryptHash(password, 12),
         role: 'super-admin',
-        name: 'Tech Lead CodeRoute',
-        phone: generatePhone(),
-        isActive: true,
+        nom: 'Lead',
+        prenom: 'Tech',
+        dateNaissance: '1980-01-01',
+        numeroIdentite: `ID-SADMIN-${Date.now()}`,
+        telephone: generatePhone(),
+        ville: 'Conakry',
+        region: 'Conakry',
+        numeroUnique: `GN-CODE-2026-SADM-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`,
+        actif: true,
       },
     })
     accounts.push({

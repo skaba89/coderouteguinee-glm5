@@ -1,0 +1,58 @@
+# ============================================================
+# CodeRoute Guinée — WAF Docker Compose (Sprint 13)
+# ============================================================
+# Adds ModSecurity v3 + OWASP CRS 3.3 in front of the Next.js
+# application as a dedicated container. Can be deployed:
+#   - In staging: alongside the app via this compose file
+#   - In production: as a separate VM (Conakry DC DMZ)
+# ============================================================
+
+services:
+  waf:
+    image: owasp/modsecurity-crs:4.0-nginx
+    container_name: coderoute-waf
+    restart: unless-stopped
+    environment:
+      BACKEND: "http://app:3000"
+      PARANOIA: "1"                  # 1 = default, 2-4 = stricter
+      ANOMALY_INBOUND: "5"           # threshold for blocking
+      ANOMALY_OUTBOUND: "4"
+      MODSEC_RULE_ENGINE: "DetectionOnly"  # set to "On" after tuning
+      SERVER_NAME: "coderoute.gov.gn"
+      SSL_PORT: "443"
+      LOGLEVEL: "warn"
+      REAL_IP_HEADER: "X-Real-IP"
+      REAL_IP_RECURSIVE: "on"
+      TRUSTED_PROXIES: "10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
+    volumes:
+      - ./nginx/modsec/modsecurity.conf:/etc/nginx/modsec/modsecurity.conf:ro
+      - ./nginx/modsec/custom-rules.conf:/etc/nginx/modsec/custom-rules.conf:ro
+      - ./nginx/modsec/webhook-exclusions.conf:/etc/nginx/modsec/webhook-exclusions.conf:ro
+      - ./nginx/modsec/upload-exclusions.conf:/etc/nginx/modsec/upload-exclusions.conf:ro
+      - waf_logs:/var/log/nginx/modsec
+      - waf_cache:/var/cache/modsecurity
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - coderoute-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+volumes:
+  waf_logs:
+  waf_cache:
+
+networks:
+  coderoute-net:
+    external: true
+    name: coderoute-net

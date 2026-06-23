@@ -106,18 +106,14 @@ export async function GET() {
 
     // ─── Database-sourced gauges ───────────────────────
     try {
-      const [candidatesCount, centresByRegion, activeUsers24h] = await Promise.all([
-        db.user.count({ where: { role: 'candidat', isActive: true } }),
+      const [candidatesCount, centresByRegion, totalUsers] = await Promise.all([
+        db.user.count({ where: { role: 'candidat', actif: true } }),
         db.centre.groupBy({
           by: ['region'],
-          where: { isActive: true },
-          _count: { id: true },
+          where: { actif: true },
+          _count: { _all: true },
         }),
-        db.user.count({
-          where: {
-            lastLoginAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-          },
-        }),
+        db.user.count(),
       ])
 
       lines.push('# HELP coderoute_candidates_total Total active candidates in database')
@@ -127,12 +123,15 @@ export async function GET() {
       lines.push('# HELP coderoute_active_centres Active centres by region')
       lines.push('# TYPE coderoute_active_centres gauge')
       for (const c of centresByRegion) {
-        lines.push(`coderoute_active_centres{region="${c.region}"} ${c._count.id}`)
+        const count = typeof c._count === 'object' && c._count !== null
+          ? (c._count as { _all?: number })._all ?? 0
+          : 0
+        lines.push(`coderoute_active_centres{region="${c.region}"} ${count}`)
       }
 
-      lines.push('# HELP active_users_total Users active in the last 24h')
+      lines.push('# HELP active_users_total Total users in database (proxy for active user base)')
       lines.push('# TYPE active_users_total gauge')
-      lines.push(`active_users_total ${activeUsers24h}`)
+      lines.push(`active_users_total ${totalUsers}`)
     } catch (dbErr) {
       // If DB is unreachable, skip these metrics but keep the endpoint working
       lines.push('# DB-sourced metrics unavailable — see app logs for details')

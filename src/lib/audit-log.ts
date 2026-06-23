@@ -52,8 +52,13 @@ export type AuditEventType =
   | 'ADMIN_ACTION'
   | 'ROLE_ACCESS_DENIED'
   | 'RATE_LIMIT_EXCEEDED'
+  | 'RATE_LIMIT_BANNED'
+  | 'RATE_LIMIT_USER_EXCEEDED'
   | 'CSRF_VALIDATION_FAILED'
   | 'DATA_EXPORT'
+  | 'GEOBLOCK_BLOCKED'
+  | 'GEOBLOCK_HIGH_RISK'
+  | 'GEOBLOCK_FAIL_CLOSED'
 
 export type AuditSeverity = 'info' | 'warning' | 'critical'
 

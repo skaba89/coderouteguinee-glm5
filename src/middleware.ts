@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/session'
 import { validateCsrfRequest, isCsrfRequiredMethod, setCsrfCookie, generateCsrfToken } from '@/lib/csrf'
 import { checkRateLimit, RATE_LIMIT_PRESETS } from '@/lib/rate-limit'
+import { checkDynamicRateLimit } from '@/lib/rate-limit-dynamic'
+import { checkGeoBlock } from '@/lib/geoblock'
 import { logAuditConsole } from '@/lib/audit-log'
 
 // Match the cookie name used in src/lib/session.ts (dynamic per env)
@@ -101,9 +103,24 @@ export async function middleware(request: NextRequest) {
   }
 
   // ─── 1. Add security headers to all responses ────────────
+  // ─── 1b. Geo-blocking check (Sprint 13) ─────────────────
+  // Skip for health checks and static assets
+  if (!pathname.startsWith('/api/health') && !pathname.startsWith('/_next/')) {
+    const geoBlockResponse = await checkGeoBlock(request)
+    if (geoBlockResponse) {
+      return addSecurityHeaders(geoBlockResponse)
+    }
+  }
+
   // ─── 2. Rate limiting check ──────────────────────────────
   const rateLimitConfig = getRateLimitConfig(pathname)
   if (rateLimitConfig) {
+    // Try dynamic (Redis-backed, adaptive) limiter first
+    const dynamicResponse = await checkDynamicRateLimit(request, rateLimitConfig)
+    if (dynamicResponse) {
+      return addSecurityHeaders(dynamicResponse)
+    }
+    // Fallback: in-memory limiter (works when Redis is down)
     const rateLimitResponse = checkRateLimit(request, rateLimitConfig)
     if (rateLimitResponse) {
       // Log rate limit exceeded

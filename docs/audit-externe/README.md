@@ -27,19 +27,24 @@ L'audit externe a quatre objectifs complémentaires, alignés sur la décision d
 
 ```
 docs/audit-externe/
-├── README.md                       ← ce fichier (point d'entrée)
-├── 01-CHARTE-AUDIT.md              ← mission, périmètre, règles d'engagement
-├── 02-PERIMETRE-TECHNIQUE.md       ← inventaire des composants audités
-├── 03-CONTROLES-INTERNES.md        ← auto-évaluation 48/48 (référence)
-├── 04-SCENARIOS-PENTEST.md         ← cas de tests recommandés (OWASP ASVS L2)
-├── 05-ACCES-TEMPORAIRES.md         ← procédure de création/rotation/révocation
-├── 06-CONFIDENTIALITE-CA-NDA.md    ← modèle d'accord de confidentialité
-├── 07-RAPPORT-MODELE.md            ← structure attendue du rapport d'audit
-├── 08-PLAN-REMEDIATION.md          ← modèle de plan de remédiation post-audit
+├── README.md                                  ← ce fichier (point d'entrée)
+├── 01-CHARTE-AUDIT.md                         ← mission, périmètre, règles d'engagement
+├── 02-PERIMETRE-TECHNIQUE.md                  ← inventaire des composants audités
+├── 03-CONTROLES-INTERNES.md                   ← auto-évaluation 48/48 (référence)
+├── 04-SCENARIOS-PENTEST.md                    ← cas de tests recommandés (OWASP ASVS L2)
+├── 05-ACCES-TEMPORAIRES.md                    ← procédure de création/rotation/révocation
+├── 06-CONFIDENTIALITE-CA-NDA.md               ← modèle d'accord de confidentialité
+├── 07-RAPPORT-MODELE.md                       ← structure attendue du rapport d'audit
+├── MANUEL-AUDITEUR.md                         ← (Sprint 13) guide pas-à-pas pour l'auditeur
+├── PLAN-REMEDIATION.md                        ← (Sprint 13) template de suivi des constats
+├── COMMUNICATIONS-PERSONNES-CONCERNEES.md     ← (Sprint 13) 10 templates FR + multilingues
+├── runbook-incident-agpd.md                   ← procédure 72h article 33
+├── modele-notification-agpd.md                ← modèle de notification AGPD
+├── REGISTRE-VIOLATIONS.md                     ← registre article 35
 └── annexes/
-    ├── inventory-secrets.md        ← cartographie des secrets (sans valeurs)
-    ├── data-flow-diagram.txt       ← DFD simplifié pour l'auditeur
-    └── owasp-asvs-checklist.md     ← checklist ASVS Level 2 adaptée
+    ├── inventory-secrets.md                   ← cartographie des secrets (sans valeurs)
+    ├── data-flow-diagram.txt                  ← DFD simplifié pour l'auditeur
+    └── owasp-asvs-checklist.md                ← checklist ASVS Level 2 adaptée
 ```
 
 ## Critères d'acceptation de l'audit
