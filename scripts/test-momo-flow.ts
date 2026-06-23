@@ -18,13 +18,22 @@ async function main() {
   console.log('==============================================')
 
   // ── 1. Login as candidat ─────────────────────────────────
-  console.log('\n[1] Login candidat@candidat@demo.gn')
+  // SECURITY: read credentials from env vars — never hardcode in source
+  const TEST_EMAIL = process.env.TEST_EMAIL || 'candidat@demo.gn'
+  const TEST_PASSWORD = process.env.TEST_PASSWORD
+  if (!TEST_PASSWORD) {
+    console.error('❌ TEST_PASSWORD env var is required (use .env.test or .env)')
+    console.error('   Example: TEST_PASSWORD=xxx npx tsx scripts/test-momo-flow.ts')
+    process.exit(1)
+  }
+
+  console.log(`\n[1] Login as ${TEST_EMAIL}`)
   const loginRes = await fetch(`${BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email: 'candidat@demo.gn',
-      password: 'Candidat@2026',
+      email: TEST_EMAIL,
+      password: TEST_PASSWORD,
     }),
   })
   const setCookie = loginRes.headers.get('set-cookie') || ''

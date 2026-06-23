@@ -39,6 +39,9 @@ Otherwise, it will start one automatically.
 | `admin-notifications.spec.ts` | **NEW (Phase 29+30)** — Orange SMS panel visibility, env vars grid, phone validation, log table, unauthorized access |
 | `candidate-booking.spec.ts` | **NEW (Phase 30)** — Booking view, training view, courses view, results view |
 | `error-pages.spec.ts` | **NEW (Phase 30)** — 404 page, offline route, manifest/SW reachability, API health, accessibility smoke |
+| `exam-flow.spec.ts` | **NEW (Sprint 3)** — Start practice exam, answer question, submit, language fallback, API contract |
+| `payment-webhook.spec.ts` | **NEW (Sprint 3)** — Webhook HMAC verification: reject missing/invalid/tampered signatures, malformed body, provider identification, no error leakage |
+| `rgpd-rights.spec.ts` | **NEW (Sprint 3)** — RGPD user rights (Art. 32-35 Loi L/2022/018/AN): information, access, rectification, opposition, cookie consent |
 
 ## Test credentials
 

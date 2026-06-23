@@ -54,3 +54,31 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Backups (daily DB dumps — never commit)
+/backups
+/backups/*
+
+# Load test results
+/load-tests/results/
+
+# Playwright reports (regenerated on each run)
+/playwright-report/
+/test-results/
+
+# Agent scratch / generated artifacts (never commit)
+/tool-results/
+/agent-ctx/
+/download/
+/coderouteguinee/
+
+# Local media uploads (audio narration mp3s — stored on object storage in prod)
+/upload/
+
+# Local SQLite dev database (PostgreSQL in prod)
+/db/
+
+# Compressed backups
+*.tar.gz
+*.tgz
+*.zip
