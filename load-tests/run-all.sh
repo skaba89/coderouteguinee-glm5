@@ -133,6 +133,72 @@ else
     || FAILURES=$((FAILURES+1))
 fi
 
+# 5. Sprint 11 — Booking flow (needs TEST_PASSWORD)
+if [[ -n "${TEST_PASSWORD:-}" ]]; then
+  echo -e "${BLUE}▶ Running: Booking Flow (Sprint 11)${NC}"
+  echo -e "  Script: booking-flow.js"
+  echo -e "  Scenario: 50 candidates booking simultaneously"
+  if ! env BASE_URL="${BASE_URL}" TEST_PASSWORD="${TEST_PASSWORD}" \
+       TEST_EMAIL="${TEST_EMAIL:-candidat@demo.gn}" \
+       k6 run "$(dirname "$0")/booking-flow.js"; then
+    echo -e "${RED}✗ Booking Flow failed${NC}"
+    FAILURES=$((FAILURES+1))
+  else
+    echo -e "${GREEN}✓ Booking Flow completed${NC}"
+  fi
+  echo ""
+fi
+
+# 6. Sprint 11 — RGPD export (needs TEST_PASSWORD)
+if [[ -n "${TEST_PASSWORD:-}" ]]; then
+  echo -e "${BLUE}▶ Running: RGPD Export (Sprint 11)${NC}"
+  echo -e "  Script: rgpd-export.js"
+  echo -e "  Scenario: 20 concurrent data exports"
+  if ! env BASE_URL="${BASE_URL}" TEST_PASSWORD="${TEST_PASSWORD}" \
+       TEST_EMAIL="${TEST_EMAIL:-candidat@demo.gn}" \
+       k6 run "$(dirname "$0")/rgpd-export.js"; then
+    echo -e "${RED}✗ RGPD Export failed${NC}"
+    FAILURES=$((FAILURES+1))
+  else
+    echo -e "${GREEN}✓ RGPD Export completed${NC}"
+  fi
+  echo ""
+fi
+
+# 7. Sprint 11 — Webhook storm (needs WEBHOOK_SECRET)
+if [[ -n "${WEBHOOK_SECRET:-}" ]]; then
+  echo -e "${BLUE}▶ Running: Webhook Storm (Sprint 11)${NC}"
+  echo -e "  Script: webhook-storm.js"
+  echo -e "  Scenario: 200 legit + 50 attacker + 20 replay"
+  if ! env BASE_URL="${BASE_URL}" WEBHOOK_SECRET="${WEBHOOK_SECRET}" \
+       k6 run "$(dirname "$0")/webhook-storm.js"; then
+    echo -e "${RED}✗ Webhook Storm failed${NC}"
+    FAILURES=$((FAILURES+1))
+  else
+    echo -e "${GREEN}✓ Webhook Storm completed${NC}"
+  fi
+  echo ""
+fi
+
+# 8. Sprint 11 — Concurrent admin (needs all admin passwords) — skip in smoke mode
+if [[ "$SMOKE_MODE" != "true" && -n "${SUPERADMIN_PASSWORD:-}" && -n "${ADMIN_PASSWORD:-}" ]]; then
+  echo -e "${BLUE}▶ Running: Concurrent Admin Dashboard (Sprint 11)${NC}"
+  echo -e "  Script: admin-concurrent.js"
+  echo -e "  Scenario: 30 concurrent admin users across 4 roles"
+  if ! env BASE_URL="${BASE_URL}" \
+       SUPERADMIN_PASSWORD="${SUPERADMIN_PASSWORD}" \
+       ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
+       AUTO_ECOLE_PASSWORD="${AUTO_ECOLE_PASSWORD:-${ADMIN_PASSWORD}}" \
+       CENTRE_PASSWORD="${CENTRE_PASSWORD:-${ADMIN_PASSWORD}}" \
+       k6 run "$(dirname "$0")/admin-concurrent.js"; then
+    echo -e "${RED}✗ Concurrent Admin failed${NC}"
+    FAILURES=$((FAILURES+1))
+  else
+    echo -e "${GREEN}✓ Concurrent Admin completed${NC}"
+  fi
+  echo ""
+fi
+
 # ─── Summary ───────────────────────────────────────────────
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║  Load Test Suite — Final Summary                         ║${NC}"

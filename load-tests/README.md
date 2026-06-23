@@ -10,6 +10,10 @@ This directory contains [k6](https://k6.io/) load testing scripts that verify th
 | `login.js` | `POST /api/auth/login` | 20→50 | 75s | Auth under credential-stuffing attack (argon2 hashing + rate limit) |
 | `exams.js` | `POST /api/exams` | 5→10 | 75s | Exam submission during peak exam-day (200 candidates/centre/30min) |
 | `payment-webhook.js` | `POST /api/payments/webhook` | 30 (two scenarios) | 60s | Webhook HMAC verification under burst load (Orange Money / MTN MoMo) |
+| `booking-flow.js` | `POST /api/bookings` + flow | 50 | 2min | Concurrent booking during DNTT slot opening (no double-booking, pricing integrity) |
+| `rgpd-export.js` | `POST /api/rgpd/export` | 20 | 1min | Concurrent RGPD exports with data leakage detection |
+| `webhook-storm.js` | `POST /api/payments/webhook` | 270 (3 scenarios) | 90s | Webhook storm: 200 legit + 50 invalid sig + 20 replay (idempotency, signature verify) |
+| `admin-concurrent.js` | `GET /api/admin/stats` + flow | 30 (4 roles) | 90s | 30 admins across 4 roles concurrent dashboard (no DB pool exhaustion, no audit log loss) |
 
 ## Prerequisites
 
